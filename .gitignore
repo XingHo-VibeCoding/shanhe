@@ -1,0 +1,28 @@
+# 敏感文件 —— 绝不提交到 GitHub
+.env
+.env.*
+*.local
+
+# 密码 / 密钥 / 凭证
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+*.secret
+
+# 依赖目录
+node_modules/
+
+# 本地数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 系统 / 编辑器杂项
+.DS_Store
+Thumbs.db
+
+# 工作记忆（非项目内容，不上传）
+.workbuddy/
