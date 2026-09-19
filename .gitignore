@@ -3,6 +3,10 @@
 .env.*
 *.local
 
+# 标题索引与抓取进度（派生产物，由 fetch_index.py 生成，不提交）
+my-app/title_index.json
+my-app/fetch_progress.json
+
 # 密码 / 密钥 / 凭证
 *.pem
 *.key

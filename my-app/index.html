@@ -37,6 +37,7 @@
       display: flex;
       gap: 10px;
       margin-bottom: 12px;
+      position: relative;
     }
     .search-box input {
       flex: 1;
@@ -59,6 +60,31 @@
       cursor: pointer;
     }
     .search-box button:hover { background: #1f2d3a; }
+    .suggest-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 4px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      max-height: 320px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+    .suggest-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .suggest-item:last-child { border-bottom: none; }
+    .suggest-item:hover,
+    .suggest-item.hover { background: #f5f2ec; }
+    .suggest-item .si-title { font-size: 15px; color: #333; }
+    .suggest-item .si-meta { font-size: 12px; color: #999; margin-top: 2px; }
     .hint {
       font-size: 12px;
       color: #aaa;
@@ -188,10 +214,11 @@
 
   <div class="container">
     <div class="search-box">
-      <input id="searchInput" type="text" placeholder="输入诗人姓名，如：李白、杜甫、苏轼" onkeydown="if(event.key==='Enter') searchPoems(1)">
+      <input id="searchInput" type="text" placeholder="输入诗人姓名或诗词名，如：李白、杜甫、静夜思" autocomplete="off" oninput="onInputChange()" onkeydown="onInputKeydown(event)">
       <button onclick="searchPoems(1)">查询</button>
+      <div class="suggest-list" id="suggestList"></div>
     </div>
-    <div class="hint">提示：输入诗人姓名，可列出 TA 的全部作品（含原文、译文、注释）。</div>
+    <div class="hint">提示：输入诗人姓名可列出 TA 的全部作品；输入诗词名（支持联想，如输入「临江仙」自动列出相关篇名）可查找具体诗词。</div>
 
     <div class="count" id="count"></div>
     <div id="result"></div>
@@ -214,7 +241,7 @@
       result.innerHTML = '<div class="loading">正在查询诗词库，请稍候…</div>';
 
       if (!keyword) {
-        result.innerHTML = '<div class="empty">请输入诗人姓名再查询</div>';
+        result.innerHTML = '<div class="empty">请输入诗人姓名或诗词名再查询</div>';
         return;
       }
 
@@ -222,7 +249,7 @@
       currentPage = page || 1;
 
       try {
-        const url = API_BASE + "/search?poet=" + encodeURIComponent(keyword) + "&page=" + currentPage;
+        const url = API_BASE + "/search?keyword=" + encodeURIComponent(keyword) + "&page=" + currentPage;
         const resp = await fetch(url);
         const json = await resp.json();
 
@@ -246,7 +273,7 @@
 
       if (list.length === 0) {
         count.textContent = "";
-        result.innerHTML = '<div class="empty">没有找到「' + currentPoet + '」的诗词，换个诗人试试吧</div>';
+        result.innerHTML = '<div class="empty">没有找到「' + currentPoet + '」的相关诗词，换个诗人或诗名试试吧</div>';
         return;
       }
 
@@ -320,6 +347,109 @@
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
     }
+
+    // ========== 标题联想（输入前缀，列出完整篇名） ==========
+    let suggestTimer = null;      // 防抖计时器
+    let suggestItems = [];        // 当前联想结果
+    let suggestIndex = -1;        // 当前高亮项
+
+    // 输入时触发（防抖 200ms）
+    function onInputChange() {
+      clearTimeout(suggestTimer);
+      const kw = document.getElementById("searchInput").value.trim();
+      if (!kw) {
+        hideSuggest();
+        return;
+      }
+      suggestTimer = setTimeout(() => fetchSuggest(kw), 200);
+    }
+
+    // 请求联想接口
+    async function fetchSuggest(kw) {
+      try {
+        const resp = await fetch(API_BASE + "/suggest?q=" + encodeURIComponent(kw));
+        const json = await resp.json();
+        if (json.ret_code === "0" && json.suggestions && json.suggestions.length > 0) {
+          suggestItems = json.suggestions;
+          suggestIndex = -1;
+          renderSuggest();
+        } else {
+          hideSuggest();
+        }
+      } catch (e) {
+        // 联想失败不影响主搜索，静默忽略
+        hideSuggest();
+      }
+    }
+
+    // 渲染下拉列表
+    function renderSuggest() {
+      const box = document.getElementById("suggestList");
+      if (!suggestItems.length) {
+        hideSuggest();
+        return;
+      }
+      box.innerHTML = suggestItems.map((s, i) => `
+        <div class="suggest-item ${i === suggestIndex ? "hover" : ""}"
+             onmousedown="pickSuggestion(${i})"
+             onmouseenter="suggestIndex=${i}; renderSuggest();">
+          <div class="si-title">${escapeHtml(s.title)}</div>
+          <div class="si-meta">${escapeHtml(s.poet)} · ${escapeHtml(s.dynasty)}</div>
+        </div>
+      `).join("");
+      box.style.display = "block";
+    }
+
+    function hideSuggest() {
+      document.getElementById("suggestList").style.display = "none";
+      suggestItems = [];
+      suggestIndex = -1;
+    }
+
+    // 选中某项 → 填入输入框并直接查询
+    function pickSuggestion(i) {
+      if (i < 0 || i >= suggestItems.length) return;
+      const item = suggestItems[i];
+      document.getElementById("searchInput").value = item.title;
+      hideSuggest();
+      searchPoems(1);
+    }
+
+    // 键盘操作：上下键切换、回车确认、ESC 收起
+    function onInputKeydown(e) {
+      const box = document.getElementById("suggestList");
+      if (box.style.display !== "block") {
+        // 下拉未展开，回车直接查询
+        if (e.key === "Enter") searchPoems(1);
+        return;
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        suggestIndex = (suggestIndex + 1) % suggestItems.length;
+        renderSuggest();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        suggestIndex = (suggestIndex - 1 + suggestItems.length) % suggestItems.length;
+        renderSuggest();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (suggestIndex >= 0) {
+          pickSuggestion(suggestIndex);
+        } else {
+          hideSuggest();
+          searchPoems(1);
+        }
+      } else if (e.key === "Escape") {
+        hideSuggest();
+      }
+    }
+
+    // 点击页面其他区域时收起下拉
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest(".search-box")) {
+        hideSuggest();
+      }
+    });
 
     // 初始化：默认展示李白（演示效果）
     document.getElementById("searchInput").value = "李白";
