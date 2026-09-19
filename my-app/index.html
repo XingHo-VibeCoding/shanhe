@@ -29,7 +29,7 @@
       margin-top: 6px;
     }
     .container {
-      max-width: 720px;
+      max-width: 760px;
       margin: 0 auto;
       padding: 24px 16px 60px;
     }
@@ -63,6 +63,24 @@
       font-size: 12px;
       color: #aaa;
       margin-bottom: 16px;
+    }
+    .poet-bio {
+      background: #fff;
+      border: 1px solid #e8e4dc;
+      border-left: 4px solid #2c3e50;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+    }
+    .poet-bio .bio-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+    .poet-bio .bio-text {
+      font-size: 13px;
+      color: #777;
+      margin-top: 4px;
     }
     .poem-card {
       background: #fff;
@@ -102,12 +120,20 @@
       font-size: 14px;
       font-weight: 500;
       color: #2c3e50;
-      margin: 10px 0 4px;
+      margin: 12px 0 4px;
     }
-    .translation, .analysis {
+    .translation {
       font-size: 14px;
+      color: #555;
+      white-space: pre-line;
+    }
+    .annotation {
+      font-size: 13px;
       color: #999;
       white-space: pre-line;
+      border-top: 1px dotted #eee;
+      margin-top: 8px;
+      padding-top: 8px;
     }
     .empty {
       text-align: center;
@@ -132,6 +158,26 @@
       padding: 40px 0;
       font-size: 15px;
     }
+    .pager {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .pager button {
+      padding: 8px 18px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #fff;
+      color: #2c3e50;
+      cursor: pointer;
+    }
+    .pager button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -142,20 +188,25 @@
 
   <div class="container">
     <div class="search-box">
-      <input id="searchInput" type="text" placeholder="输入诗人姓名，如：李白、杜甫、苏轼" onkeydown="if(event.key==='Enter') searchPoems()">
-      <button onclick="searchPoems()">查询</button>
+      <input id="searchInput" type="text" placeholder="输入诗人姓名，如：李白、杜甫、苏轼" onkeydown="if(event.key==='Enter') searchPoems(1)">
+      <button onclick="searchPoems(1)">查询</button>
     </div>
-    <div class="hint">提示：输入诗人姓名，可列出 TA 的全部作品；也支持输入诗题关键词搜索。</div>
+    <div class="hint">提示：输入诗人姓名，可列出 TA 的全部作品（含原文、译文、注释）。</div>
 
     <div class="count" id="count"></div>
     <div id="result"></div>
   </div>
 
   <script>
-    const API_BASE = "https://poetry-api.snowtraces.com/v1";
-    const MAX_RESULT = 30; // 每次最多展示条数，避免页面卡顿
+    // 本地后端地址（密钥在后端，前端看不到）
+    const API_BASE = "http://localhost:5000";
 
-    async function searchPoems() {
+    // 当前搜索状态
+    let currentPoet = "";
+    let currentPage = 1;
+    let totalPages = 1;
+
+    async function searchPoems(page) {
       const keyword = document.getElementById("searchInput").value.trim();
       const result = document.getElementById("result");
       const count = document.getElementById("count");
@@ -163,96 +214,116 @@
       result.innerHTML = '<div class="loading">正在查询诗词库，请稍候…</div>';
 
       if (!keyword) {
-        result.innerHTML = '<div class="empty">请输入诗人姓名或诗题关键词再查询</div>';
+        result.innerHTML = '<div class="empty">请输入诗人姓名再查询</div>';
         return;
       }
+
+      currentPoet = keyword;
+      currentPage = page || 1;
 
       try {
-        // 第一步：尝试按「作者名」精确查找作者
-        const author = await findAuthor(keyword);
-        if (author) {
-          // 找到了作者，列出 TA 的全部作品
-          const works = await fetchAuthorWorks(author.id);
-          renderResult(works, author.name + " · " + author.dynasty + " 的作品");
-        } else {
-          // 没找到作者，退回按关键词搜作品（标题/内容）
-          const works = await searchWorks(keyword);
-          renderResult(works, "关键词「" + keyword + "」的搜索结果");
+        const url = API_BASE + "/search?poet=" + encodeURIComponent(keyword) + "&page=" + currentPage;
+        const resp = await fetch(url);
+        const json = await resp.json();
+
+        if (json.ret_code !== "0") {
+          result.innerHTML = '<div class="error">' + (json.remark || "查询失败") + '</div>';
+          return;
         }
+
+        renderResult(json);
       } catch (e) {
-        result.innerHTML = '<div class="error">查询失败，可能网络或接口暂时不可用，请稍后重试。<br>（错误：' + e.message + '）</div>';
+        result.innerHTML = '<div class="error">无法连接后端服务。请确认已启动 server.py。<br>（错误：' + e.message + '）</div>';
       }
     }
 
-    // 按作者名查找作者，返回 { id, name, dynasty } 或 null
-    async function findAuthor(name) {
-      const url = API_BASE + "/authors?q=" + encodeURIComponent(name) + "&page_size=1";
-      const resp = await fetch(url);
-      if (!resp.ok) return null;
-      const json = await resp.json();
-      const list = json.data || [];
-      if (list.length === 0) return null;
-      const a = list[0];
-      // 只有名字完全一致才认为是精确匹配，避免误判
-      if (a.name === name) {
-        return { id: a.id, name: a.name, dynasty: a.dynasty };
-      }
-      return null;
-    }
-
-    // 按作者 id 列出其全部作品
-    async function fetchAuthorWorks(authorId) {
-      const url = API_BASE + "/authors/" + authorId + "/works?page_size=" + MAX_RESULT;
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-      const json = await resp.json();
-      return json.data || [];
-    }
-
-    // 按关键词搜索作品
-    async function searchWorks(keyword) {
-      const url = API_BASE + "/works?q=" + encodeURIComponent(keyword) + "&page_size=" + MAX_RESULT;
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-      const json = await resp.json();
-      return json.data || [];
-    }
-
-    function renderResult(list, label) {
+    function renderResult(json) {
       const count = document.getElementById("count");
       const result = document.getElementById("result");
-      if (!list || list.length === 0) {
+      const list = json.poemInfo || [];
+      const allNum = json.allNum || list.length;
+      totalPages = json.allPages || 1;
+
+      if (list.length === 0) {
         count.textContent = "";
-        result.innerHTML = '<div class="empty">没有找到相关诗词，换个关键词试试吧</div>';
+        result.innerHTML = '<div class="empty">没有找到「' + currentPoet + '」的诗词，换个诗人试试吧</div>';
         return;
       }
-      count.textContent = label + "（共 " + list.length + " 首）";
-      result.innerHTML = list.map(p => {
+
+      // 诗人简介（如果有）
+      let bioHtml = "";
+      if (json.poetInfo && json.poetInfo.poet) {
+        bioHtml = `
+          <div class="poet-bio">
+            <div class="bio-name">${json.poetInfo.poet} · ${json.poetInfo.dynasty || ""}</div>
+            <div class="bio-text">${json.poetInfo.biography || ""}</div>
+          </div>
+        `;
+      }
+
+      count.textContent = "「" + currentPoet + "」共 " + allNum + " 首作品，当前第 " + currentPage + " / " + totalPages + " 页";
+
+      const cards = list.map(p => {
         const title = p.title || "无题";
-        const author = p.authorName || "佚名";
+        const author = p.poet || "佚名";
         const dynasty = p.dynasty || "未知";
-        const type = p.type === "ci" ? "词" : (p.type === "qu" ? "曲" : "诗");
-        const content = Array.isArray(p.content) ? p.content.join("\n") : (p.content || "");
+
+        // contentlist 是 [{original, translation, annotation}, ...] 结构
+        const contentlist = p.contentlist || [];
+        let contentHtml = "";
+        let transHtml = "";
+        let annHtml = "";
+
+        contentlist.forEach(item => {
+          if (item.original) contentHtml += item.original + "\n";
+          if (item.translation) transHtml += item.translation + "\n";
+          if (item.annotation) annHtml += "○ " + item.annotation + "\n";
+        });
+
+        if (!contentHtml) contentHtml = "（无内容）";
+
         return `
           <div class="poem-card">
             <h2>${title}</h2>
             <div class="poem-meta">
               ${author} · ${dynasty}代
-              <span class="tag">${type}</span>
             </div>
-            <div class="poem-content">${content}</div>
-            <div class="section-title">释义</div>
-            <div class="translation">暂未收录（后续接入 AI 自动生成）</div>
-            <div class="section-title">简析</div>
-            <div class="analysis">暂未收录（后续接入 AI 自动生成）</div>
+            <div class="poem-content">${escapeHtml(contentHtml)}</div>
+            <div class="section-title">译文</div>
+            <div class="translation">${escapeHtml(transHtml) || "（暂无译文）"}</div>
+            <div class="section-title">注释</div>
+            <div class="annotation">${escapeHtml(annHtml) || "（暂无注释）"}</div>
           </div>
         `;
       }).join("");
+
+      // 分页按钮
+      let pagerHtml = "";
+      if (totalPages > 1) {
+        pagerHtml = `
+          <div class="pager">
+            <button onclick="searchPoems(${currentPage - 1})" ${currentPage <= 1 ? "disabled" : ""}>上一页</button>
+            <span>第 ${currentPage} / ${totalPages} 页</span>
+            <button onclick="searchPoems(${currentPage + 1})" ${currentPage >= totalPages ? "disabled" : ""}>下一页</button>
+          </div>
+        `;
+      }
+
+      result.innerHTML = bioHtml + cards + pagerHtml;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // 简单的转义，防止特殊字符破坏页面
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
     }
 
     // 初始化：默认展示李白（演示效果）
     document.getElementById("searchInput").value = "李白";
-    searchPoems();
+    searchPoems(1);
   </script>
 </body>
 </html>
