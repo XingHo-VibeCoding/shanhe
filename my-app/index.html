@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>诗迹山河 · 诗词查询</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #f7f5f0;
+      color: #333;
+      line-height: 1.8;
+    }
+    .header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 28px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 2px;
+    }
+    .header p {
+      font-size: 13px;
+      opacity: 0.75;
+      margin-top: 6px;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .search-box input {
+      flex: 1;
+      padding: 12px 14px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+    }
+    .search-box input:focus {
+      border-color: #2c3e50;
+    }
+    .search-box button {
+      padding: 12px 22px;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #2c3e50;
+      color: #fff;
+      cursor: pointer;
+    }
+    .search-box button:hover { background: #1f2d3a; }
+    .hint {
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 16px;
+    }
+    .poem-card {
+      background: #fff;
+      border: 1px solid #e8e4dc;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .poem-card h2 {
+      font-size: 19px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .poem-meta {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+    .poem-meta .tag {
+      display: inline-block;
+      background: #eef2f5;
+      color: #2c3e50;
+      padding: 1px 8px;
+      border-radius: 10px;
+      margin-left: 6px;
+      font-size: 12px;
+    }
+    .poem-content {
+      font-size: 17px;
+      white-space: pre-line;
+      padding: 12px 0;
+      border-top: 1px dashed #eee;
+      border-bottom: 1px dashed #eee;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2c3e50;
+      margin: 10px 0 4px;
+    }
+    .translation, .analysis {
+      font-size: 14px;
+      color: #999;
+      white-space: pre-line;
+    }
+    .empty {
+      text-align: center;
+      color: #999;
+      padding: 40px 0;
+      font-size: 15px;
+    }
+    .count {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 12px;
+    }
+    .loading {
+      text-align: center;
+      color: #999;
+      padding: 40px 0;
+      font-size: 15px;
+    }
+    .error {
+      text-align: center;
+      color: #c0392b;
+      padding: 40px 0;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>诗迹山河</h1>
+    <p>古诗词学习平台 · 地图 + 诗词</p>
+  </div>
+
+  <div class="container">
+    <div class="search-box">
+      <input id="searchInput" type="text" placeholder="输入诗人姓名，如：李白、杜甫、苏轼" onkeydown="if(event.key==='Enter') searchPoems()">
+      <button onclick="searchPoems()">查询</button>
+    </div>
+    <div class="hint">提示：输入诗人姓名，可列出 TA 的全部作品；也支持输入诗题关键词搜索。</div>
+
+    <div class="count" id="count"></div>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const API_BASE = "https://poetry-api.snowtraces.com/v1";
+    const MAX_RESULT = 30; // 每次最多展示条数，避免页面卡顿
+
+    async function searchPoems() {
+      const keyword = document.getElementById("searchInput").value.trim();
+      const result = document.getElementById("result");
+      const count = document.getElementById("count");
+      count.textContent = "";
+      result.innerHTML = '<div class="loading">正在查询诗词库，请稍候…</div>';
+
+      if (!keyword) {
+        result.innerHTML = '<div class="empty">请输入诗人姓名或诗题关键词再查询</div>';
+        return;
+      }
+
+      try {
+        // 第一步：尝试按「作者名」精确查找作者
+        const author = await findAuthor(keyword);
+        if (author) {
+          // 找到了作者，列出 TA 的全部作品
+          const works = await fetchAuthorWorks(author.id);
+          renderResult(works, author.name + " · " + author.dynasty + " 的作品");
+        } else {
+          // 没找到作者，退回按关键词搜作品（标题/内容）
+          const works = await searchWorks(keyword);
+          renderResult(works, "关键词「" + keyword + "」的搜索结果");
+        }
+      } catch (e) {
+        result.innerHTML = '<div class="error">查询失败，可能网络或接口暂时不可用，请稍后重试。<br>（错误：' + e.message + '）</div>';
+      }
+    }
+
+    // 按作者名查找作者，返回 { id, name, dynasty } 或 null
+    async function findAuthor(name) {
+      const url = API_BASE + "/authors?q=" + encodeURIComponent(name) + "&page_size=1";
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const json = await resp.json();
+      const list = json.data || [];
+      if (list.length === 0) return null;
+      const a = list[0];
+      // 只有名字完全一致才认为是精确匹配，避免误判
+      if (a.name === name) {
+        return { id: a.id, name: a.name, dynasty: a.dynasty };
+      }
+      return null;
+    }
+
+    // 按作者 id 列出其全部作品
+    async function fetchAuthorWorks(authorId) {
+      const url = API_BASE + "/authors/" + authorId + "/works?page_size=" + MAX_RESULT;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      const json = await resp.json();
+      return json.data || [];
+    }
+
+    // 按关键词搜索作品
+    async function searchWorks(keyword) {
+      const url = API_BASE + "/works?q=" + encodeURIComponent(keyword) + "&page_size=" + MAX_RESULT;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      const json = await resp.json();
+      return json.data || [];
+    }
+
+    function renderResult(list, label) {
+      const count = document.getElementById("count");
+      const result = document.getElementById("result");
+      if (!list || list.length === 0) {
+        count.textContent = "";
+        result.innerHTML = '<div class="empty">没有找到相关诗词，换个关键词试试吧</div>';
+        return;
+      }
+      count.textContent = label + "（共 " + list.length + " 首）";
+      result.innerHTML = list.map(p => {
+        const title = p.title || "无题";
+        const author = p.authorName || "佚名";
+        const dynasty = p.dynasty || "未知";
+        const type = p.type === "ci" ? "词" : (p.type === "qu" ? "曲" : "诗");
+        const content = Array.isArray(p.content) ? p.content.join("\n") : (p.content || "");
+        return `
+          <div class="poem-card">
+            <h2>${title}</h2>
+            <div class="poem-meta">
+              ${author} · ${dynasty}代
+              <span class="tag">${type}</span>
+            </div>
+            <div class="poem-content">${content}</div>
+            <div class="section-title">释义</div>
+            <div class="translation">暂未收录（后续接入 AI 自动生成）</div>
+            <div class="section-title">简析</div>
+            <div class="analysis">暂未收录（后续接入 AI 自动生成）</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // 初始化：默认展示李白（演示效果）
+    document.getElementById("searchInput").value = "李白";
+    searchPoems();
+  </script>
+</body>
+</html>
