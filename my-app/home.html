@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>诗迹山河 · 首页</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f7f5f0;
+    color: #333;
+    line-height: 1.8;
+  }
+
+  /* ===== 顶部标题 ===== */
+  .header {
+    background: #2c3e50;
+    color: #fff;
+    padding: 32px 20px 26px;
+    text-align: center;
+  }
+  .header h1 {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 32px;
+    font-weight: 500;
+    letter-spacing: 8px;
+  }
+  .header p {
+    font-size: 13px;
+    opacity: 0.72;
+    margin-top: 8px;
+    letter-spacing: 3px;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 22px 16px 80px;
+  }
+
+  /* ===== 日期栏 ===== */
+  .date-bar {
+    text-align: center;
+    font-size: 13px;
+    color: #b5a58c;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+
+  /* ===== 今日荐诗 ===== */
+  .daily {
+    background: #fff;
+    border: 1px solid #e8e4dc;
+    border-radius: 12px;
+    padding: 24px 24px 22px;
+    margin-bottom: 26px;
+  }
+  .daily-badge {
+    display: inline-block;
+    background: #a3402f;
+    color: #fff;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 2px 12px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+  }
+  .daily .d-title {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 20px;
+    font-weight: 500;
+    text-align: center;
+    color: #2c3e50;
+  }
+  .daily .d-lines {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 19px;
+    text-align: center;
+    color: #333;
+    line-height: 2.1;
+    margin: 14px 0;
+  }
+  .daily .d-author {
+    text-align: center;
+    font-size: 13px;
+    color: #999;
+  }
+
+  /* ===== 区块标题 ===== */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-head h2 {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: #2c3e50;
+    letter-spacing: 2px;
+  }
+  .section-head .num {
+    font-size: 12px;
+    color: #b5a58c;
+  }
+
+  /* ===== 诗词卡片列表 ===== */
+  .poem-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .poem-card {
+    background: #fff;
+    border: 1px solid #e8e4dc;
+    border-radius: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .poem-card:hover { border-color: #c9c2b5; }
+  .pc-title {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: #2c3e50;
+  }
+  .pc-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .pc-author { font-size: 13px; color: #666; }
+  .dynasty-badge {
+    font-size: 12px;
+    background: #eef2f5;
+    color: #2c3e50;
+    padding: 1px 8px;
+    border-radius: 10px;
+  }
+  .topic-tag {
+    font-size: 12px;
+    background: #f4ece0;
+    color: #a3402f;
+    padding: 1px 8px;
+    border-radius: 10px;
+  }
+  .pc-line {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 15px;
+    color: #555;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #eee;
+  }
+
+  /* ===== 四种状态占位 ===== */
+  .state-box {
+    text-align: center;
+    padding: 56px 20px;
+    color: #b5a58c;
+    font-size: 15px;
+    line-height: 2;
+  }
+  .state-box.error { color: #c0392b; }
+  .state-box .state-icon { font-size: 34px; margin-bottom: 8px; }
+  .state-box .btn {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 8px 22px;
+    font-size: 14px;
+    border: 1px solid #2c3e50;
+    border-radius: 8px;
+    background: #fff;
+    color: #2c3e50;
+    cursor: pointer;
+  }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid #e8e4dc;
+    border-top-color: #2c3e50;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== 状态切换调试按钮 ===== */
+  .debug-switch {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 99;
+    display: flex;
+    gap: 6px;
+    background: rgba(44,62,80,.92);
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+  .debug-switch button {
+    font-size: 12px;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    cursor: pointer;
+  }
+  .debug-switch button.active { background: #fff; color: #2c3e50; }
+</style>
+</head>
+<body>
+  <header class="header">
+    <h1>诗迹山河</h1>
+    <p>古诗词学习平台 · 地图 + 诗词</p>
+  </header>
+
+  <main class="container">
+    <div class="date-bar" id="dateBar">……</div>
+
+    <section class="daily">
+      <span class="daily-badge">今日荐诗</span>
+      <div class="d-title">静夜思</div>
+      <div class="d-lines">床前明月光，疑是地上霜。<br>举头望明月，低头思故乡。</div>
+      <div class="d-author">李白 · 唐代</div>
+    </section>
+
+    <div class="section-head">
+      <h2>精选诗词</h2>
+      <span class="num" id="listNum"></span>
+    </div>
+
+    <div class="poem-list" id="poemList"></div>
+    <div class="state-box loading" id="stateBox">正在展开诗卷…</div>
+  </main>
+
+  <div class="debug-switch" id="debugSwitch">
+    <button data-state="normal" class="active">正常</button>
+    <button data-state="empty">空</button>
+    <button data-state="error">错误</button>
+  </div>
+
+  <script>
+    // ===== 1. 日期栏（公历 + 农历，农历日期转中文数字）=====
+    function lunarDayText(n) {
+      const ones = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+      if (n < 1 || n > 30) return String(n);
+      if (n === 10) return "初十";
+      if (n < 10) return "初" + ones[n];
+      if (n === 20) return "二十";
+      if (n === 30) return "三十";
+      return ["", "十", "二十"][Math.floor(n / 10)] + ones[n % 10];
+    }
+    (function setDate() {
+      const now = new Date();
+      const solar = now.getFullYear() + "年" + (now.getMonth() + 1) + "月" + now.getDate() + "日";
+      let lunar = "";
+      try {
+        const parts = new Intl.DateTimeFormat("zh-CN-u-ca-chinese", { month: "long", day: "numeric" }).formatToParts(now);
+        let month = "", day = "";
+        for (const p of parts) {
+          if (p.type === "month") month = p.value;
+          else if (p.type === "day") day = p.value;
+        }
+        lunar = month + lunarDayText(parseInt(day, 10));
+      } catch (e) { lunar = ""; }
+      document.getElementById("dateBar").textContent = solar + (lunar ? " · 农历" + lunar : "");
+    })();
+
+    // ===== 2. mock 数据（本地假数据，公版名篇）=====
+    const MOCK_POEMS = [
+      { title: "黄鹤楼送孟浩然之广陵", author: "李白", dynasty: "唐代", line: "故人西辞黄鹤楼，烟花三月下扬州。", tags: ["送别", "长江"] },
+      { title: "望岳", author: "杜甫", dynasty: "唐代", line: "会当凌绝顶，一览众山小。", tags: ["山水", "壮志"] },
+      { title: "水调歌头·明月几时有", author: "苏轼", dynasty: "宋代", line: "明月几时有，把酒问青天。", tags: ["中秋", "怀人"] },
+      { title: "静夜思", author: "李白", dynasty: "唐代", line: "床前明月光，疑是地上霜。", tags: ["思乡", "月亮"] },
+      { title: "春晓", author: "孟浩然", dynasty: "唐代", line: "春眠不觉晓，处处闻啼鸟。", tags: ["春天", "田园"] },
+      { title: "登鹳雀楼", author: "王之涣", dynasty: "唐代", line: "白日依山尽，黄河入海流。", tags: ["山水", "登高"] },
+      { title: "泊秦淮", author: "杜牧", dynasty: "唐代", line: "烟笼寒水月笼沙，夜泊秦淮近酒家。", tags: ["夜景", "怀古"] },
+      { title: "念奴娇·赤壁怀古", author: "苏轼", dynasty: "宋代", line: "大江东去，浪淘尽，千古风流人物。", tags: ["怀古", "赤壁"] }
+    ];
+
+    // ===== 3. 状态管理与渲染 =====
+    const stateBox = document.getElementById("stateBox");
+    const poemList = document.getElementById("poemList");
+    const listNum = document.getElementById("listNum");
+    let currentState = "normal";
+
+    function cardHtml(p) {
+      const tags = (p.tags || []).map(function (t) { return '<span class="topic-tag">' + t + '</span>'; }).join("");
+      return (
+        '<div class="poem-card">' +
+          '<div class="pc-title">' + p.title + '</div>' +
+          '<div class="pc-meta">' +
+            '<span class="pc-author">' + p.author + '</span>' +
+            '<span class="dynasty-badge">' + p.dynasty + '</span>' + tags +
+          '</div>' +
+          '<div class="pc-line">' + p.line + '</div>' +
+        '</div>'
+      );
+    }
+
+    function render() {
+      document.querySelectorAll(".debug-switch button").forEach(function (b) {
+        b.classList.toggle("active", b.dataset.state === currentState);
+      });
+
+      // 非「正常」的三种状态：清空列表，并确保占位框恢复显示
+      if (currentState !== "normal") {
+        poemList.innerHTML = "";
+        listNum.textContent = "";
+        stateBox.style.display = "";
+      }
+
+      if (currentState === "loading") {
+        stateBox.className = "state-box loading";
+        stateBox.innerHTML = '<div class="spinner"></div>正在展开诗卷…';
+        return;
+      }
+      if (currentState === "empty") {
+        stateBox.className = "state-box";
+        stateBox.innerHTML =
+          '<div style="width:36px;height:36px;border:2px dashed #d3d1c7;border-radius:50%;margin:0 auto 10px;"></div>' +
+          '这里还空着<br>还没有精选诗词，去发现吧<br>' +
+          '<button class="btn" onclick="setState(\'normal\')">去发现诗词</button>';
+        return;
+      }
+      if (currentState === "error") {
+        stateBox.className = "state-box error";
+        stateBox.innerHTML =
+          '<div style="width:36px;height:36px;line-height:32px;border:2px solid #e24b4a;border-radius:50%;margin:0 auto 10px;font-size:22px;font-weight:500;color:#e24b4a;">!</div>' +
+          '诗卷打不开了<br>网络好像出了点问题，稍后再试<br>' +
+          '<button class="btn" onclick="setState(\'normal\')">重试</button>';
+        return;
+      }
+      // normal：渲染诗词卡片列表（此时隐藏占位框）
+      stateBox.style.display = "none";
+      listNum.textContent = "共 " + MOCK_POEMS.length + " 首";
+      poemList.innerHTML = MOCK_POEMS.map(cardHtml).join("");
+    }
+
+    function setState(s) {
+      currentState = s;
+      render();
+    }
+
+    // 模拟异步加载：先显示「加载中」，600ms 后再切到目标状态
+    function showLoading(cb) {
+      setState("loading");
+      setTimeout(cb, 600);
+    }
+
+    // ===== 4. 状态切换按钮 =====
+    document.querySelectorAll(".debug-switch button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const target = btn.dataset.state;
+        showLoading(function () { setState(target); });
+      });
+    });
+
+    // ===== 5. 初始化：模拟首次加载，再展示列表 =====
+    showLoading(function () { setState("normal"); });
+  </script>
+</body>
+</html>
