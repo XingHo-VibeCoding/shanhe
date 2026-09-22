@@ -204,6 +204,32 @@
       opacity: 0.4;
       cursor: not-allowed;
     }
+    .title-list-head {
+      font-size: 14px;
+      color: #2c3e50;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .title-item {
+      background: #fff;
+      border: 1px solid #e8e4dc;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color .2s;
+    }
+    .title-item:hover { border-color: #c9c2b5; }
+    .title-item .ti-title {
+      font-size: 16px;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+    .title-item .ti-meta {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -258,6 +284,12 @@
           return;
         }
 
+        // 若是「同名作品列表」类型（本地索引命中，非正文），走列表渲染
+        if (json.match_type === "titles") {
+          renderTitleList(json);
+          return;
+        }
+
         renderResult(json);
       } catch (e) {
         result.innerHTML = '<div class="error">无法连接后端服务。请确认已启动 server.py。<br>（错误：' + e.message + '）</div>';
@@ -295,17 +327,26 @@
         const author = p.poet || "佚名";
         const dynasty = p.dynasty || "未知";
 
-        // contentlist 是 [{original, translation, annotation}, ...] 结构
+        // 兼容两种数据格式：
+        //  1. API 返回：contentlist 是 [{original, translation, annotation}, ...] 逐句结构
+        //  2. 本地库返回：content / translation / annotation 是拼接好的整字段
         const contentlist = p.contentlist || [];
         let contentHtml = "";
         let transHtml = "";
         let annHtml = "";
 
-        contentlist.forEach(item => {
-          if (item.original) contentHtml += item.original + "\n";
-          if (item.translation) transHtml += item.translation + "\n";
-          if (item.annotation) annHtml += "○ " + item.annotation + "\n";
-        });
+        if (contentlist.length > 0) {
+          contentlist.forEach(item => {
+            if (item.original) contentHtml += item.original + "\n";
+            if (item.translation) transHtml += item.translation + "\n";
+            if (item.annotation) annHtml += "○ " + item.annotation + "\n";
+          });
+        } else {
+          // 本地库格式：整字段直接展示
+          contentHtml = p.content || "";
+          transHtml = p.translation || "";
+          annHtml = p.annotation || "";
+        }
 
         if (!contentHtml) contentHtml = "（无内容）";
 
@@ -338,6 +379,51 @@
 
       result.innerHTML = bioHtml + cards + pagerHtml;
       window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // 渲染「同名作品列表」（本地索引命中，点某一首再查正文）
+    function renderTitleList(json) {
+      const count = document.getElementById("count");
+      const result = document.getElementById("result");
+      const titles = json.titles || [];
+      const allNum = json.allNum || titles.length;
+
+      count.textContent = "找到 " + allNum + " 首同名词作，点击查看正文";
+
+      const items = titles.map(t => `
+        <div class="title-item" onclick="searchPoemsByTitle('${escapeHtml(t.title).replace(/'/g, "\\'")}')">
+          <div class="ti-title">${escapeHtml(t.title)}</div>
+          <div class="ti-meta">${escapeHtml(t.poet)} · ${escapeHtml(t.dynasty)}</div>
+        </div>
+      `).join("");
+
+      result.innerHTML = items;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // 按完整篇名精确查询（点同名列表某一首时调用）
+    async function searchPoemsByTitle(title) {
+      document.getElementById("searchInput").value = title;
+      const result = document.getElementById("result");
+      const count = document.getElementById("count");
+      count.textContent = "";
+      result.innerHTML = '<div class="loading">正在查询诗词库，请稍候…</div>';
+
+      currentPoet = title;
+      currentPage = 1;
+
+      try {
+        const url = API_BASE + "/search?title=" + encodeURIComponent(title) + "&page=1";
+        const resp = await fetch(url);
+        const json = await resp.json();
+        if (json.ret_code !== "0") {
+          result.innerHTML = '<div class="error">' + (json.remark || "查询失败") + '</div>';
+          return;
+        }
+        renderResult(json);
+      } catch (e) {
+        result.innerHTML = '<div class="error">无法连接后端服务。请确认已启动 server.py。<br>（错误：' + e.message + '）</div>';
+      }
     }
 
     // 简单的转义，防止特殊字符破坏页面

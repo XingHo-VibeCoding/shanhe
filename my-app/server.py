@@ -13,6 +13,7 @@
 
 import os
 import json
+import sqlite3
 import requests
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -56,6 +57,26 @@ try:
 except Exception as e:
     print(f"⚠️  加载标题索引失败：{e}")
     TITLE_INDEX = []
+
+# 诗词正文数据库（由 fetch_content.py 生成，存原文/译文/注释五件套）
+DB_FILE = os.path.join(FRONTEND_DIR, "poems.db")
+
+
+def db_query(sql, params=()):
+    """查本地 poems.db（只读）。库不存在时返回空列表。"""
+    if not os.path.exists(DB_FILE):
+        return []
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute(sql, params)
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+    except Exception as e:
+        print(f"⚠️  查询数据库失败：{e}")
+        return []
 
 
 @app.route("/")
@@ -149,8 +170,48 @@ def search():
 
 
 def search_smart(keyword, page):
-    """智能搜索：先按诗人名查，查不到该诗人就转按诗名查"""
-    # 先尝试按诗人名查（1620-4）
+    """智能搜索：先查本地库（零额度），查不到再调 API，最后按诗名兜底。
+
+    顺序（越靠前越省额度）：
+      1. 本地 poems.db 里按「诗人名」查 → 命中直接返回
+      2. 本地 poems.db 里按「诗名」查 → 命中直接返回
+      3. 本地标题索引「同名作品」→ 命中返回标题列表
+      4. 才调 API（先按诗人名，再按诗名）
+    """
+    page_size = 20
+    offset = (int(page) - 1) * page_size if str(page).isdigit() else 0
+
+    # 1. 本地库按诗人名查
+    poet_rows = db_query(
+        "SELECT * FROM poems WHERE poet = ? ORDER BY title LIMIT ? OFFSET ?",
+        (keyword, page_size, offset),
+    )
+    if poet_rows:
+        poet_total = db_query("SELECT COUNT(*) AS c FROM poems WHERE poet = ?", (keyword,))
+        total = poet_total[0]["c"] if poet_total else len(poet_rows)
+        return jsonify(_poems_from_db(poet_rows, total, page))
+
+    # 2. 本地库按诗名查（精确匹配标题）
+    title_rows = db_query(
+        "SELECT * FROM poems WHERE title = ? ORDER BY title LIMIT ? OFFSET ?",
+        (keyword, page_size, offset),
+    )
+    if title_rows:
+        title_total = db_query("SELECT COUNT(*) AS c FROM poems WHERE title = ?", (keyword,))
+        total = title_total[0]["c"] if title_total else len(title_rows)
+        return jsonify(_poems_from_db(title_rows, total, page))
+
+    # 3. 本地标题索引「同名作品」（零额度）
+    title_matches = find_same_titles(keyword)
+    if title_matches:
+        return jsonify({
+            "ret_code": "0",
+            "match_type": "titles",
+            "allNum": len(title_matches),
+            "titles": title_matches,
+        })
+
+    # 4. 调 API 兜底：先按诗人名查
     try:
         poet_resp = requests.post(
             f"{SHOWAPI_BASE}/1620-4",
@@ -163,14 +224,55 @@ def search_smart(keyword, page):
     except Exception as e:
         poet_data = {"ret_code": "-1", "remark": str(e)}
 
-    # 若按诗人名查到了，就走诗人作品列表
     if poet_data.get("ret_code") == "0":
         poet_list = poet_data.get("poetInfo", [])
         if poet_list:
             return search_by_poet_with_info(poet_list[0], page)
 
-    # 查不到诗人 → 转按诗名查
+    # 5. 最后按诗名查 API
     return search_by_title(keyword, page)
+
+
+def _poems_from_db(rows, total, page):
+    """把数据库查到的作品行，组装成前端可渲染的结构（兼容 API 返回格式）"""
+    poem_info = []
+    for r in rows:
+        poem_info.append({
+            "poemId": r.get("poem_id", ""),
+            "title": r.get("title", ""),
+            "poet": r.get("poet", ""),
+            "dynasty": r.get("dynasty", ""),
+            "content": r.get("content", ""),
+            "translation": r.get("translation", ""),
+            "annotation": r.get("annotation", ""),
+        })
+    return {
+        "ret_code": "0",
+        "match_type": "db",
+        "allNum": total,
+        "poemInfo": poem_info,
+    }
+
+
+def find_same_titles(keyword):
+    """在本地标题索引里，找出所有「标题以关键词开头」的同名作品。
+    返回 [{title, poet, dynasty}, ...]，去重、最多 50 条。零 API 调用。"""
+    if not TITLE_INDEX or not keyword:
+        return []
+    result = []
+    seen = set()
+    for item in TITLE_INDEX:
+        title = item.get("title", "")
+        if title and title.startswith(keyword) and title not in seen:
+            seen.add(title)
+            result.append({
+                "title": title,
+                "poet": item.get("poet", ""),
+                "dynasty": item.get("dynasty", ""),
+            })
+            if len(result) >= 50:
+                break
+    return result
 
 
 def search_by_poet_with_info(poet_info, page):
