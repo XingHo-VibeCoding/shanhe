@@ -169,7 +169,7 @@
 </head>
 <body>
   <div class="topbar">
-    <a class="back" href="home.html">← 返回</a>
+    <a class="back" id="backLink" href="home.html">← 返回</a>
     <span class="t">诗词详情</span>
   </div>
 
@@ -185,6 +185,19 @@
     return new URLSearchParams(location.search).get(name) || "";
   }
   const title = getParam("title");
+
+  // Day 13：从哪来回哪去（?from=footprints → 足迹页；缺省 → 首页）
+  (function initBack() {
+    const from = getParam("from");
+    const back = document.getElementById("backLink");
+    if (from === "footprints") {
+      back.href = "footprints.html";
+      back.textContent = "← 返回足迹";
+    } else {
+      back.href = "home.html";
+      back.textContent = "← 返回首页";
+    }
+  })();
 
   function escapeHtml(s) {
     return String(s)

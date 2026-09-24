@@ -393,7 +393,7 @@
 
     <div class="date-bar" id="dateBar">……</div>
 
-    <section class="daily" onclick="location.href='detail.html?title=静夜思'">
+    <section class="daily" onclick="location.href='detail.html?title=静夜思&from=home'">
       <!-- 红梅枝 -->
       <svg class="plum" viewBox="0 0 120 120" aria-hidden="true">
         <g stroke="#9a8466" stroke-width="2.2" fill="none" stroke-linecap="round">
@@ -507,7 +507,7 @@
 
     function cardHtml(p) {
       const tags = (p.tags || []).map(function (t) { return '<span class="topic-tag">' + t + '</span>'; }).join("");
-      const href = 'detail.html?title=' + encodeURIComponent(p.title);
+      const href = 'detail.html?title=' + encodeURIComponent(p.title) + '&from=home';
       return (
         '<div class="poem-card" onclick="location.href=\'' + href + '\'">' +
           '<div class="pc-title">' + p.title + '</div>' +

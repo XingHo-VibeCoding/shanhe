@@ -449,7 +449,7 @@
     return (
       '<div class="fold-card">' +
         '<h3 class="fold-head" tabindex="0" role="button" aria-expanded="false" onclick="toggleCard(this)" onkeydown="keyCard(event, this)">' +
-          '<span><a class="poem-title-link" href="detail.html?title=' + encodeURIComponent(p.title) + '">' + esc(p.title) + '</a>' +
+          '<span><a class="poem-title-link" href="detail.html?title=' + encodeURIComponent(p.title) + '&from=footprints">' + esc(p.title) + '</a>' +
           '　<em style="font-style:normal;font-size:11px;color:#8a7a5f;">' + esc(p.genre) + ' · ' + esc(p.year) + '</em></span>' +
           '<span class="fold-right"><span class="fold-state">已收起</span>' +
           '<svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4 L6 8 L10 4" fill="none" stroke="#a3402f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
@@ -573,7 +573,7 @@
     })
     .catch(e => {
       document.getElementById("timeline").innerHTML =
-        '<div class="empty">足迹长卷未能展开：' + esc(e.message) + '<br>请确认通过 http://localhost:8080 访问（非本地文件打开）</div>';
+        '<div class="empty">足迹长卷未能展开：' + esc(e.message) + '<br>请确认通过 http://localhost:8080 访问（非本地文件打开）<br><a href="javascript:location.reload()" style="display:inline-block;margin-top:12px;padding:8px 24px;font-family:\'STKaiti\',\'KaiTi\',\'楷体\',serif;font-size:14px;letter-spacing:2px;color:#fdfbf5;background:#a3402f;border-radius:18px;text-decoration:none;transition:background .2s,transform .2s;" onmouseover="this.style.background=\'#8f3526\';this.style.transform=\'scale(1.05)\'" onmouseout="this.style.background=\'#a3402f\';this.style.transform=\'\'">重试</a></div>';
     });
 </script>
 </body>

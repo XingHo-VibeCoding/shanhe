@@ -183,6 +183,45 @@
       padding: 40px 0;
       font-size: 15px;
     }
+    .retry-btn {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 8px 24px;
+      font-family: "STKaiti", "KaiTi", "楷体", serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: #fdfbf5;
+      background: #a3402f;
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: background .2s, transform .2s;
+    }
+    .retry-btn:hover { background: #8f3526; transform: scale(1.05); }
+    .retry-btn:focus-visible { outline: 2px solid #a3402f; outline-offset: 3px; }
+    .err-detail { font-size: 12px; color: #8a7a5f; margin-top: 6px; }
+    .empty-chips {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 13px;
+      color: #8a7a5f;
+    }
+    .empty-chips button {
+      padding: 6px 16px;
+      font-size: 13px;
+      color: #5a4f3f;
+      background: transparent;
+      border: 1px solid #c9bda3;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    .empty-chips button:hover { border-color: #a3402f; color: #a3402f; }
+    .empty-chips button:focus-visible { outline: 2px solid #a3402f; outline-offset: 2px; }
     .count {
       font-size: 13px;
       color: #999;
@@ -296,7 +335,7 @@
         const json = await resp.json();
 
         if (json.ret_code !== "0") {
-          result.innerHTML = '<div class="error">' + (json.remark || "查询失败") + '</div>';
+          result.innerHTML = '<div class="error">' + (json.remark || "查询失败") + '<br><button class="retry-btn" onclick="searchPoems(currentPage || 1)">重试</button></div>';
           return;
         }
 
@@ -308,8 +347,16 @@
 
         renderResult(json);
       } catch (e) {
-        result.innerHTML = '<div class="error">无法连接后端服务。请确认已启动 server.py。<br>（错误：' + e.message + '）</div>';
+        result.innerHTML = '<div class="error">诗卷暂时打不开——后端服务可能没有启动，请稍后重试。'
+          + '<div class="err-detail">（技术信息：' + e.message + '）</div>'
+          + '<button class="retry-btn" onclick="searchPoems(currentPage || 1)">重试</button></div>';
       }
+    }
+
+    // Day 13：空结果引导——点示例词直接搜
+    function fillSearch(kw) {
+      document.getElementById("searchInput").value = kw;
+      searchPoems(1);
     }
 
     function renderResult(json) {
@@ -321,7 +368,11 @@
 
       if (list.length === 0) {
         count.textContent = "";
-        result.innerHTML = '<div class="empty">没有找到「' + currentPoet + '」的相关诗词，换个诗人或诗名试试吧</div>';
+        result.innerHTML = '<div class="empty">没有找到「' + currentPoet + '」的相关诗词'
+          + '<div class="empty-chips">试试这些：<button onclick="fillSearch(\'李白\')">李白</button>'
+          + '<button onclick="fillSearch(\'杜甫\')">杜甫</button>'
+          + '<button onclick="fillSearch(\'静夜思\')">静夜思</button>'
+          + '<button onclick="fillSearch(\'水调歌头\')">水调歌头</button></div></div>';
         return;
       }
 
@@ -433,12 +484,14 @@
         const resp = await fetch(url);
         const json = await resp.json();
         if (json.ret_code !== "0") {
-          result.innerHTML = '<div class="error">' + (json.remark || "查询失败") + '</div>';
+          result.innerHTML = '<div class="error">' + (json.remark || "查询失败") + '<br><button class="retry-btn" onclick="searchPoemsByTitle(currentPoet)">重试</button></div>';
           return;
         }
         renderResult(json);
       } catch (e) {
-        result.innerHTML = '<div class="error">无法连接后端服务。请确认已启动 server.py。<br>（错误：' + e.message + '）</div>';
+        result.innerHTML = '<div class="error">诗卷暂时打不开——后端服务可能没有启动，请稍后重试。'
+          + '<div class="err-detail">（技术信息：' + e.message + '）</div>'
+          + '<button class="retry-btn" onclick="searchPoemsByTitle(currentPoet)">重试</button></div>';
       }
     }
 
