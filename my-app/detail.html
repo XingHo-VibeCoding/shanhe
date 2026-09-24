@@ -119,6 +119,13 @@
   /* ===== 可折叠卡片（Day 11：展开/收起 + 反馈） ===== */
   .fold-head { cursor: pointer; }
   .fold-head:hover { opacity: .8; }
+  /* 余力加练：键盘焦点状态——Tab 聚焦时朱红描边，一眼看清"焦点在哪" */
+  .fold-head:focus-visible {
+    outline: 2px solid #a3402f;
+    outline-offset: 4px;
+    border-radius: 2px;
+    opacity: 1;
+  }
   .fold-right {
     margin-left: auto;
     display: flex;
@@ -190,7 +197,8 @@
   function foldCard(title, cls, text) {
     return (
       '<div class="card fold-card">' +
-        '<h2 class="fold-head" onclick="toggleCard(this)">' +
+        '<h2 class="fold-head" tabindex="0" role="button" aria-expanded="false" ' +
+             'onclick="toggleCard(this)" onkeydown="toggleKey(event, this)">' +
           '<span>' + title + '</span>' +
           '<span class="fold-right">' +
             '<span class="fold-state">已收起</span>' +
@@ -212,6 +220,15 @@
     card.classList.toggle("open", opening);
     fold.style.maxHeight = opening ? fold.scrollHeight + "px" : "0px";
     stateEl.textContent = opening ? "已展开" : "已收起";
+    head.setAttribute("aria-expanded", opening);   // 无障碍：告诉屏幕阅读器当前状态
+  }
+
+  // 余力加练：键盘操作——Enter 或 空格 均可展开/收起
+  function toggleKey(e, head) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();   // 空格默认会滚动页面，拦掉
+      toggleCard(head);
+    }
   }
 
   function renderPoem(p) {
