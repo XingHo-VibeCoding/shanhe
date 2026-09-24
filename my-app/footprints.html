@@ -269,7 +269,15 @@
   .spot b { font-family: "STKaiti", "KaiTi", serif; font-size: 14px; letter-spacing: 1px; color: #3a3226; }
   .spot .coords { color: #a3402f; font-size: 11px; font-family: Consolas, monospace; }
 
-  .empty { text-align: center; color: #8a7a5f; padding: 40px 0; letter-spacing: 2px; }
+  .tl-count {
+    font-size: 13px; color: #8a7a5f; letter-spacing: 2px;
+    padding: 0 0 14px 2px;
+  }
+  .tl-count b { color: #a3402f; font-weight: 600; }
+  .empty {
+    text-align: center; color: #8a7a5f; padding: 40px 0; letter-spacing: 2px;
+  }
+  .empty .e-msg { margin-bottom: 16px; }
 
   /* ===== 响应式 ===== */
   @media (max-width: 920px) {
@@ -462,11 +470,19 @@
   function renderTimeline() {
     const tl = document.getElementById("timeline");
     const nodes = visibleNodes();
+    const label = filterType === "all" ? "全部行迹" : TYPE_META[filterType].label;
     if (!nodes.length) {
-      tl.innerHTML = '<div class="empty">此类行迹暂无</div>';
+      // 无结果：明确空状态文案 + 返回全量的路径
+      tl.innerHTML =
+        '<div class="empty">' +
+          '<div class="e-msg">「' + label + '」暂无行迹记录</div>' +
+          '<button class="chip" onclick="resetFilter()">查看全部行迹</button>' +
+        '</div>';
       return;
     }
-    tl.innerHTML = nodes.map(n => {
+    tl.innerHTML =
+      '<div class="tl-count">当前筛选：<b>' + label + '</b> · 共 ' + nodes.length + ' 处行迹</div>' +
+      nodes.map(n => {
       const meta = TYPE_META[n.type];
       return (
         '<article class="node' + (n.id === activeId ? " active" : "") + '" id="card-' + n.id + '" ' +
@@ -509,7 +525,12 @@
     }
   }
 
-  /* ================= 折叠交互（Day 11 同款：动效+文字+键盘） ================= */
+  /* 清空筛选，回到全量（无结果状态下的返回路径） */
+  function resetFilter() {
+    filterType = "all";
+    activeId = null;
+    renderFilters(); renderMap(); renderTimeline();
+  }
   function toggleCard(head) {
     const card = head.closest(".fold-card");
     const fold = card.querySelector(".fold");

@@ -150,7 +150,11 @@
     cursor: pointer;
     transition: background .2s;
   }
-  .search-bar button:hover { background: #8f3526; }
+  .search-bar button:hover { background: #8f3526; transform: scale(1.05); }
+  .search-bar button:focus-visible {
+    outline: 2px solid #a3402f;
+    outline-offset: 3px;
+  }
 
   /* ===== 日期栏 ===== */
   .date-bar {

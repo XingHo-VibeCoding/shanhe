@@ -43,33 +43,49 @@
       flex: 1;
       padding: 12px 14px;
       font-size: 15px;
-      border: 1px solid #ccc;
+      font-family: inherit;
+      color: #3a3226;
+      background: #fdfbf5;
+      border: 1px solid #d8cdb8;
       border-radius: 8px;
       outline: none;
+      transition: border-color .2s;
     }
+    .search-box input::placeholder { color: #b5a88c; }
     .search-box input:focus {
-      border-color: #2c3e50;
+      border-color: #a3402f;
+    }
+    .search-box input:focus-visible {
+      outline: 2px solid #a3402f;
+      outline-offset: 2px;
     }
     .search-box button {
       padding: 12px 22px;
       font-size: 15px;
+      font-family: "STKaiti", "KaiTi", "楷体", serif;
+      letter-spacing: 2px;
       border: none;
       border-radius: 8px;
-      background: #2c3e50;
-      color: #fff;
+      background: #a3402f;
+      color: #fdfbf5;
       cursor: pointer;
+      transition: background .2s, transform .2s;
     }
-    .search-box button:hover { background: #1f2d3a; }
+    .search-box button:hover { background: #8f3526; transform: scale(1.05); }
+    .search-box button:focus-visible {
+      outline: 2px solid #a3402f;
+      outline-offset: 3px;
+    }
     .suggest-list {
       position: absolute;
       top: 100%;
       left: 0;
       right: 0;
       margin-top: 4px;
-      background: #fff;
-      border: 1px solid #ddd;
+      background: #fdfbf5;
+      border: 1px solid #d8cdb8;
       border-radius: 8px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      box-shadow: 0 6px 20px rgba(58,50,38,.10);
       max-height: 320px;
       overflow-y: auto;
       z-index: 100;
@@ -78,16 +94,16 @@
     .suggest-item {
       padding: 10px 14px;
       cursor: pointer;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid #ece4d2;
     }
     .suggest-item:last-child { border-bottom: none; }
     .suggest-item:hover,
-    .suggest-item.hover { background: #f5f2ec; }
-    .suggest-item .si-title { font-size: 15px; color: #333; }
-    .suggest-item .si-meta { font-size: 12px; color: #999; margin-top: 2px; }
+    .suggest-item.hover { background: #f0e9d8; }
+    .suggest-item .si-title { font-size: 15px; color: #3a3226; }
+    .suggest-item .si-meta { font-size: 12px; color: #8a7a5f; margin-top: 2px; }
     .hint {
       font-size: 12px;
-      color: #aaa;
+      color: #8a7a5f;
       margin-bottom: 16px;
     }
     .poet-bio {
@@ -252,7 +268,7 @@
 
   <script>
     // 本地后端地址（密钥在后端，前端看不到）
-    const API_BASE = "http://localhost:5000";
+    const API_BASE = "http://127.0.0.1:5000";
 
     // 当前搜索状态
     let currentPoet = "";
