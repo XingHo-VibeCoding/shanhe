@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>东坡行迹 · 沉浸式演示｜诗迹山河</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f4eee1;
+    color: #3a3226;
+  }
+
+  /* ===== 舞台与幻灯片 ===== */
+  #stage { position: fixed; inset: 0; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 64px 24px 120px;
+    opacity: 0; visibility: hidden;
+    transform: translateY(26px) scale(.985);
+    transition: opacity .7s ease, transform .7s ease, visibility 0s linear .7s;
+  }
+  .slide.active {
+    opacity: 1; visibility: visible;
+    transform: none;
+    transition: opacity .7s ease, transform .7s ease, visibility 0s;
+  }
+  .slide > * { max-width: 880px; width: 100%; }
+
+  /* 视差层（装饰） */
+  #parallax { position: fixed; inset: -40px; pointer-events: none; z-index: 0; transition: transform .35s ease-out; }
+  .slide { z-index: 1; }
+
+  /* ===== 封面 ===== */
+  .cover-bg {
+    position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(rgba(42,34,22,.30), rgba(42,34,22,.55)),
+                url("assets/xiaoxiang.jpg") center 30% / cover no-repeat;
+  }
+  .cover-kicker {
+    color: #f5f0e6; letter-spacing: 8px; font-size: 15px; opacity: .9;
+    margin-bottom: 18px; text-align: center;
+  }
+  .cover-title {
+    font-family: "STKaiti", "KaiTi", serif;
+    color: #fdfbf5; font-size: clamp(44px, 9vw, 88px);
+    letter-spacing: 18px; text-indent: 18px; text-align: center;
+    text-shadow: 0 4px 22px rgba(0,0,0,.45);
+  }
+  .cover-sub {
+    color: #efe8d8; text-align: center; margin-top: 20px;
+    font-size: clamp(14px, 2vw, 18px); letter-spacing: 5px; opacity: .92;
+  }
+  .cover-rule {
+    width: 220px; height: 1px; background: #f5f0e6; opacity: .5;
+    margin: 30px auto 0;
+  }
+  .cover-hint {
+    margin-top: 34px; text-align: center;
+  }
+  .big-play {
+    font-family: "STKaiti", "KaiTi", serif;
+    font-size: 19px; letter-spacing: 6px; text-indent: 6px;
+    color: #fdfbf5; background: rgba(163,64,47,.92);
+    border: 1px solid rgba(253,251,245,.6);
+    border-radius: 40px; padding: 14px 44px;
+    cursor: pointer; letter-spacing: 6px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.35);
+    transition: transform .2s ease, background .2s ease;
+  }
+  .big-play:hover { transform: scale(1.05); background: #a3402f; }
+  .cover-dur { color: #efe8d8; font-size: 12px; letter-spacing: 2px; margin-top: 14px; text-align: center; opacity: .8; }
+
+  /* ===== 总览页 ===== */
+  .ov-kicker, .s-kicker {
+    color: #a3402f; font-size: 13px; letter-spacing: 4px; margin-bottom: 14px; text-align: center;
+  }
+  .ov-title, .s-place {
+    font-family: "STKaiti", "KaiTi", serif;
+    font-size: clamp(30px, 5vw, 46px); letter-spacing: 8px;
+    text-align: center; margin-bottom: 6px;
+  }
+  .ov-sub { text-align: center; color: #8a7a5f; font-size: 13px; letter-spacing: 3px; margin-bottom: 22px; }
+  .ov-map-card {
+    background: #fdfbf5; border: 1px solid #d8cdb8; border-radius: 8px;
+    box-shadow: 0 4px 18px rgba(58,50,38,.08); padding: 10px 14px 6px;
+  }
+  .ov-intro { font-size: 14.5px; line-height: 2.15; color: #5a4f3f; text-align: justify; margin-top: 20px; }
+  .ov-intro b { color: #a3402f; font-weight: 600; }
+
+  /* ===== 足迹页 ===== */
+  .s-head { text-align: center; margin-bottom: 8px; }
+  .s-head .s-place small {
+    font-size: clamp(13px, 1.6vw, 17px); color: #8a7a5f;
+    letter-spacing: 2px; margin-left: 12px; font-family: sans-serif;
+  }
+  .s-years {
+    display: block; text-align: center; color: #8a7a5f;
+    font-size: 13px; letter-spacing: 3px; margin-top: 4px;
+  }
+  .s-stage {
+    display: inline-block; color: #fdfbf5; font-size: 12px; letter-spacing: 3px;
+    border-radius: 12px; padding: 2px 14px; margin-top: 10px;
+  }
+  .s-event {
+    font-size: clamp(14px, 1.8vw, 16.5px); line-height: 2.15; color: #5a4f3f;
+    text-align: justify; margin: 20px auto 0; max-width: 760px;
+  }
+  .s-quote {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: clamp(24px, 4.2vw, 40px); line-height: 1.7;
+    color: #3a3226; text-align: center; letter-spacing: 3px;
+    margin: 30px auto 6px; max-width: 800px;
+  }
+  .s-cite {
+    display: block; text-align: center; color: #a3402f;
+    font-size: 14px; letter-spacing: 2px; margin-top: 12px;
+    font-family: "STKaiti", "KaiTi", serif;
+  }
+  .s-more {
+    display: block; margin: 22px auto 0;
+    font-family: inherit; font-size: 13px; letter-spacing: 3px;
+    color: #8a7a5f; background: transparent;
+    border: 1px solid #c9bda3; border-radius: 18px;
+    padding: 6px 22px; cursor: pointer;
+    transition: all .2s ease;
+  }
+  .s-more:hover { border-color: #a3402f; color: #a3402f; }
+  .s-full {
+    max-height: 0; overflow: hidden; transition: max-height .4s ease;
+    margin: 0 auto; max-width: 640px;
+  }
+  .s-full.open { max-height: 900px; }
+  .s-full pre {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: clamp(14px, 1.8vw, 17px); line-height: 2.1; white-space: pre-wrap;
+    color: #3a3226; background: #fdfbf5; border: 1px solid #e2d8c3;
+    border-radius: 8px; padding: 18px 24px; margin-top: 16px; text-align: center;
+  }
+
+  /* 悬停术语 */
+  .term {
+    color: #a3402f; border-bottom: 1px dotted #a3402f;
+    cursor: help;
+  }
+  #tip {
+    position: fixed; z-index: 50; pointer-events: none;
+    background: #2a2216; color: #f5f0e6;
+    font-size: 13px; line-height: 1.8;
+    padding: 10px 14px; border-radius: 6px;
+    max-width: 300px; opacity: 0; transform: translateY(6px);
+    transition: opacity .2s ease, transform .2s ease;
+    box-shadow: 0 6px 20px rgba(0,0,0,.3);
+  }
+  #tip.show { opacity: 1; transform: none; }
+
+  /* ===== 尾页 ===== */
+  .end-big {
+    font-family: "STKaiti", "KaiTi", serif;
+    font-size: clamp(30px, 6vw, 56px); letter-spacing: 6px;
+    text-align: center; line-height: 1.9; color: #3a3226;
+  }
+  .end-big em { font-style: normal; color: #a3402f; }
+  .end-note { text-align: center; color: #8a7a5f; font-size: 14px; letter-spacing: 2px; line-height: 2.1; margin-top: 26px; }
+  .end-links { text-align: center; margin-top: 30px; }
+  .end-links a, .end-links button {
+    display: inline-block; margin: 0 10px;
+    font-family: inherit; font-size: 14px; letter-spacing: 3px;
+    color: #fdfbf5; background: #a3402f; border: none;
+    border-radius: 30px; padding: 10px 30px; cursor: pointer;
+    text-decoration: none; transition: transform .2s ease, opacity .2s ease;
+  }
+  .end-links a:hover, .end-links button:hover { transform: scale(1.05); opacity: .9; }
+
+  /* ===== 控制条 ===== */
+  #controls {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    z-index: 20; display: flex; align-items: center; gap: 14px;
+    background: rgba(42,34,22,.88); backdrop-filter: blur(6px);
+    border: 1px solid rgba(253,251,245,.18);
+    border-radius: 40px; padding: 10px 22px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.3);
+  }
+  .ctl-btn {
+    background: none; border: none; color: #f5f0e6;
+    font-size: 17px; cursor: pointer; padding: 4px 8px;
+    line-height: 1; transition: transform .15s ease, color .15s ease;
+  }
+  .ctl-btn:hover { transform: scale(1.2); color: #e8b4a8; }
+  #dots { display: flex; gap: 8px; align-items: center; }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(253,251,245,.35); cursor: pointer;
+    border: none; padding: 0; transition: all .25s ease;
+  }
+  .dot:hover { background: rgba(253,251,245,.75); }
+  .dot.on { background: #a3402f; transform: scale(1.35); box-shadow: 0 0 0 3px rgba(163,64,47,.35); }
+  #pageNo { color: #f5f0e6; font-size: 12px; letter-spacing: 2px; opacity: .85; min-width: 52px; text-align: center; }
+  #ttsState { color: #f5f0e6; font-size: 11px; letter-spacing: 1px; opacity: .6; }
+
+  /* 顶部进度细条 */
+  #prog { position: fixed; top: 0; left: 0; height: 3px; background: #a3402f; width: 0; z-index: 30; transition: width .5s ease; }
+
+  /* 朗读状态指示（当前页正在朗读的微光） */
+  .slide.active .s-quote, .slide.active .end-big, .slide.active .cover-title {
+    animation: glow 3.5s ease-in-out infinite;
+  }
+  @keyframes glow { 0%,100% { opacity: 1; } 50% { opacity: .82; } }
+
+  @media (max-width: 640px) {
+    .slide { padding: 40px 16px 110px; }
+    #controls { gap: 8px; padding: 8px 14px; }
+    #ttsState { display: none; }
+  }
+</style>
+</head>
+<body>
+  <!-- 视差装饰层 -->
+  <div id="parallax">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;">
+      <path d="M0 780 Q 200 640 420 760 Q 640 870 880 740 Q 1120 620 1340 750 Q 1400 770 1440 760 L 1440 900 L 0 900 Z" fill="#3a3226" opacity=".045"/>
+      <path d="M0 200 Q 240 90 480 190 Q 700 280 960 170 Q 1200 70 1440 180 L 1440 0 L 0 0 Z" fill="#3a3226" opacity=".035"/>
+      <circle cx="1230" cy="150" r="58" fill="#d8cdb8" opacity=".35"/>
+      <circle cx="1218" cy="140" r="9" fill="#c9bda3" opacity=".5"/>
+      <circle cx="1245" cy="162" r="6" fill="#c9bda3" opacity=".45"/>
+    </svg>
+  </div>
+
+  <div id="prog"></div>
+  <div id="stage"></div>
+  <div id="tip"></div>
+
+  <div id="controls">
+    <button class="ctl-btn" id="btnPrev" title="上一页" aria-label="上一页">⏮</button>
+    <button class="ctl-btn" id="btnPlay" title="播放 / 暂停" aria-label="播放或暂停">▶</button>
+    <button class="ctl-btn" id="btnNext" title="下一页" aria-label="下一页">⏭</button>
+    <div id="dots"></div>
+    <span id="pageNo">1 / 11</span>
+    <span id="ttsState">语音就绪</span>
+  </div>
+
+<script>
+/* ================================================================
+   东坡行迹 · 沉浸式自动播放演示
+   技术：单文件 HTML5；朗读 = 浏览器内置 speechSynthesis（免密钥）；
+   切页由「朗读结束」驱动（天然音画同步），另设估算时长兜底。
+   ================================================================ */
+
+/* ---------- 演示数据（11 页） ---------- */
+const C = { birth:"#6b7f4e", official:"#b08a3e", exile:"#a3402f", death:"#5a4f3f",
+            label:{birth:"出生",official:"为官",exile:"贬谪",death:"离世"} };
+
+const TOUR = [
+{ kind:"cover", narration:"欢迎来到诗迹山河，诗人足迹之旅。公元一〇三七年一月，一个婴儿降生在蜀地眉山的纱縠行苏宅。此后六十四年，他的人生轨迹将纵贯大半个中国：从四川到陕西，从江南到山东，从中原一路向南，直到海南的天涯海角。他叫苏轼，字子瞻，号东坡居士。今天，请用六分钟，陪他走完这一生。" },
+
+{ kind:"overview", narration:"先看全图。苏轼一生，两次及第、三度遭贬，行迹凡八处。从出生地眉山出发，首仕凤翔，两宦杭州，北知密州；乌台诗案后谪居黄州，晚年再贬惠州、儋州，最后病逝常州。这条路线，恰是一条由顺境滑向逆境、又从逆境臻于化境的曲线。地图上的每个圆点，都是接下来要停靠的一站。现在，出发。" },
+
+{ kind:"spot", place:"眉山", modern:"今四川眉山", years:"1037—1056", type:"birth", order:"第一站",
+  event:"景祐三年岁末，苏轼生于眉州纱縠行苏宅。父亲苏洵游学归来，亲授二子学业；弟弟苏辙，是他一生的知己。至和元年父子三人出川赴京，次年应试，一鸣惊人。出川舟中回望故乡，写下「故乡飘已远，往意浩无边」。",
+  quote:"故乡飘已远，往意浩无边。", cite:"——初发嘉州（1059，出川舟中）",
+  poem:"初发嘉州 · 苏轼\n\n朝发鼓阗阗，西风猎画旐。\n故乡飘已远，往意浩无边。\n锦水细不见，蛮江清可怜。\n奔腾过佛脚，旷荡造平川。\n野市有禅客，钓台寻暮烟。\n相期定先到，久立水潺潺。",
+  terms:[["苏洵","苏轼之父，唐宋八大家之一，晚岁发愤著书，《三字经》'苏老泉，二十七，始发愤'即指他。"],["苏辙","苏轼之弟，字子由，父子三人并称'三苏'、同列唐宋八大家。"]],
+  narration:"第一站，眉山，今四川省眉山市。景祐三年岁末，苏轼生于纱縠行。父亲苏洵亲授学业，弟弟苏辙是他一生的知己。二十岁那年，父子三人出川赴京，次年应试，一鸣惊人。出川舟中他回望渐远的故乡，写下'故乡飘已远，往意浩无边'——少年眼里的巴山蜀水，自此成了背景。今日眉山城中的三苏祠，红墙环抱、古木扶疏，是蜀中最深的一脉书香。" },
+
+{ kind:"spot", place:"凤翔", modern:"今陕西宝鸡", years:"1061—1065", type:"official", order:"第二站",
+  event:"嘉祐六年应⟪制科考试⟫，入第三等（宋朝百年第一），授签书凤翔府判官，首度正式为官。任上疏浚东湖、建喜雨亭，惠政初显。",
+  quote:"人生到处知何似，应似飞鸿踏雪泥。", cite:"——和子由渑池怀旧（1061，赴任途中）",
+  poem:"和子由渑池怀旧 · 苏轼\n\n人生到处知何似，应似飞鸿踏雪泥。\n泥上偶然留指爪，鸿飞那复计东西。\n老僧已死成新塔，坏壁无由见旧题。\n往日崎岖还记否，路长人困蹇驴嘶。",
+  terms:[["制科考试","皇帝亲自下诏、临时设置的特种考试，等第远高于普通科举；宋百年间入第三等者仅苏轼一人。"]],
+  narration:"第二站，凤翔，今陕西省宝鸡市。嘉祐六年，苏轼应制科考试入第三等——这是宋朝百年间的最高等第，随后签书凤翔府判官，首度正式为官。赴任途中，他与弟弟在渑池旧地怀旧，写下那句著名的'人生到处知何似，应似飞鸿踏雪泥'。飞鸿踏雪、泥上留爪、转瞬东西——这枚少年时的感喟，几乎成了他一生的谶语。任上他疏浚东湖、修建喜雨亭，实干之才已然初显。" },
+
+{ kind:"spot", place:"杭州", modern:"今浙江杭州", years:"1071—1074 / 1089—1091", type:"official", order:"第三站",
+  event:"两度居杭：通判任上写西湖诗；十五年后再知杭州，奏请疏浚西湖，以⟪葑草⟫淤泥筑成纵贯南北的长堤——苏堤。",
+  quote:"欲把西湖比西子，淡妆浓抹总相宜。", cite:"——饮湖上初晴后雨（1073）",
+  poem:"饮湖上初晴后雨二首·其二 · 苏轼\n\n水光潋滟晴方好，山色空蒙雨亦奇。\n欲把西湖比西子，淡妆浓抹总相宜。",
+  terms:[["通判","州府副职，与知州共理政务、互相监察，苏轼此任因自请外放而来。"],["葑草","湖中蔓延的水生杂草，与淤泥壅塞湖面，苏轼上任时西湖已湮塞近半。"]],
+  narration:"第三站，杭州。苏轼两度居杭：三十多岁任通判，五十多岁再知杭州。通判任上，他写下'欲把西湖比西子，淡妆浓抹总相宜'，西湖从此有了'西子湖'的别名。十五年后重回杭州，他见湖面葑草过半、湮塞将枯，于是奏请朝廷疏浚，并以挖出的葑草淤泥筑成一条纵贯南北的长堤——这就是苏堤，六桥烟柳，春晓最美。湖山与诗人，从此互相成全。" },
+
+{ kind:"spot", place:"密州", modern:"今山东诸城", years:"1074—1076", type:"official", order:"第四站",
+  event:"北方连年旱蝗，到任即灭蝗、抗旱、收养弃婴。城北⟪超然台⟫上，出猎抒怀、中秋怀弟，⟪豪放词⟫风自此自立。",
+  quote:"但愿人长久，千里共婵娟。", cite:"——水调歌头·明月几时有（1076 中秋）",
+  poem:"水调歌头 · 苏轼\n\n丙辰中秋，欢饮达旦，大醉，作此篇，兼怀子由。\n\n明月几时有？把酒问青天。\n不知天上宫阙，今夕是何年。\n我欲乘风归去，又恐琼楼玉宇，高处不胜寒。\n起舞弄清影，何似在人间。\n\n转朱阁，低绮户，照无眠。\n不应有恨，何事长向别时圆？\n人有悲欢离合，月有阴晴圆缺，此事古难全。\n但愿人长久，千里共婵娟。",
+  terms:[["超然台","苏轼修葺的城北旧台，弟苏辙取名于《老子》'虽有荣观，燕处超然'。"],["豪放词","与婉约词相对的词风，气象开阔、境界宏大，苏轼开其宗，辛弃疾继其后。"]],
+  narration:"第四站，密州，今山东省诸城市。北方连年旱蝗，他到任即灭蝗、抗旱、收养弃婴，是个不折不扣的实干太守。但密州留在文学史上的，是城北那座超然台。熙宁八年，他在台上写密州出猎：'会挽雕弓如满月，西北望，射天狼'，豪放词风自此自立；次年中秋，他在台上欢饮达旦，怀念七年未见的弟弟，写下'但愿人长久，千里共婵娟'——从此，中秋的月亮只姓苏。" },
+
+{ kind:"spot", place:"黄州", modern:"今湖北黄冈", years:"1080—1084", type:"exile", order:"第五站",
+  event:"⟪乌台诗案⟫下狱一百三十天，几乎丧命。贬黄州团练副使，不得签书公事。躬耕城东坡地，自号「东坡居士」。赤壁一词二赋、《寒食帖》皆成于此。",
+  quote:"大江东去，浪淘尽，千古风流人物。", cite:"——念奴娇·赤壁怀古（1082）",
+  poem:"念奴娇·赤壁怀古 · 苏轼\n\n大江东去，浪淘尽，千古风流人物。\n故垒西边，人道是，三国周郎赤壁。\n乱石穿空，惊涛拍岸，卷起千堆雪。\n江山如画，一时多少豪杰。\n\n遥想公瑾当年，小乔初嫁了，雄姿英发。\n羽扇纶巾，谈笑间，樯橹灰飞烟灭。\n故国神游，多情应笑我，早生华发。\n人生如梦，一尊还酹江月。",
+  terms:[["乌台诗案","御史台官署遍植柏树、乌鸦群集，故称'乌台'；元丰二年苏轼因诗文被诬'讥讪朝政'系狱百三十日，几乎定死罪。"]],
+  narration:"第五站，黄州，今湖北省黄冈市。元丰二年，乌台诗案发，苏轼因诗获罪，下狱一百三十天，几乎丧命。出狱后贬黄州团练副使，不得签书公事，俸禄微薄。他躬耕城东坡地，自号'东坡居士'。可正是这座江边小城，成就了文学的巅峰：'大江东去，浪淘尽，千古风流人物'，前后赤壁赋，天下第三行书寒食帖——人生的最低谷，恰恰是他的最高峰。" },
+
+{ kind:"spot", place:"惠州", modern:"今广东惠州", years:"1094—1097", type:"exile", order:"第六站",
+  event:"绍圣元年新党复起，年近六旬被贬过岭。助筑东新、西新二桥，引山泉入城。一首「春睡美」传至京师，⟪章惇⟫不悦，再贬儋州。",
+  quote:"日啖荔枝三百颗，不辞长作岭南人。", cite:"——惠州一绝（1096）",
+  poem:"惠州一绝 · 苏轼\n\n罗浮山下四时春，卢橘杨梅次第新。\n日啖荔枝三百颗，不辞长作岭南人。",
+  terms:[["章惇","时任宰相、苏轼早年好友，政见反目后将其一贬再贬，徽宗朝被贬者多出其手。"]],
+  narration:"第六站，惠州，今广东省惠州市。绍圣元年新党复起，年近六旬的苏轼被贬过岭。瘴疠之地，他却看得开：助筑东新、西新二桥，引山泉入城，还把贬谪的日子过出了甜味——'日啖荔枝三百颗，不辞长作岭南人'。可惜一首'报道先生春睡美'传到京城，宰相章惇读罢不悦：苏轼在岭南尚能安睡？于是再贬，这一次，贬向真正的天涯海角。" },
+
+{ kind:"spot", place:"儋州", modern:"今海南儋州", years:"1097—1100", type:"exile", order:"第七站",
+  event:"六十二岁渡海，垂老投荒，「食无肉、病无药、居无室」。讲学不辍，⟪载酒堂⟫上，海南第一位举人姜唐佐出其门下。",
+  quote:"九死南荒吾不恨，兹游奇绝冠平生。", cite:"——六月二十日夜渡海（1100，北归渡海）",
+  poem:"六月二十日夜渡海 · 苏轼\n\n参横斗转欲三更，苦雨终风也解晴。\n云散月明谁点缀？天容海色本澄清。\n空余鲁叟乘桴意，粗识轩辕奏乐声。\n九死南荒吾不恨，兹游奇绝冠平生。",
+  terms:[["载酒堂","苏轼在儋州讲学的居所，取'载酒问字'之意，明扩建为东坡书院，为海南文脉起点。"]],
+  narration:"第七站，儋州，今海南省儋州市。六十二岁渡海，垂老投荒。他在这里食无肉、病无药、居无室、出无友，却依然讲学不辍。载酒堂上，海南历史上第一位举人姜唐佐出其门下，文脉自此入琼。三年后遇赦北归，渡海那夜，他写诗总结这三年：'九死南荒吾不恨，兹游奇绝冠平生'——把一场最苦的贬谪，说成平生最奇绝的壮游。这是苏轼式的骄傲。" },
+
+{ kind:"spot", place:"常州", modern:"今江苏常州", years:"1101", type:"death", order:"最后一站",
+  event:"遇赦北归，途经润州金山寺见李公麟所绘画像，自题六言。两个月后，建中靖国元年七月二十八日病逝，享年六十四。",
+  quote:"问汝平生功业，黄州惠州儋州。", cite:"——自题金山画像（1101）",
+  poem:"自题金山画像 · 苏轼\n\n心似已灰之木，身如不系之舟。\n问汝平生功业，黄州惠州儋州。",
+  terms:[["李公麟","北宋画坛第一高手，苏轼挚友，曾为苏轼画像。"]],
+  narration:"最后一站，常州。建中靖国元年，苏轼遇赦北归，途经润州金山寺，见到好友李公麟为他画的画像，提笔自题：'心似已灰之木，身如不系之舟。问汝平生功业，黄州惠州儋州。'他自问自答：平生功业，不在做过大官的汴京、杭州，而在三个贬谪之地。两个月后，七月二十八日，病逝于常州，享年六十四岁。" },
+
+{ kind:"end", narration:"回望这条足迹线：出生眉山，一鸣汴京，初仕凤翔，两宦杭州，北守密州，谪居黄州，再贬惠儋，终老常州。苏轼把每一段逆境，都走成了风景；把每一处贬所，都住成了故乡。此心安处是吾乡。诗迹山河，感谢观看。你可以继续在诗人足迹页面，探索每个地点的诗词与景点。" }
+];
+
+/* ---------- 总览页迷你地图（等距投影，示意） ---------- */
+const MDATA = [
+  ["眉山",30.05,103.83,"birth"],["凤翔",34.52,107.40,"official"],["杭州",30.24,120.15,"official"],
+  ["密州",35.99,119.41,"official"],["黄州",30.45,114.87,"exile"],["惠州",23.09,114.40,"exile"],
+  ["儋州",19.74,109.30,"exile"],["常州",31.77,119.97,"death"]
+];
+function proj(lng, lat) {
+  const W=640, H=380, PAD=46, K=Math.cos(35*Math.PI/180);
+  const sc=Math.min((W-2*PAD)/((135-73)*K),(H-2*PAD)/(54-18));
+  const ox=(W-(135-73)*K*sc)/2;
+  return { x: ox+(lng-73)*K*sc, y: PAD+(54-lat)*sc };
+}
+function miniMap() {
+  let s='<svg viewBox="0 0 640 380" style="width:100%;height:auto;display:block;" role="img" aria-label="苏轼行迹示意">';
+  s+='<path d="M20 320 Q 90 290 180 322 Q 320 360 470 320 Q 570 292 620 318 L 620 360 L 20 360 Z" fill="#3a3226" opacity=".05"/>';
+  s+='<path d="M10 90 Q 160 30 330 88 Q 500 140 630 80 L 630 20 L 10 20 Z" fill="#3a3226" opacity=".04"/>';
+  const pts = MDATA.map(m => proj(m[1], m[2]));
+  s+='<path d="'+pts.map((p,i)=>(i?"L":"M")+p.x+" "+p.y).join(" ")+'" fill="none" stroke="#8a7a5f" stroke-width="1.3" stroke-dasharray="5 6" opacity=".6"/>';
+  MDATA.forEach((m,i)=>{
+    const p=pts[i], c=C[m[3]];
+    s+='<circle cx="'+p.x+'" cy="'+p.y+'" r="7" fill="'+c+'" stroke="#fdfbf5" stroke-width="2"/>';
+    s+='<text x="'+(p.x+11)+'" y="'+(p.y+4)+'" font-size="13" font-family="STKaiti,KaiTi,serif" fill="#3a3226" paint-order="stroke" stroke="#fdfbf5" stroke-width="3">'+m[0]+'</text>';
+  });
+  return s+'</svg>';
+}
+
+/* ---------- 渲染 ---------- */
+const stage = document.getElementById("stage");
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function withTerms(html){
+  TOUR[curSlide] && TOUR[curSlide].terms && TOUR[curSlide].terms.forEach(t=>{
+    html = html.replace("⟪"+t[0]+"⟫", '<span class="term" data-d="'+esc(t[1])+'">'+t[0]+"</span>");
+  });
+  return html;
+}
+function buildSlides(){
+  stage.innerHTML = TOUR.map((s,i)=>{
+    if(s.kind==="cover") return '<section class="slide" data-i="'+i+'">'+
+      '<div class="cover-bg"></div>'+
+      '<div class="cover-kicker">诗迹山河 · 沉浸式演示</div>'+
+      '<h1 class="cover-title">东坡行迹</h1>'+
+      '<p class="cover-sub">循苏轼一生八处足迹 · 约 6 分钟</p>'+
+      '<div class="cover-rule"></div>'+
+      '<div class="cover-hint"><button class="big-play" id="bigPlay">▶　开始播放</button>'+
+      '<div class="cover-dur">建议开启声音 · 随时可暂停 / 跳转</div></div></section>';
+    if(s.kind==="overview") return '<section class="slide" data-i="'+i+'">'+
+      '<div class="ov-kicker">东坡行迹 · 总览</div>'+
+      '<h2 class="ov-title">一蓑烟雨任平生</h2>'+
+      '<p class="ov-sub">八处行迹 · 大半个中国 · 六十四年</p>'+
+      '<div class="ov-map-card">'+miniMap()+'</div>'+
+      '<p class="ov-intro">从<b>眉山</b>出发，首仕<b>凤翔</b>，两宦<b>杭州</b>，北守<b>密州</b>；乌台诗案后谪居<b>黄州</b>，晚年再贬<b>惠州</b>、<b>儋州</b>，终老<b>常州</b>——由顺境滑向逆境，又从逆境臻于化境。</p></section>';
+    if(s.kind==="end") return '<section class="slide" data-i="'+i+'">'+
+      '<div class="end-big">此心安处是吾乡。<br>问汝平生功业，<em>黄州 惠州 儋州</em>。</div>'+
+      '<p class="end-note">苏轼把每一段逆境都走成了风景。<br>演示到此结束，感谢观看。</p>'+
+      '<div class="end-links"><button id="replay">↺　再看一遍</button>'+
+      '<a href="footprints.html">探索诗人足迹 →</a></div></section>';
+    /* spot */
+    return '<section class="slide" data-i="'+i+'">'+
+      '<div class="s-head"><div class="s-kicker">'+s.order+' · '+C.label[s.type]+'</div>'+
+      '<h2 class="s-place">'+s.place+'<small>'+s.modern+'</small></h2>'+
+      '<span class="s-years">'+s.years+'</span>'+
+      '<span class="s-stage" style="background:'+C[s.type]+'">'+C.label[s.type]+'</span></div>'+
+      '<p class="s-event">'+esc(s.event)+'</p>'+
+      '<blockquote class="s-quote">「'+esc(s.quote)+'」<span class="s-cite">'+s.cite+'</span></blockquote>'+
+      '<button class="s-more" tabindex="0">展开全文 ⌄</button>'+
+      '<div class="s-full"><pre>'+esc(s.poem)+'</pre></div></section>';
+  }).join("");
+}
+
+/* 术语替换（build 后统一处理，因为 withTerms 依赖当前页） */
+function applyTerms(){
+  TOUR.forEach((s,i)=>{
+    if(s.kind!=="spot" || !s.terms) return;
+    const el = stage.querySelector('.slide[data-i="'+i+'"] .s-event');
+    let html = el.innerHTML;
+    s.terms.forEach(t=>{
+      html = html.replace("⟪"+t[0]+"⟫", '<span class="term" data-d="'+esc(t[1])+'">'+t[0]+"</span>");
+    });
+    el.innerHTML = html;
+  });
+}
+
+/* ---------- 播放引擎 ---------- */
+let curSlide=0, playing=false, gen=0, fbTimer=null, speakStart=0, estDur=0;
+const $=id=>document.getElementById(id);
+const synth = window.speechSynthesis;
+let voice=null, ttsOK = !!synth;
+
+function pickVoice(){
+  const vs = synth.getVoices().filter(v=>/^zh\b|-CN/i.test(v.lang));
+  if(!vs.length) return null;
+  const pref=["Xiaoxiao","Yunxi","Yaoyao","Huihui","Kangkang","Xiaoyi"];
+  for(const p of pref){ const v=vs.find(v=>v.name.includes(p)); if(v) return v; }
+  return vs[0];
+}
+if(synth){
+  voice = pickVoice();
+  synth.onvoiceschanged = ()=>{ voice = pickVoice(); $("ttsState").textContent = voice?("语音·"+voice.name.replace(/Microsoft |\(.*\)/g,"").trim()):"语音就绪"; };
+}
+
+const est = t => Math.max(9000, t.length/3.4*1000 + 3500);
+
+function speakPage(i){
+  const myGen = ++gen;
+  const text = TOUR[i].narration;
+  estDur = est(text); speakStart = Date.now();
+  $("ttsState").textContent = "朗读中…";
+  // 兜底计时：即使 onend 丢失也能按时推进
+  fbTimer = setTimeout(()=>{ if(gen===myGen) advance(myGen); }, estDur+8000);
+  if(!ttsOK || !voice){
+    $("ttsState").textContent = "语音不可用·定时切换";
+    return; // 兜底 timer 已在跑
+  }
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang="zh-CN"; u.rate=1.12; u.voice=voice;
+  u.onend = ()=>{ if(gen!==myGen) return;
+    clearTimeout(fbTimer);
+    setTimeout(()=>{ if(gen===myGen) advance(myGen); }, 1600);
+  };
+  u.onerror = ()=>{ if(gen!==myGen) return;   // 静默兜底
+    $("ttsState").textContent="语音中断·定时切换";
+  };
+  synth.speak(u);
+}
+function advance(myGen){
+  if(gen!==myGen) return;
+  if(curSlide < TOUR.length-1) go(curSlide+1, true);
+  else stopAtEnd();
+}
+function stopAtEnd(){
+  playing=false; updatePlayBtn();
+  $("ttsState").textContent="演示结束";
+}
+
+function go(i, auto){
+  curSlide=i;
+  stage.querySelectorAll(".slide").forEach(s=>s.classList.toggle("active", +s.dataset.i===i));
+  document.querySelectorAll(".dot").forEach((d,k)=>d.classList.toggle("on",k===i));
+  $("pageNo").textContent=(i+1)+" / "+TOUR.length;
+  $("prog").style.width=((i+1)/TOUR.length*100)+"%";
+  if(auto && playing) speakPage(i);
+  else if(!auto){ // 手动跳页：取消朗读；若在播放态，重读本页
+    clearTimeout(fbTimer); gen++; synth && synth.cancel();
+    if(playing) speakPage(i);
+  }
+}
+
+/* ---------- 控制 ---------- */
+function updatePlayBtn(){ $("btnPlay").textContent = playing?"⏸":"▶"; }
+function userStart(){
+  playing=true; updatePlayBtn();
+  $("ttsState").textContent="朗读中…";
+  speakPage(curSlide);
+}
+function togglePlay(){
+  if(!playing){
+    if(curSlide===TOUR.length-1){ go(0,false); } // 结束后再按播放=重头
+    playing=true; updatePlayBtn();
+    synth && synth.resume();
+    speakPage(curSlide);
+  } else {
+    playing=false; updatePlayBtn();
+    clearTimeout(fbTimer); gen++;
+    synth && synth.pause();
+    $("ttsState").textContent="已暂停";
+  }
+}
+
+$("btnPlay").addEventListener("click", togglePlay);
+$("btnPrev").addEventListener("click", ()=>go(Math.max(0,curSlide-1),false));
+$("btnNext").addEventListener("click", ()=>go(Math.min(TOUR.length-1,curSlide+1),false));
+
+/* 导航圆点（交互③） */
+$("dots").innerHTML = TOUR.map((s,i)=>'<button class="dot" data-i="'+i+'" aria-label="第'+(i+1)+'页"></button>').join("");
+document.querySelectorAll(".dot").forEach(d=>d.addEventListener("click",()=>go(+d.dataset.i,false)));
+
+/* 键盘 */
+document.addEventListener("keydown", e=>{
+  if(e.key===" "){ e.preventDefault(); curSlide===0&&!playing?userStart():togglePlay(); }
+  if(e.key==="ArrowRight") go(Math.min(TOUR.length-1,curSlide+1),false);
+  if(e.key==="ArrowLeft") go(Math.max(0,curSlide-1),false);
+});
+
+/* ---------- 页内交互（不打断播放） ---------- */
+/* 交互①：点击展开全文 */
+stage.addEventListener("click", e=>{
+  const big = e.target.closest("#bigPlay");   if(big){ userStart(); return; }
+  const rl  = e.target.closest("#replay");    if(rl){ go(0,false); userStart(); return; }
+  const btn = e.target.closest(".s-more");
+  if(btn){
+    const box = btn.nextElementSibling;
+    const open = box.classList.toggle("open");
+    btn.textContent = open ? "收起全文 ⌃" : "展开全文 ⌄";
+  }
+});
+/* 展开/收起也支持键盘 */
+stage.addEventListener("keydown", e=>{
+  if((e.key==="Enter"||e.key===" ") && e.target.classList && e.target.classList.contains("s-more")){
+    e.preventDefault(); e.target.click();
+  }
+});
+
+/* 交互②：悬停术语注释 */
+const tip = $("tip");
+stage.addEventListener("mouseover", e=>{
+  const t = e.target.closest(".term");
+  if(!t) return;
+  tip.textContent = t.dataset.d;
+  tip.classList.add("show");
+});
+stage.addEventListener("mouseout", e=>{
+  if(e.target.closest(".term")) tip.classList.remove("show");
+});
+document.addEventListener("mousemove", e=>{
+  if(!tip.classList.contains("show")) return;
+  const x = Math.min(e.clientX+14, innerWidth-320), y = Math.min(e.clientY+16, innerHeight-120);
+  tip.style.left=x+"px"; tip.style.top=y+"px";
+});
+
+/* ---------- 视差 ---------- */
+document.addEventListener("mousemove", e=>{
+  const dx=(e.clientX/innerWidth-.5)*14, dy=(e.clientY/innerHeight-.5)*10;
+  $("parallax").style.transform="translate("+(-dx)+"px,"+(-dy)+"px)";
+});
+
+/* ---------- 启动 ---------- */
+buildSlides();
+applyTerms();
+go(0,false);
+updatePlayBtn();
+if(!ttsOK) $("ttsState").textContent="此浏览器不支持语音·定时切换";
+</script>
+</body>
+</html>

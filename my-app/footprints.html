@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>诗人足迹 · 苏轼｜诗迹山河</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f4eee1;
+    color: #3a3226;
+    min-height: 100vh;
+  }
+
+  /* ===== 顶部返回条 ===== */
+  .topbar {
+    background: #2a2216;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 18px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar a {
+    color: #f5f0e6;
+    font-size: 14px;
+    text-decoration: none;
+    letter-spacing: 1px;
+  }
+  .topbar a:hover { opacity: .8; }
+  .topbar .t { font-size: 13px; letter-spacing: 3px; color: #f5f0e6; opacity: .85; }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 26px 16px 80px; }
+
+  /* ===== 诗人题头 ===== */
+  .poet-head {
+    background: #fdfbf5;
+    border: 1px solid #d8cdb8;
+    border-radius: 6px;
+    padding: 26px 28px 22px;
+    box-shadow: 0 2px 8px rgba(58,50,38,.05);
+    display: flex;
+    gap: 22px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .poet-name {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 34px;
+    letter-spacing: 6px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .poet-name .alias { font-size: 15px; color: #8a7a5f; letter-spacing: 2px; margin-left: 10px; }
+  .poet-meta { font-size: 13px; color: #8a7a5f; letter-spacing: 1px; margin-top: 6px; }
+  .poet-intro {
+    flex: 1;
+    min-width: 260px;
+    font-size: 14px;
+    line-height: 2;
+    color: #5a4f3f;
+  }
+  .poet-stats { display: flex; gap: 0; margin-top: 4px; }
+  .stat {
+    text-align: center;
+    padding: 0 18px;
+    border-left: 1px solid #d8cdb8;
+  }
+  .stat:first-child { border-left: none; padding-left: 0; }
+  .stat b { font-family: "STKaiti", "KaiTi", serif; font-size: 26px; color: #a3402f; display: block; }
+  .stat span { font-size: 12px; color: #8a7a5f; letter-spacing: 2px; }
+
+  /* ===== 筛选 ===== */
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
+  .filters .lbl { font-size: 13px; color: #8a7a5f; letter-spacing: 2px; }
+  .chip {
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 5px 16px;
+    border-radius: 16px;
+    border: 1px solid #c9bda3;
+    background: transparent;
+    color: #5a4f3f;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .chip:hover { border-color: #a3402f; color: #a3402f; }
+  .chip.on { background: #a3402f; border-color: #a3402f; color: #fdfbf5; }
+  .chip:focus-visible { outline: 2px solid #a3402f; outline-offset: 2px; }
+
+  /* ===== 主布局：地图 + 时间轴 ===== */
+  .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+
+  /* --- 地图（水墨长卷） --- */
+  .map-card {
+    background: #fdfbf5;
+    border: 1px solid #d8cdb8;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(58,50,38,.05);
+    overflow: hidden;
+    position: sticky;
+    top: 56px;
+  }
+  .map-card .map-title {
+    font-family: "STKaiti", "KaiTi", serif;
+    font-size: 15px;
+    letter-spacing: 4px;
+    color: #a3402f;
+    padding: 12px 18px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .map-card .map-sub { font-size: 11px; color: #8a7a5f; letter-spacing: 1px; font-family: sans-serif; }
+  #mapSvg { display: block; width: 100%; height: auto; }
+
+  /* 地图标记 */
+  .marker { cursor: pointer; }
+  .marker .dot { transition: r .2s ease, stroke-width .2s ease; }
+  .marker:hover .dot { stroke-width: 3; }
+  .marker text {
+    font-size: 13px;
+    font-family: "STKaiti", "KaiTi", serif;
+    fill: #3a3226;
+    paint-order: stroke;
+    stroke: #fdfbf5;
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+  .marker text.modern { font-size: 10px; fill: #8a7a5f; font-family: sans-serif; }
+  .marker.active .dot { stroke-width: 3.5; }
+  .marker .halo { opacity: 0; }
+  .marker.active .halo { opacity: 1; animation: pulse 1.6s ease-out infinite; }
+  @keyframes pulse {
+    0% { transform: scale(.4); opacity: .8; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  .marker:focus { outline: none; }
+  .marker:focus-visible .dot { stroke: #a3402f; stroke-width: 3.5; }
+  .map-legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 8px 18px 14px;
+    font-size: 12px;
+    color: #5a4f3f;
+  }
+  .map-legend i {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: -1px;
+  }
+
+  /* --- 时间轴 --- */
+  .timeline { position: relative; padding-left: 26px; }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 8px; top: 6px; bottom: 6px;
+    width: 1px;
+    background: linear-gradient(#c9bda3, #d8cdb8);
+  }
+  .node {
+    position: relative;
+    background: #fdfbf5;
+    border: 1px solid #d8cdb8;
+    border-radius: 6px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(58,50,38,.05);
+    transition: border-color .25s ease, box-shadow .25s ease;
+  }
+  .node::before {
+    content: "";
+    position: absolute;
+    left: -23px; top: 26px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--dot, #b08a3e);
+    box-shadow: 0 0 0 3px #f4eee1;
+  }
+  .node.active { border-color: #a3402f; box-shadow: 0 2px 14px rgba(163,64,47,.15); }
+  .node-year {
+    font-family: "STKaiti", "KaiTi", serif;
+    color: #a3402f;
+    font-size: 15px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .node-year .stage {
+    font-size: 11px;
+    font-family: sans-serif;
+    color: #fdfbf5;
+    background: var(--dot, #b08a3e);
+    border-radius: 10px;
+    padding: 1px 10px;
+    letter-spacing: 2px;
+  }
+  .node-place {
+    font-family: "STKaiti", "KaiTi", serif;
+    font-size: 21px;
+    letter-spacing: 3px;
+    margin: 8px 0 2px;
+  }
+  .node-place .modern {
+    font-size: 12px;
+    font-family: sans-serif;
+    color: #8a7a5f;
+    letter-spacing: 1px;
+    margin-left: 8px;
+  }
+  .node-event { font-size: 13.5px; line-height: 2; color: #5a4f3f; margin: 8px 0 4px; }
+
+  /* 诗作折叠（沿用 Day 11 反馈模式：动效 + 文字 + 键盘） */
+  .fold-head {
+    font-size: 13.5px;
+    font-weight: normal;
+    color: #a3402f;
+    letter-spacing: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0 5px;
+    border-top: 1px dashed #e2d8c3;
+    margin-top: 8px;
+  }
+  .fold-head:first-of-type { border-top: none; }
+  .fold-head:hover { opacity: .8; }
+  .fold-head:focus-visible { outline: 2px solid #a3402f; outline-offset: 3px; border-radius: 2px; }
+  .fold-right { margin-left: auto; display: flex; align-items: center; gap: 7px; }
+  .fold-state { font-size: 11px; color: #8a7a5f; letter-spacing: 1px; font-weight: normal; }
+  .chev { width: 11px; height: 11px; flex: none; transition: transform .25s ease; }
+  .fold-card.open .chev { transform: rotate(180deg); }
+  .fold { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+  .poem-title-link { color: inherit; text-decoration: none; border-bottom: 1px dotted #c9bda3; }
+  .poem-title-link:hover { color: #a3402f; border-bottom-color: #a3402f; }
+  .poem-body {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 15px;
+    line-height: 2.1;
+    white-space: pre-wrap;
+    color: #3a3226;
+    padding: 2px 2px 10px;
+  }
+  .poem-note { font-size: 12px; color: #8a7a5f; line-height: 1.9; padding-bottom: 10px; }
+
+  /* 景点 */
+  .spot {
+    background: #f7f2e6;
+    border: 1px solid #e2d8c3;
+    border-radius: 5px;
+    padding: 10px 14px;
+    margin-top: 8px;
+    font-size: 12.5px;
+    line-height: 1.9;
+    color: #5a4f3f;
+  }
+  .spot b { font-family: "STKaiti", "KaiTi", serif; font-size: 14px; letter-spacing: 1px; color: #3a3226; }
+  .spot .coords { color: #a3402f; font-size: 11px; font-family: Consolas, monospace; }
+
+  .empty { text-align: center; color: #8a7a5f; padding: 40px 0; letter-spacing: 2px; }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 920px) {
+    .layout { grid-template-columns: 1fr; }
+    .map-card { position: static; }
+    .poet-head { padding: 20px; }
+    .poet-name { font-size: 27px; }
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="home.html">← 返回首页</a>
+    <span class="t">诗人足迹</span>
+  </div>
+
+  <main class="container">
+    <!-- 诗人题头（数据渲染） -->
+    <section class="poet-head" id="poetHead"></section>
+
+    <!-- 筛选 -->
+    <div class="filters" id="filters">
+      <span class="lbl">行迹筛选</span>
+      <!-- chips 由 JS 生成 -->
+    </div>
+
+    <div class="layout">
+      <!-- 水墨长卷地图 -->
+      <section class="map-card" aria-label="足迹示意地图">
+        <div class="map-title">
+          <span>东坡行迹图</span>
+          <span class="map-sub">依经纬落位 · 古地名配今地</span>
+        </div>
+        <svg id="mapSvg" viewBox="0 0 980 620" role="img" aria-label="苏轼一生足迹示意地图"></svg>
+        <div class="map-legend" id="mapLegend"></div>
+      </section>
+
+      <!-- 时间轴 -->
+      <section class="timeline" id="timeline" aria-label="足迹时间轴"></section>
+    </div>
+  </main>
+
+<script>
+  /* ================= 数据与状态 ================= */
+  const TYPE_META = {
+    birth:    { label: "出生", color: "#6b7f4e" },
+    official: { label: "为官", color: "#b08a3e" },
+    exile:    { label: "贬谪", color: "#a3402f" },
+    death:    { label: "离世", color: "#5a4f3f" }
+  };
+  let DATA = null;          // 当前诗人
+  let filterType = "all";   // 当前筛选
+  let activeId = null;      // 当前选中节点
+
+  /* ================= 工具 ================= */
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  function svgEl(tag, attrs) {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  /* ================= 经纬度 → 长卷坐标 =================
+     等距圆柱投影，标准纬线 35°N（cos35≈0.82）。
+     仅示意相对位置，不描绘任何疆界。 */
+  const W = 980, H = 620, PAD = 64;
+  const K = Math.cos(35 * Math.PI / 180);
+  function proj(lng, lat) {
+    const dx = (lng - 73) * K;      // 73°E — 135°E
+    const dy = (54 - lat);          // 54°N — 18°N
+    const scale = Math.min((W - 2 * PAD) / ((135 - 73) * K), (H - 2 * PAD) / (54 - 18));
+    const ox = (W - (135 - 73) * K * scale) / 2;
+    return { x: ox + dx * scale, y: PAD + dy * scale };
+  }
+
+  /* ================= 画家题头 ================= */
+  function renderHead(p) {
+    document.getElementById("poetHead").innerHTML =
+      '<div>' +
+        '<div class="poet-name">' + esc(p.name) + '<span class="alias">' + esc(p.alias) + '</span></div>' +
+        '<div class="poet-meta">' + esc(p.dynasty) + ' · ' + esc(p.born) + '—' + esc(p.died) + '</div>' +
+      '</div>' +
+      '<div class="poet-intro">' + esc(p.intro) + '</div>' +
+      '<div class="poet-stats">' +
+        '<div class="stat"><b>' + p.footprints.length + '</b><span>行迹</span></div>' +
+        '<div class="stat"><b>' + p.footprints.reduce((n, f) => n + f.poems.length, 0) + '</b><span>诗作</span></div>' +
+        '<div class="stat"><b>' + p.footprints.reduce((n, f) => n + f.spots.length, 0) + '</b><span>景点</span></div>' +
+      '</div>';
+  }
+
+  /* ================= 地图 ================= */
+  function renderMap() {
+    const svg = document.getElementById("mapSvg");
+    svg.innerHTML = "";
+
+    /* --- 底：远山与水纹（纯装饰水墨，非地理描绘） --- */
+    const bg = svgEl("g", { opacity: ".5" });
+    const mts = [
+      "M0 560 Q 120 430 250 540 Q 340 610 470 545 Q 600 480 720 555 Q 840 620 980 530 L 980 620 L 0 620 Z",
+      "M0 130 Q 160 40 330 120 Q 470 185 640 105 Q 800 30 980 115 L 980 0 L 0 0 Z"
+    ];
+    mts.forEach(d => bg.appendChild(svgEl("path", { d, fill: "#3a3226", opacity: ".05" })));
+    svg.appendChild(bg);
+    // 淡水纹
+    for (let i = 0; i < 3; i++) {
+      svg.appendChild(svgEl("path", {
+        d: "M30 " + (240 + i * 150) + " Q 260 " + (225 + i * 150) + " 500 " + (245 + i * 150) + " T 950 " + (235 + i * 150),
+        fill: "none", stroke: "#3a3226", "stroke-width": "1", opacity: ".06"
+      }));
+    }
+
+    const nodes = visibleNodes();
+
+    /* --- 旅程虚线（按时间顺序连接） --- */
+    if (nodes.length > 1) {
+      svg.appendChild(svgEl("path", {
+        d: nodes.map((n, i) => (i ? "L" : "M") + proj(n.lng, n.lat).x + " " + proj(n.lng, n.lat).y).join(" "),
+        fill: "none", stroke: "#8a7a5f", "stroke-width": "1.4",
+        "stroke-dasharray": "5 6", opacity: ".55"
+      }));
+    }
+
+    /* --- 标记 --- */
+    nodes.forEach(n => {
+      const { x, y } = proj(n.lng, n.lat);
+      const c = TYPE_META[n.type].color;
+      const g = svgEl("g", {
+        class: "marker" + (n.id === activeId ? " active" : ""),
+        tabindex: "0", role: "button",
+        "aria-label": n.year + "年 " + n.place + "，" + TYPE_META[n.type].label + "，" + n.modern
+      });
+      g.dataset.id = n.id;
+
+      const halo = svgEl("circle", { cx: x, cy: y, r: 14, fill: "none", stroke: c, "stroke-width": 2, class: "halo" });
+      halo.style.transformOrigin = x + "px " + y + "px";
+      g.appendChild(halo);
+      g.appendChild(svgEl("circle", { cx: x, cy: y, r: 6, fill: c, stroke: "#fdfbf5", "stroke-width": 2, class: "dot" }));
+
+      // 标签：古地名 + 今地名（古今对照）
+      const label = svgEl("text", { x: x + 11, y: y + 1, class: "gname" });
+      label.style.dominantBaseline = "middle";
+      label.textContent = n.place;
+      g.appendChild(label);
+      const mod = svgEl("text", { x: x + 11, y: y + 17, class: "modern" });
+      mod.textContent = n.modern.replace("今", "");
+      g.appendChild(mod);
+
+      g.addEventListener("click", () => selectNode(n.id, true));
+      g.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectNode(n.id, true); }
+      });
+      svg.appendChild(g);
+    });
+
+    /* --- 图例 --- */
+    document.getElementById("mapLegend").innerHTML = Object.keys(TYPE_META)
+      .map(t => '<span><i style="background:' + TYPE_META[t].color + '"></i>' + TYPE_META[t].label + '</span>').join("");
+  }
+
+  /* ================= 时间轴 ================= */
+  function visibleNodes() {
+    return DATA.footprints.filter(f => filterType === "all" || f.type === filterType);
+  }
+
+  function poemFold(p) {
+    return (
+      '<div class="fold-card">' +
+        '<h3 class="fold-head" tabindex="0" role="button" aria-expanded="false" onclick="toggleCard(this)" onkeydown="keyCard(event, this)">' +
+          '<span><a class="poem-title-link" href="detail.html?title=' + encodeURIComponent(p.title) + '">' + esc(p.title) + '</a>' +
+          '　<em style="font-style:normal;font-size:11px;color:#8a7a5f;">' + esc(p.genre) + ' · ' + esc(p.year) + '</em></span>' +
+          '<span class="fold-right"><span class="fold-state">已收起</span>' +
+          '<svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4 L6 8 L10 4" fill="none" stroke="#a3402f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+        '</h3>' +
+        '<div class="fold"><div class="poem-body">' + esc(p.content) + '</div>' +
+        (p.note ? '<div class="poem-note">◆ ' + esc(p.note) + '</div>' : '') + '</div>' +
+      '</div>'
+    );
+  }
+
+  function spotCard(s) {
+    return (
+      '<div class="spot"><b>' + esc(s.name) + '</b>　<span style="color:#8a7a5f;">' + esc(s.modern) + '</span><br>' +
+      esc(s.desc) + '<br><span class="coords">' + s.lat + "°N, " + s.lng + "°E" + '</span></div>'
+    );
+  }
+
+  function renderTimeline() {
+    const tl = document.getElementById("timeline");
+    const nodes = visibleNodes();
+    if (!nodes.length) {
+      tl.innerHTML = '<div class="empty">此类行迹暂无</div>';
+      return;
+    }
+    tl.innerHTML = nodes.map(n => {
+      const meta = TYPE_META[n.type];
+      return (
+        '<article class="node' + (n.id === activeId ? " active" : "") + '" id="card-' + n.id + '" ' +
+              'style="--dot:' + meta.color + '" data-id="' + n.id + '" tabindex="0">' +
+          '<div class="node-year">' + esc(n.years) + '<span class="stage">' + meta.label + '</span></div>' +
+          '<div class="node-place">' + esc(n.place) + '<span class="modern">' + esc(n.modern) + '</span></div>' +
+          '<p class="node-event">' + esc(n.event) + '</p>' +
+          n.poems.map(poemFold).join("") +
+          n.spots.map(spotCard).join("") +
+        '</article>'
+      );
+    }).join("");
+
+    // 卡片点击 → 选中（点折叠头/链接时不冒泡触发）
+    tl.querySelectorAll(".node").forEach(card => {
+      card.addEventListener("click", e => {
+        if (e.target.closest(".fold-head") || e.target.closest("a")) return;
+        selectNode(card.dataset.id, false);
+      });
+      card.addEventListener("keydown", e => {
+        if (e.key === "Enter" && !e.target.closest(".fold-head") && !e.target.closest("a")) {
+          selectNode(card.dataset.id, false);
+        }
+      });
+    });
+  }
+
+  /* ================= 选中联动（地图 ⇄ 时间轴） ================= */
+  function selectNode(id, scrollCard) {
+    activeId = id;
+    // 更新地图标记
+    document.querySelectorAll(".marker").forEach(m =>
+      m.classList.toggle("active", m.dataset.id === id));
+    // 更新时间轴卡片
+    document.querySelectorAll(".node").forEach(c =>
+      c.classList.toggle("active", c.dataset.id === id));
+    if (scrollCard) {
+      const card = document.getElementById("card-" + id);
+      if (card) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
+  /* ================= 折叠交互（Day 11 同款：动效+文字+键盘） ================= */
+  function toggleCard(head) {
+    const card = head.closest(".fold-card");
+    const fold = card.querySelector(".fold");
+    const stateEl = head.querySelector(".fold-state");
+    const opening = !card.classList.contains("open");
+    card.classList.toggle("open", opening);
+    fold.style.maxHeight = opening ? fold.scrollHeight + "px" : "0px";
+    stateEl.textContent = opening ? "已展开" : "已收起";
+    head.setAttribute("aria-expanded", opening);
+  }
+  function keyCard(e, head) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCard(head); }
+  }
+
+  /* ================= 筛选 ================= */
+  function renderFilters() {
+    const box = document.getElementById("filters");
+    const opts = [["all", "全部"]].concat(Object.keys(TYPE_META).map(t => [t, TYPE_META[t].label]));
+    box.innerHTML = '<span class="lbl">行迹筛选</span>' + opts.map(([v, label]) =>
+      '<button class="chip' + (filterType === v ? " on" : "") + '" data-v="' + v + '">' + label + '</button>'
+    ).join("");
+    box.querySelectorAll(".chip").forEach(c =>
+      c.addEventListener("click", () => {
+        filterType = c.dataset.v;
+        activeId = null;
+        renderFilters(); renderMap(); renderTimeline();
+      }));
+  }
+
+  /* ================= 启动 ================= */
+  fetch("data/su_shi.json")
+    .then(r => r.json())
+    .then(d => {
+      DATA = d.poets[0];   // 结构预留多诗人：d.poets 数组可直接扩展
+      document.title = "诗人足迹 · " + DATA.name + "｜诗迹山河";
+      renderHead(DATA);
+      renderFilters();
+      renderMap();
+      renderTimeline();
+    })
+    .catch(e => {
+      document.getElementById("timeline").innerHTML =
+        '<div class="empty">足迹长卷未能展开：' + esc(e.message) + '<br>请确认通过 http://localhost:8080 访问（非本地文件打开）</div>';
+    });
+</script>
+</body>
+</html>
