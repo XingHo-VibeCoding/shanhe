@@ -8,6 +8,9 @@ my-app/title_index.json
 my-app/fetch_progress.json
 my-app/fetch_content_progress.json
 
+# 本地网络调试脚本（GitHub 推送用的临时转发代理，硬编码 IP，不上传）
+my-app/_ghproxy.py
+
 # chinese-poetry 开源数据源（import_poetry.py 的原料，300MB+，不提交）
 _poetry_src/
 
