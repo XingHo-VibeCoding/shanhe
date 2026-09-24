@@ -116,6 +116,29 @@
     line-height: 1.9;
   }
 
+  /* ===== 可折叠卡片（Day 11：展开/收起 + 反馈） ===== */
+  .fold-head { cursor: pointer; }
+  .fold-head:hover { opacity: .8; }
+  .fold-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .fold-state {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: #8a7a5f;
+  }
+  .chev { width: 12px; height: 12px; flex: none; transition: transform .25s ease; }
+  .fold-card.open .chev { transform: rotate(180deg); }
+  .fold {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .3s ease;
+  }
+
   /* ===== 状态占位 ===== */
   .state {
     text-align: center;
@@ -148,7 +171,7 @@
   </main>
 
 <script>
-  const API_BASE = "http://localhost:5000";
+  const API_BASE = "http://127.0.0.1:5000";
 
   // 从 URL 取诗名（如 detail.html?title=静夜思）
   function getParam(name) {
@@ -163,6 +186,34 @@
       .replace(/>/g, "&gt;");
   }
 
+  // ===== Day 11：可折叠卡片（展开/收起，动效 + 文字双反馈） =====
+  function foldCard(title, cls, text) {
+    return (
+      '<div class="card fold-card">' +
+        '<h2 class="fold-head" onclick="toggleCard(this)">' +
+          '<span>' + title + '</span>' +
+          '<span class="fold-right">' +
+            '<span class="fold-state">已收起</span>' +
+            '<svg class="chev" viewBox="0 0 12 12" aria-hidden="true">' +
+              '<path d="M2 4 L6 8 L10 4" fill="none" stroke="#a3402f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '</svg>' +
+          '</span>' +
+        '</h2>' +
+        '<div class="fold"><div class="' + cls + '">' + text + '</div></div>' +
+      '</div>'
+    );
+  }
+
+  function toggleCard(head) {
+    const card = head.closest(".fold-card");
+    const fold = card.querySelector(".fold");
+    const stateEl = head.querySelector(".fold-state");
+    const opening = !card.classList.contains("open");
+    card.classList.toggle("open", opening);
+    fold.style.maxHeight = opening ? fold.scrollHeight + "px" : "0px";
+    stateEl.textContent = opening ? "已展开" : "已收起";
+  }
+
   function renderPoem(p) {
     const tags = (p.tag ? String(p.tag).split(",") : [])
       .filter(t => t.trim())
@@ -174,10 +225,10 @@
         (tags ? '<div class="tags">' + tags + '</div>' : '') +
       '</div>' +
       '<div class="card"><h2>原文</h2><div class="content">' + escapeHtml(p.content || "（暂无原文）") + '</div></div>' +
-      '<div class="card"><h2>译文</h2><div class="trans">' + escapeHtml(p.translation || "（暂无译文）") + '</div></div>' +
-      '<div class="card"><h2>注释</h2><div class="anno">' + escapeHtml(p.annotation || "（暂无注释）") + '</div></div>' +
-      (p.background ? '<div class="card"><h2>创作背景</h2><div class="bg">' + escapeHtml(p.background) + '</div></div>' : '') +
-      (p.appreciation ? '<div class="card"><h2>赏析</h2><div class="appr">' + escapeHtml(p.appreciation) + '</div></div>' : '')
+      foldCard("译文", "trans", escapeHtml(p.translation || "（暂无译文）")) +
+      foldCard("注释", "anno", escapeHtml(p.annotation || "（暂无注释）")) +
+      (p.background ? foldCard("创作背景", "bg", escapeHtml(p.background)) : '') +
+      (p.appreciation ? foldCard("赏析", "appr", escapeHtml(p.appreciation)) : '')
     );
   }
 
