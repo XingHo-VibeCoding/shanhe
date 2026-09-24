@@ -3,9 +3,13 @@
 .env.*
 *.local
 
-# 标题索引与抓取进度（派生产物，由 fetch_index.py 生成，不提交）
+# 标题索引与抓取进度（派生产物，由抓取脚本生成，不提交）
 my-app/title_index.json
 my-app/fetch_progress.json
+my-app/fetch_content_progress.json
+
+# chinese-poetry 开源数据源（import_poetry.py 的原料，300MB+，不提交）
+_poetry_src/
 
 # 密码 / 密钥 / 凭证
 *.pem
@@ -18,6 +22,12 @@ secrets.json
 
 # 依赖目录
 node_modules/
+
+# Python 缓存与虚拟环境
+__pycache__/
+*.pyc
+.venv/
+venv/
 
 # 本地数据库文件
 *.db

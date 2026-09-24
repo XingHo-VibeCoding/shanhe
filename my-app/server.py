@@ -13,10 +13,15 @@
 
 import os
 import json
+import re
+import html
 import sqlite3
 import requests
+import urllib3
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # 从 .env 文件读取 appKey（密钥不进代码、不进仓库）
 def load_env():
@@ -35,12 +40,15 @@ def load_env():
 
 ENV = load_env()
 APPKEY = ENV.get("SHOWAPI_APPKEY", "")
+APIHZ_ID = ENV.get("APIHZ_ID", "")
+APIHZ_KEY = ENV.get("APIHZ_KEY", "")
 
 app = Flask(__name__)
 CORS(app)  # 允许前端跨端口调用（解决浏览器 CORS 拦截）
 
 # 万维易源接口地址（3 个接入点）
 SHOWAPI_BASE = "https://route.showapi.com"
+APIHZ_BASE = "https://cn.apihz.cn/api/zici/poetry.php"
 
 # 前端页面所在的目录（与 server.py 同级）
 FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -77,6 +85,111 @@ def db_query(sql, params=()):
     except Exception as e:
         print(f"⚠️  查询数据库失败：{e}")
         return []
+
+
+# ===== 古诗文大全（apihz）数据源工具 =====
+def clean_html(text):
+    """把 apihz 返回的 HTML 文本清洗成纯文本（保留段落换行）"""
+    if not text:
+        return ""
+    text = html.unescape(str(text))
+    text = text.replace("<br />", "\n").replace("<br/>", "\n").replace("<br>", "\n")
+    text = re.sub(r"</p>", "\n", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = re.sub(r"[ \t\u3000]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def split_translation_annotation(raw):
+    """从 ywjzsy（译文+注释混排）里拆出「译文」和「注释」两部分"""
+    if not raw:
+        return "", ""
+    marked = str(raw).replace("<strong>译文</strong>", "@TRANS@").replace("<strong>注释</strong>", "@ANNO@")
+    text = clean_html(marked)
+    t_idx = text.find("@TRANS@")
+    a_idx = text.find("@ANNO@")
+    translation = ""
+    annotation = ""
+    if t_idx != -1:
+        end = a_idx if a_idx != -1 else len(text)
+        translation = text[t_idx + len("@TRANS@"):end].strip()
+    if a_idx != -1:
+        annotation = text[a_idx + len("@ANNO@"):].strip()
+    return translation, annotation
+
+
+def _apihz_fetch_page(keyword, page):
+    """调一页古诗文大全接口，返回 (作品列表, 错误信息)。作品列表为 None 表示出错。"""
+    try:
+        resp = requests.get(
+            APIHZ_BASE,
+            params={"id": APIHZ_ID, "key": APIHZ_KEY, "words": keyword, "page": str(page)},
+            timeout=20,
+            verify=False,
+        )
+        data = resp.json()
+    except Exception as e:
+        return None, "古诗文接口调用失败：" + str(e)
+
+    if data.get("code") != 200:
+        return None, data.get("msg") or "古诗文接口返回错误"
+
+    poem_info = []
+    for it in data.get("data") or []:
+        translation, annotation = split_translation_annotation(it.get("ywjzsy"))
+        poem_info.append({
+            "title": it.get("name", ""),
+            "poet": it.get("author", ""),
+            "dynasty": it.get("dynasty", ""),
+            "content": clean_html(it.get("content")),
+            "translation": translation,
+            "annotation": annotation,
+            "tag": it.get("tag", ""),
+            "background": clean_html(it.get("czbj")),
+            "appreciation": clean_html(it.get("sxy")),
+        })
+    return poem_info, None
+
+
+def apihz_search(keyword, page=1):
+    """调古诗文大全 API（免费、每日无上限），转成前端兼容的 poemInfo 格式。
+
+    注意：apihz 的 words 是「全文模糊搜」——搜「杜甫」会把诗句里提到杜甫的
+    别人作品也返回。所以这里加「作者精确匹配优先」：
+      - 若结果里有 author 恰好等于关键词的作品（说明搜的是人名），
+        就翻页把该作者本人的作品找齐，只返回 TA 的；
+      - 若没有（说明搜的是诗名/词牌），保持模糊结果原样返回。
+    """
+    if not APIHZ_ID or not APIHZ_KEY:
+        return {"ret_code": "-1", "remark": "缺少古诗文 API 的 id/key，请检查 .env"}
+
+    page_num = int(page) if str(page).isdigit() else 1
+    collected = []   # 翻页累计抓到的作品
+    exact = []       # 作者精确匹配关键词的作品
+    # 最多翻 5 页找「正主」作品（每页 5 首，找到 5 首即可停）
+    for p in range(page_num, page_num + 5):
+        more, err = _apihz_fetch_page(keyword, p)
+        if err or not more:
+            break
+        collected.extend(more)
+        exact = [x for x in collected if x["poet"] == keyword]
+        if len(exact) >= 5 or len(more) < 5:
+            break
+
+    if exact:
+        poem_info = exact
+    else:
+        # 搜的是诗名/词牌 → 返回当前页的模糊匹配结果
+        start = (page_num - 1) * 5
+        poem_info = collected[start:start + 5] if collected else []
+
+    return {
+        "ret_code": "0",
+        "match_type": "apihz",
+        "allNum": len(poem_info),
+        "poemInfo": poem_info,
+    }
 
 
 @app.route("/")
@@ -181,9 +294,9 @@ def search_smart(keyword, page):
     page_size = 20
     offset = (int(page) - 1) * page_size if str(page).isdigit() else 0
 
-    # 1. 本地库按诗人名查
+    # 1. 本地库按诗人名查（按知名度降序：名篇在前）
     poet_rows = db_query(
-        "SELECT * FROM poems WHERE poet = ? ORDER BY title LIMIT ? OFFSET ?",
+        "SELECT * FROM poems WHERE poet = ? ORDER BY popularity DESC, title LIMIT ? OFFSET ?",
         (keyword, page_size, offset),
     )
     if poet_rows:
@@ -191,9 +304,9 @@ def search_smart(keyword, page):
         total = poet_total[0]["c"] if poet_total else len(poet_rows)
         return jsonify(_poems_from_db(poet_rows, total, page))
 
-    # 2. 本地库按诗名查（精确匹配标题）
+    # 2. 本地库按诗名查（精确匹配标题，同名里名篇在前）
     title_rows = db_query(
-        "SELECT * FROM poems WHERE title = ? ORDER BY title LIMIT ? OFFSET ?",
+        "SELECT * FROM poems WHERE title = ? ORDER BY popularity DESC, title LIMIT ? OFFSET ?",
         (keyword, page_size, offset),
     )
     if title_rows:
@@ -201,7 +314,17 @@ def search_smart(keyword, page):
         total = title_total[0]["c"] if title_total else len(title_rows)
         return jsonify(_poems_from_db(title_rows, total, page))
 
-    # 3. 本地标题索引「同名作品」（零额度）
+    # 3. 本地标题索引「按作者精确匹配」——搜人名直接列出 TA 的作品（零额度）
+    poet_titles = find_poet_titles(keyword)
+    if poet_titles:
+        return jsonify({
+            "ret_code": "0",
+            "match_type": "titles",
+            "allNum": len(poet_titles),
+            "titles": poet_titles,
+        })
+
+    # 4. 本地标题索引「同名作品」（零额度）
     title_matches = find_same_titles(keyword)
     if title_matches:
         return jsonify({
@@ -211,26 +334,8 @@ def search_smart(keyword, page):
             "titles": title_matches,
         })
 
-    # 4. 调 API 兜底：先按诗人名查
-    try:
-        poet_resp = requests.post(
-            f"{SHOWAPI_BASE}/1620-4",
-            params={"appKey": APPKEY},
-            data={"poet": keyword, "maxResult": "5"},
-            headers={"content-type": "application/x-www-form-urlencoded"},
-            timeout=15,
-        )
-        poet_data = poet_resp.json().get("showapi_res_body", {})
-    except Exception as e:
-        poet_data = {"ret_code": "-1", "remark": str(e)}
-
-    if poet_data.get("ret_code") == "0":
-        poet_list = poet_data.get("poetInfo", [])
-        if poet_list:
-            return search_by_poet_with_info(poet_list[0], page)
-
-    # 5. 最后按诗名查 API
-    return search_by_title(keyword, page)
+    # 5. 古诗文大全 API 兜底（免费、每日无上限，关键词同时覆盖诗人名/诗名）
+    return jsonify(apihz_search(keyword, page))
 
 
 def _poems_from_db(rows, total, page):
@@ -275,6 +380,30 @@ def find_same_titles(keyword):
     return result
 
 
+def find_poet_titles(keyword):
+    """在本地标题索引里，找出某位诗人的全部作品（按作者名精确匹配）。
+    返回 [{title, poet, dynasty}, ...]，去重、最多 50 条。零 API 调用。
+    用于搜「杜甫」「李白」这类人名 → 直接列出 TA 的作品标题。"""
+    if not TITLE_INDEX or not keyword:
+        return []
+    result = []
+    seen = set()
+    for item in TITLE_INDEX:
+        if item.get("poet") != keyword:
+            continue
+        title = item.get("title", "")
+        if title and title not in seen:
+            seen.add(title)
+            result.append({
+                "title": title,
+                "poet": item.get("poet", ""),
+                "dynasty": item.get("dynasty", ""),
+            })
+            if len(result) >= 50:
+                break
+    return result
+
+
 def search_by_poet_with_info(poet_info, page):
     """已知诗人信息，查 TA 的全部诗词（分页），并附诗人简介"""
     poet_id = poet_info.get("poetId", "")
@@ -296,15 +425,8 @@ def search_by_poet_with_info(poet_info, page):
 
 
 def search_by_title(title, page):
-    """按诗词名查"""
-    resp = requests.post(
-        f"{SHOWAPI_BASE}/1620-5",
-        params={"appKey": APPKEY},
-        data={"title": title, "page": page, "maxResult": "20"},
-        headers={"content-type": "application/x-www-form-urlencoded"},
-        timeout=15,
-    )
-    return jsonify(resp.json().get("showapi_res_body", {}))
+    """按诗词名查（走古诗文大全 API）"""
+    return jsonify(apihz_search(title, page))
 
 
 if __name__ == "__main__":

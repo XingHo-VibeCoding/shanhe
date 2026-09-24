@@ -354,7 +354,7 @@
           <div class="poem-card">
             <h2>${title}</h2>
             <div class="poem-meta">
-              ${author} · ${dynasty}代
+              ${author} · ${dynasty}
             </div>
             <div class="poem-content">${escapeHtml(contentHtml)}</div>
             <div class="section-title">译文</div>
@@ -537,9 +537,13 @@
       }
     });
 
-    // 初始化：默认展示李白（演示效果）
-    document.getElementById("searchInput").value = "李白";
-    searchPoems(1);
+    // 初始化：若链接带了 keyword 参数（从首页搜索框跳转而来）就自动搜它，否则默认展示李白
+    (function init() {
+      const params = new URLSearchParams(location.search);
+      const kw = params.get("keyword");
+      document.getElementById("searchInput").value = kw || "李白";
+      searchPoems(1);
+    })();
   </script>
 </body>
 </html>
