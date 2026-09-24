@@ -8,26 +8,59 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-      background: #f7f5f0;
-      color: #333;
+      background: #f4eee1;
+      color: #3a3226;
       line-height: 1.8;
     }
     .header {
-      background: #2c3e50;
-      color: #fff;
-      padding: 28px 20px;
+      background:
+        linear-gradient(rgba(244,238,225,.76), rgba(244,238,225,.60)),
+        url(assets/pic_qljs.jpg) center 30% / cover no-repeat;
+      border-bottom: 1px solid #d8cdb8;
+      color: #3a3226;
+      padding: 44px 20px 40px;
       text-align: center;
     }
     .header h1 {
-      font-size: 26px;
+      font-family: "STKaiti", "KaiTi", "楷体", serif;
+      font-size: 30px;
       font-weight: 500;
-      letter-spacing: 2px;
+      letter-spacing: 8px;
+      color: #3a3226;
+      text-shadow: 0 1px 0 rgba(253,251,245,.8);
     }
     .header p {
       font-size: 13px;
-      opacity: 0.75;
-      margin-top: 6px;
+      color: #5a4f3f;
+      margin-top: 8px;
+      letter-spacing: 2px;
     }
+    .header .paint-credit {
+      font-size: 11px;
+      color: #8a7a5f;
+      margin-top: 14px;
+      letter-spacing: 1px;
+    }
+    .site-nav {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .site-nav a {
+      padding: 7px 18px;
+      border: 1px solid #c9bda3;
+      border-radius: 16px;
+      color: #5a4f3f;
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-decoration: none;
+      background: rgba(253,251,245,.65);
+      transition: border-color .2s, color .2s;
+    }
+    .site-nav a:hover { border-color: #a3402f; color: #a3402f; }
+    .site-nav a:focus-visible { outline: 2px solid #a3402f; outline-offset: 2px; }
     .container {
       max-width: 760px;
       margin: 0 auto;
@@ -107,44 +140,47 @@
       margin-bottom: 16px;
     }
     .poet-bio {
-      background: #fff;
-      border: 1px solid #e8e4dc;
-      border-left: 4px solid #2c3e50;
+      background: #fdfbf5;
+      border: 1px solid #d8cdb8;
+      border-left: 4px solid #a3402f;
       border-radius: 8px;
       padding: 14px 18px;
       margin-bottom: 18px;
     }
     .poet-bio .bio-name {
+      font-family: "STKaiti", "KaiTi", "楷体", serif;
       font-size: 16px;
       font-weight: 500;
-      color: #2c3e50;
+      color: #3a3226;
     }
     .poet-bio .bio-text {
       font-size: 13px;
-      color: #777;
+      color: #8a7a5f;
       margin-top: 4px;
     }
     .poem-card {
-      background: #fff;
-      border: 1px solid #e8e4dc;
+      background: #fdfbf5;
+      border: 1px solid #d8cdb8;
       border-radius: 10px;
       padding: 20px;
       margin-bottom: 16px;
     }
     .poem-card h2 {
+      font-family: "STKaiti", "KaiTi", "楷体", serif;
       font-size: 19px;
       font-weight: 500;
       margin-bottom: 4px;
+      color: #3a3226;
     }
     .poem-meta {
       font-size: 13px;
-      color: #888;
+      color: #8a7a5f;
       margin-bottom: 12px;
     }
     .poem-meta .tag {
       display: inline-block;
-      background: #eef2f5;
-      color: #2c3e50;
+      background: #f0e9d8;
+      color: #8a7a5f;
       padding: 1px 8px;
       border-radius: 10px;
       margin-left: 6px;
@@ -154,32 +190,33 @@
       font-size: 17px;
       white-space: pre-line;
       padding: 12px 0;
-      border-top: 1px dashed #eee;
-      border-bottom: 1px dashed #eee;
+      border-top: 1px dashed #d8cdb8;
+      border-bottom: 1px dashed #d8cdb8;
       margin-bottom: 12px;
     }
     .section-title {
+      font-family: "STKaiti", "KaiTi", "楷体", serif;
       font-size: 14px;
       font-weight: 500;
-      color: #2c3e50;
+      color: #5a4f3f;
       margin: 12px 0 4px;
     }
     .translation {
       font-size: 14px;
-      color: #555;
+      color: #5a4f3f;
       white-space: pre-line;
     }
     .annotation {
       font-size: 13px;
-      color: #999;
+      color: #8a7a5f;
       white-space: pre-line;
-      border-top: 1px dotted #eee;
+      border-top: 1px dotted #d8cdb8;
       margin-top: 8px;
       padding-top: 8px;
     }
     .empty {
       text-align: center;
-      color: #999;
+      color: #8a7a5f;
       padding: 40px 0;
       font-size: 15px;
     }
@@ -224,18 +261,18 @@
     .empty-chips button:focus-visible { outline: 2px solid #a3402f; outline-offset: 2px; }
     .count {
       font-size: 13px;
-      color: #999;
+      color: #8a7a5f;
       margin-bottom: 12px;
     }
     .loading {
       text-align: center;
-      color: #999;
+      color: #8a7a5f;
       padding: 40px 0;
       font-size: 15px;
     }
     .error {
       text-align: center;
-      color: #c0392b;
+      color: #a3402f;
       padding: 40px 0;
       font-size: 15px;
     }
@@ -249,40 +286,45 @@
     .pager button {
       padding: 8px 18px;
       font-size: 14px;
-      border: 1px solid #ccc;
+      border: 1px solid #d8cdb8;
       border-radius: 8px;
-      background: #fff;
-      color: #2c3e50;
+      background: #fdfbf5;
+      color: #3a3226;
       cursor: pointer;
+      transition: border-color .2s, background .2s;
     }
+    .pager button:hover:not(:disabled) { border-color: #a3402f; color: #a3402f; }
+    .pager button:focus-visible { outline: 2px solid #a3402f; outline-offset: 2px; }
     .pager button:disabled {
       opacity: 0.4;
       cursor: not-allowed;
     }
     .title-list-head {
+      font-family: "STKaiti", "KaiTi", "楷体", serif;
       font-size: 14px;
-      color: #2c3e50;
+      color: #5a4f3f;
       font-weight: 500;
       margin-bottom: 10px;
     }
     .title-item {
-      background: #fff;
-      border: 1px solid #e8e4dc;
+      background: #fdfbf5;
+      border: 1px solid #d8cdb8;
       border-radius: 10px;
       padding: 14px 18px;
       margin-bottom: 10px;
       cursor: pointer;
       transition: border-color .2s;
     }
-    .title-item:hover { border-color: #c9c2b5; }
+    .title-item:hover { border-color: #c9bda3; }
     .title-item .ti-title {
+      font-family: "STKaiti", "KaiTi", "楷体", serif;
       font-size: 16px;
-      color: #2c3e50;
+      color: #3a3226;
       font-weight: 500;
     }
     .title-item .ti-meta {
       font-size: 12px;
-      color: #999;
+      color: #8a7a5f;
       margin-top: 4px;
     }
   </style>
@@ -291,6 +333,12 @@
   <div class="header">
     <h1>诗迹山河</h1>
     <p>古诗词学习平台 · 地图 + 诗词</p>
+    <div class="paint-credit">── 画：王希孟《千里江山图》局部 · 北宋 ──</div>
+    <nav class="site-nav">
+      <a href="home.html">首页</a>
+      <a href="footprints.html">诗人足迹</a>
+      <a href="tour.html">沉浸演示</a>
+    </nav>
   </div>
 
   <div class="container">

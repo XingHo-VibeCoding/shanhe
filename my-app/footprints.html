@@ -15,7 +15,9 @@
 
   /* ===== 顶部返回条 ===== */
   .topbar {
-    background: #2a2216;
+    background:
+      linear-gradient(rgba(42,34,22,.78), rgba(42,34,22,.78)),
+      url(assets/pic_jsqs.jpg) center 40% / cover no-repeat;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -292,6 +294,10 @@
   <div class="topbar">
     <a href="home.html">← 返回首页</a>
     <span class="t">诗人足迹</span>
+    <nav style="margin-left:auto;display:flex;gap:14px;">
+      <a style="color:#f5f0e6;opacity:.85;font-size:13px;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'" href="index.html">诗词查询</a>
+      <a style="color:#f5f0e6;opacity:.85;font-size:13px;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'" href="tour.html">沉浸演示</a>
+    </nav>
   </div>
 
   <main class="container">

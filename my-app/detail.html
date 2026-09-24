@@ -16,7 +16,9 @@
 
   /* ===== 顶部返回条（暖墨） ===== */
   .topbar {
-    background: #3a3226;
+    background:
+      linear-gradient(rgba(42,34,22,.80), rgba(42,34,22,.80)),
+      url(assets/pic_xsxl.jpg) center 60% / cover no-repeat;
     color: #f5f0e6;
     padding: 13px 18px;
     display: flex;
@@ -171,6 +173,11 @@
   <div class="topbar">
     <a class="back" id="backLink" href="home.html">← 返回</a>
     <span class="t">诗词详情</span>
+    <nav style="margin-left:auto;display:flex;gap:14px;">
+      <a style="color:#f5f0e6;opacity:.85;font-size:13px;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'" href="home.html">首页</a>
+      <a style="color:#f5f0e6;opacity:.85;font-size:13px;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'" href="index.html">诗词查询</a>
+      <a style="color:#f5f0e6;opacity:.85;font-size:13px;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'" href="footprints.html">诗人足迹</a>
+    </nav>
   </div>
 
   <main class="container" id="main">
