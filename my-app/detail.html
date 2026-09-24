@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>诗迹山河 · 诗词详情</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f5f0e6;
+    color: #3a3226;
+    line-height: 1.8;
+  }
+
+  /* ===== 顶部返回条（暖墨） ===== */
+  .topbar {
+    background: #3a3226;
+    color: #f5f0e6;
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar .back {
+    color: #f5f0e6;
+    font-size: 15px;
+    text-decoration: none;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .topbar .back:hover { opacity: 0.8; }
+  .topbar .t {
+    font-size: 13px;
+    letter-spacing: 3px;
+    opacity: 0.85;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 26px 16px 80px;
+  }
+
+  /* ===== 标题区 ===== */
+  .poem-head {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .poem-head h1 {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: 5px;
+  }
+  .poem-head .meta {
+    font-size: 13px;
+    color: #8a7a5f;
+    margin-top: 8px;
+    letter-spacing: 2px;
+  }
+  .poem-head .tags { margin-top: 10px; }
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    background: #ece4d4;
+    color: #6b5d43;
+    padding: 1px 10px;
+    border-radius: 10px;
+    margin: 0 3px;
+  }
+
+  /* ===== 内容卡片 ===== */
+  .card {
+    background: #fdfbf5;
+    border: 1px solid #d8cdb8;
+    border-radius: 6px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(58,50,38,.05);
+  }
+  .card h2 {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #a3402f;
+    margin-bottom: 12px;
+    letter-spacing: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2::before {
+    content: "";
+    width: 3px;
+    height: 16px;
+    background: #a3402f;
+    border-radius: 1px;
+  }
+  .content {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 19px;
+    line-height: 2.1;
+    text-align: center;
+    color: #3a3226;
+    white-space: pre-wrap;
+  }
+  .trans, .anno, .bg, .appr {
+    font-size: 14px;
+    color: #5a4f3f;
+    white-space: pre-wrap;
+    line-height: 1.9;
+  }
+
+  /* ===== 状态占位 ===== */
+  .state {
+    text-align: center;
+    padding: 48px 20px;
+    color: #8a7a5f;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .state.error { color: #a3402f; }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid #d8cdb8;
+    border-top-color: #a3402f;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="back" href="home.html">← 返回</a>
+    <span class="t">诗词详情</span>
+  </div>
+
+  <main class="container" id="main">
+    <div class="state"><div class="spinner"></div>正在展开诗卷…</div>
+  </main>
+
+<script>
+  const API_BASE = "http://localhost:5000";
+
+  // 从 URL 取诗名（如 detail.html?title=静夜思）
+  function getParam(name) {
+    return new URLSearchParams(location.search).get(name) || "";
+  }
+  const title = getParam("title");
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function renderPoem(p) {
+    const tags = (p.tag ? String(p.tag).split(",") : [])
+      .filter(t => t.trim())
+      .map(t => '<span class="tag">' + escapeHtml(t.trim()) + '</span>').join("");
+    return (
+      '<div class="poem-head">' +
+        '<h1>' + escapeHtml(p.title || "无题") + '</h1>' +
+        '<div class="meta">' + escapeHtml(p.poet || "佚名") + ' · ' + escapeHtml(p.dynasty || "未知") + '</div>' +
+        (tags ? '<div class="tags">' + tags + '</div>' : '') +
+      '</div>' +
+      '<div class="card"><h2>原文</h2><div class="content">' + escapeHtml(p.content || "（暂无原文）") + '</div></div>' +
+      '<div class="card"><h2>译文</h2><div class="trans">' + escapeHtml(p.translation || "（暂无译文）") + '</div></div>' +
+      '<div class="card"><h2>注释</h2><div class="anno">' + escapeHtml(p.annotation || "（暂无注释）") + '</div></div>' +
+      (p.background ? '<div class="card"><h2>创作背景</h2><div class="bg">' + escapeHtml(p.background) + '</div></div>' : '') +
+      (p.appreciation ? '<div class="card"><h2>赏析</h2><div class="appr">' + escapeHtml(p.appreciation) + '</div></div>' : '')
+    );
+  }
+
+  async function load() {
+    const main = document.getElementById("main");
+    if (!title) {
+      main.innerHTML = '<div class="state">没有指定诗词，请从首页点击进入。</div>';
+      return;
+    }
+    try {
+      const resp = await fetch(API_BASE + "/search?title=" + encodeURIComponent(title) + "&page=1");
+      const json = await resp.json();
+      if (json.ret_code !== "0") {
+        main.innerHTML = '<div class="state error">' + escapeHtml(json.remark || "查询失败") + '</div>';
+        return;
+      }
+      const list = json.poemInfo || [];
+      if (list.length === 0) {
+        main.innerHTML = '<div class="state">没有找到「' + escapeHtml(title) + '」的详情，请换个诗名试试。</div>';
+        return;
+      }
+      // 同名诗里优先展示「有译文/注释」的那首（通常是名篇）；否则取第一条
+      let pick = list[0];
+      for (const p of list) {
+        if (p.translation || p.annotation) { pick = p; break; }
+      }
+      main.innerHTML = renderPoem(pick);
+    } catch (e) {
+      main.innerHTML = '<div class="state error">无法连接后端服务，请确认已启动 server.py。<br>（' + escapeHtml(e.message) + '）</div>';
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>
