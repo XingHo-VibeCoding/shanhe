@@ -123,10 +123,11 @@
 
   /* 地图标记 */
   .marker { cursor: pointer; }
-  .marker .dot { transition: r .2s ease, stroke-width .2s ease; }
-  .marker:hover .dot { stroke-width: 3; }
+  .marker .dot { transition: r .2s ease; }
+  .marker .ring { transition: stroke-width .2s ease; }
+  .marker:hover .ring { stroke-width: 2.4; }
   .marker text {
-    font-size: 13px;
+    font-size: 16px;
     font-family: "STKaiti", "KaiTi", serif;
     fill: #3a3226;
     paint-order: stroke;
@@ -134,8 +135,15 @@
     stroke-width: 3px;
     stroke-linejoin: round;
   }
-  .marker text.modern { font-size: 10px; fill: #8a7a5f; font-family: sans-serif; }
-  .marker.active .dot { stroke-width: 3.5; }
+  .marker text.modern { font-size: 12.5px; fill: #8a7a5f; font-family: sans-serif; }
+  .marker text.seq {
+    font-size: 10px;
+    font-family: "Microsoft YaHei", sans-serif;
+    font-weight: bold;
+    fill: #fdfbf5;
+    stroke: none;
+  }
+  .marker.active .ring { stroke-width: 2.6; }
   .marker .halo { opacity: 0; }
   .marker.active .halo { opacity: 1; animation: pulse 1.6s ease-out infinite; }
   @keyframes pulse {
@@ -317,7 +325,7 @@
           <span>东坡行迹图</span>
           <span class="map-sub">依经纬落位 · 古地名配今地</span>
         </div>
-        <svg id="mapSvg" viewBox="0 0 980 620" role="img" aria-label="苏轼一生足迹示意地图"></svg>
+        <svg id="mapSvg" viewBox="0 0 740 640" role="img" aria-label="苏轼一生足迹示意地图"></svg>
         <div class="map-legend" id="mapLegend"></div>
       </section>
 
@@ -349,17 +357,46 @@
     return el;
   }
 
+  /* Catmull-Rom → 三次贝塞尔：把折点连成平滑曲线 */
+  function smoothPath(pts) {
+    if (pts.length < 2) return "";
+    let d = "M" + pts[0].x + " " + pts[0].y;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(i - 1, 0)], p1 = pts[i],
+            p2 = pts[i + 1], p3 = pts[Math.min(i + 2, pts.length - 1)];
+      d += " C" + (p1.x + (p2.x - p0.x) / 6) + " " + (p1.y + (p2.y - p0.y) / 6) +
+           " "  + (p2.x - (p3.x - p1.x) / 6) + " " + (p2.y - (p3.y - p1.y) / 6) +
+           " "  + p2.x + " " + p2.y;
+    }
+    return d;
+  }
+
   /* ================= 经纬度 → 长卷坐标 =================
      等距圆柱投影，标准纬线 35°N（cos35≈0.82）。
+     按当前可见行迹的经纬度范围自适应取景——
+     不铺整个疆域，让点位铺满长卷；筛选时自动聚焦。
      仅示意相对位置，不描绘任何疆界。 */
-  const W = 980, H = 620, PAD = 64;
+  const W = 740, H = 640;
+  const PAD_L = 64, PAD_R = 156, PAD_T = 64, PAD_B = 64;  // 右侧多留：给地名标签
   const K = Math.cos(35 * Math.PI / 180);
+  const MAX_SCALE = 60;   // 点位过少（如筛选后只剩 1 处）时防过度放大
+  let PRJ = null;
+  function fitProjection(nodes) {
+    if (!nodes.length) { PRJ = null; return; }
+    const xs = nodes.map(n => n.lng * K), ys = nodes.map(n => -n.lat);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const bw = Math.max(maxX - minX, 0.5), bh = Math.max(maxY - minY, 0.5);
+    const scale = Math.min((W - PAD_L - PAD_R) / bw, (H - PAD_T - PAD_B) / bh, MAX_SCALE);
+    const ox = PAD_L + ((W - PAD_L - PAD_R) - bw * scale) / 2;
+    const oy = PAD_T + ((H - PAD_T - PAD_B) - bh * scale) / 2;
+    PRJ = { scale, ox, oy, minX, minY };
+  }
   function proj(lng, lat) {
-    const dx = (lng - 73) * K;      // 73°E — 135°E
-    const dy = (54 - lat);          // 54°N — 18°N
-    const scale = Math.min((W - 2 * PAD) / ((135 - 73) * K), (H - 2 * PAD) / (54 - 18));
-    const ox = (W - (135 - 73) * K * scale) / 2;
-    return { x: ox + dx * scale, y: PAD + dy * scale };
+    return {
+      x: PRJ.ox + (lng * K - PRJ.minX) * PRJ.scale,
+      y: PRJ.oy + (-lat - PRJ.minY) * PRJ.scale
+    };
   }
 
   /* ================= 画家题头 ================= */
@@ -385,32 +422,42 @@
     /* --- 底：远山与水纹（纯装饰水墨，非地理描绘） --- */
     const bg = svgEl("g", { opacity: ".5" });
     const mts = [
-      "M0 560 Q 120 430 250 540 Q 340 610 470 545 Q 600 480 720 555 Q 840 620 980 530 L 980 620 L 0 620 Z",
-      "M0 130 Q 160 40 330 120 Q 470 185 640 105 Q 800 30 980 115 L 980 0 L 0 0 Z"
+      "M0 570 Q 90 440 190 545 Q 260 615 355 550 Q 455 485 545 560 Q 635 625 740 540 L 740 640 L 0 640 Z",
+      "M0 130 Q 120 45 250 118 Q 355 180 480 108 Q 600 35 740 112 L 740 0 L 0 0 Z"
     ];
     mts.forEach(d => bg.appendChild(svgEl("path", { d, fill: "#3a3226", opacity: ".05" })));
     svg.appendChild(bg);
     // 淡水纹
     for (let i = 0; i < 3; i++) {
       svg.appendChild(svgEl("path", {
-        d: "M30 " + (240 + i * 150) + " Q 260 " + (225 + i * 150) + " 500 " + (245 + i * 150) + " T 950 " + (235 + i * 150),
+        d: "M30 " + (250 + i * 140) + " Q 200 " + (235 + i * 140) + " 370 " + (255 + i * 140) + " T 710 " + (245 + i * 140),
         fill: "none", stroke: "#3a3226", "stroke-width": "1", opacity: ".06"
       }));
     }
 
     const nodes = visibleNodes();
+    fitProjection(nodes);   // 按当前行迹范围取景（筛选时自动聚焦）
 
-    /* --- 旅程虚线（按时间顺序连接） --- */
+    /* --- 旅程路线：平滑曲线 + 圆点虚线（复古行程图样式） --- */
     if (nodes.length > 1) {
+      const pts = nodes.map(n => proj(n.lng, n.lat));
+      // 底层：极淡的实线，托住虚线
       svg.appendChild(svgEl("path", {
-        d: nodes.map((n, i) => (i ? "L" : "M") + proj(n.lng, n.lat).x + " " + proj(n.lng, n.lat).y).join(" "),
-        fill: "none", stroke: "#8a7a5f", "stroke-width": "1.4",
-        "stroke-dasharray": "5 6", opacity: ".55"
+        d: smoothPath(pts),
+        fill: "none", stroke: "#8a7a5f", "stroke-width": "1",
+        opacity: ".22"
+      }));
+      // 上层：圆点虚线
+      svg.appendChild(svgEl("path", {
+        d: smoothPath(pts),
+        fill: "none", stroke: "#a3402f", "stroke-width": "2",
+        "stroke-dasharray": "0.5 7", "stroke-linecap": "round",
+        opacity: ".55"
       }));
     }
 
     /* --- 标记 --- */
-    nodes.forEach(n => {
+    nodes.forEach((n, i) => {
       const { x, y } = proj(n.lng, n.lat);
       const c = TYPE_META[n.type].color;
       const g = svgEl("g", {
@@ -420,17 +467,28 @@
       });
       g.dataset.id = n.id;
 
-      const halo = svgEl("circle", { cx: x, cy: y, r: 14, fill: "none", stroke: c, "stroke-width": 2, class: "halo" });
+      const halo = svgEl("circle", { cx: x, cy: y, r: 18, fill: "none", stroke: c, "stroke-width": 2, class: "halo" });
       halo.style.transformOrigin = x + "px " + y + "px";
       g.appendChild(halo);
-      g.appendChild(svgEl("circle", { cx: x, cy: y, r: 6, fill: c, stroke: "#fdfbf5", "stroke-width": 2, class: "dot" }));
+      // 外圈：同色淡底 + 细环
+      g.appendChild(svgEl("circle", {
+        cx: x, cy: y, r: 11.5, fill: c, "fill-opacity": ".16",
+        stroke: c, "stroke-width": "1.4", class: "ring"
+      }));
+      // 内芯：实心圆
+      g.appendChild(svgEl("circle", { cx: x, cy: y, r: 8, fill: c, stroke: "#fdfbf5", "stroke-width": "1.6", class: "dot" }));
+      // 序号（与时间轴顺序对应）
+      const seq = svgEl("text", { x: x, y: y, class: "seq", "text-anchor": "middle" });
+      seq.style.dominantBaseline = "central";
+      seq.textContent = i + 1;
+      g.appendChild(seq);
 
       // 标签：古地名 + 今地名（古今对照）
-      const label = svgEl("text", { x: x + 11, y: y + 1, class: "gname" });
+      const label = svgEl("text", { x: x + 17, y: y + 1, class: "gname" });
       label.style.dominantBaseline = "middle";
       label.textContent = n.place;
       g.appendChild(label);
-      const mod = svgEl("text", { x: x + 11, y: y + 17, class: "modern" });
+      const mod = svgEl("text", { x: x + 17, y: y + 19, class: "modern" });
       mod.textContent = n.modern.replace("今", "");
       g.appendChild(mod);
 
