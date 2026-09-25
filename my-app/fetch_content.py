@@ -233,7 +233,9 @@ def main():
                     if not parsed["poem_id"]:
                         continue
                     cur.execute(
-                        "INSERT OR IGNORE INTO poems VALUES (?,?,?,?,?,?,?)",
+                        "INSERT OR IGNORE INTO poems "
+                        "(poem_id, title, poet, dynasty, content, translation, annotation) "
+                        "VALUES (?,?,?,?,?,?,?)",
                         (parsed["poem_id"], parsed["title"], parsed["poet"],
                          parsed["dynasty"], parsed["content"],
                          parsed["translation"], parsed["annotation"]),

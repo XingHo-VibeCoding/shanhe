@@ -302,7 +302,7 @@ def search_smart(keyword, page):
     if poet_rows:
         poet_total = db_query("SELECT COUNT(*) AS c FROM poems WHERE poet = ?", (keyword,))
         total = poet_total[0]["c"] if poet_total else len(poet_rows)
-        return jsonify(_poems_from_db(poet_rows, total, page))
+        return jsonify(_poems_from_db(poet_rows, total, page, poet=keyword))
 
     # 2. 本地库按诗名查（精确匹配标题，同名里名篇在前）
     title_rows = db_query(
@@ -338,8 +338,9 @@ def search_smart(keyword, page):
     return jsonify(apihz_search(keyword, page))
 
 
-def _poems_from_db(rows, total, page):
-    """把数据库查到的作品行，组装成前端可渲染的结构（兼容 API 返回格式）"""
+def _poems_from_db(rows, total, page, poet=None):
+    """把数据库查到的作品行，组装成前端可渲染的结构（兼容 API 返回格式）。
+    poet 传作者名时，附带 poet_info 表里的作者简介。"""
     poem_info = []
     for r in rows:
         poem_info.append({
@@ -350,13 +351,26 @@ def _poems_from_db(rows, total, page):
             "content": r.get("content", ""),
             "translation": r.get("translation", ""),
             "annotation": r.get("annotation", ""),
+            "background": r.get("background", "") or "",
+            "appreciation": r.get("appreciation", "") or "",
         })
-    return {
+    result = {
         "ret_code": "0",
         "match_type": "db",
         "allNum": total,
         "poemInfo": poem_info,
     }
+    if poet:
+        info = db_query(
+            "SELECT name, dynasty, intro FROM poet_info WHERE name = ?", (poet,)
+        )
+        if info:
+            result["poetInfo"] = {
+                "poet": info[0]["name"],
+                "dynasty": info[0]["dynasty"] or "",
+                "biography": info[0]["intro"],
+            }
+    return result
 
 
 def find_same_titles(keyword):
