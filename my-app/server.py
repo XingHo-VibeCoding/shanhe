@@ -198,6 +198,13 @@ def home():
     return send_from_directory(FRONTEND_DIR, "index.html")
 
 
+@app.route("/<path:filename>")
+def static_files(filename):
+    """提供其余前端静态文件（home.html / footprints.html / tour.html / assets / data 等）。
+    send_from_directory 自带路径穿越防护，不会读到目录外的文件。"""
+    return send_from_directory(FRONTEND_DIR, filename)
+
+
 @app.route("/suggest")
 def suggest():
     """
@@ -447,4 +454,6 @@ if __name__ == "__main__":
     if not APPKEY:
         print("⚠️  警告：未在 .env 中找到 SHOWAPI_APPKEY，接口将无法调用。")
     print("诗迹山河后端启动中 → http://localhost:5000")
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    # 部署沙箱要求监听 $PORT 环境变量并绑定 0.0.0.0；本地默认仍为 5000
+    port = int(os.environ.get("PORT", "5000"))
+    app.run(host="0.0.0.0", port=port, debug=False)

@@ -343,7 +343,7 @@
 
   <div class="container">
     <div class="search-box">
-      <input id="searchInput" type="text" placeholder="输入诗人姓名或诗词名，如：李白、杜甫、静夜思" autocomplete="off" oninput="onInputChange()" onkeydown="onInputKeydown(event)">
+      <input id="searchInput" type="text" placeholder="输入诗人姓名或诗词名，如：李白、杜甫、静夜思" autocomplete="off" oninput="onInputChange()" oncompositionend="onInputChange()" onkeydown="onInputKeydown(event)">
       <button onclick="searchPoems(1)">查询</button>
       <div class="suggest-list" id="suggestList"></div>
     </div>
@@ -354,8 +354,8 @@
   </div>
 
   <script>
-    // 本地后端地址（密钥在后端，前端看不到）
-    const API_BASE = "http://127.0.0.1:5000";
+    // 后端地址：留空走同源相对路径（本地/线上部署都通），密钥在后端，前端看不到
+    const API_BASE = "";
 
     // 当前搜索状态
     let currentPoet = "";
@@ -594,7 +594,7 @@
       }
       box.innerHTML = suggestItems.map((s, i) => `
         <div class="suggest-item ${i === suggestIndex ? "hover" : ""}"
-             onmousedown="pickSuggestion(${i})"
+             onclick="pickSuggestion(${i})"
              onmouseenter="suggestIndex=${i}; renderSuggest();">
           <div class="si-title">${escapeHtml(s.title)}</div>
           <div class="si-meta">${escapeHtml(s.poet)} · ${escapeHtml(s.dynasty)}</div>
