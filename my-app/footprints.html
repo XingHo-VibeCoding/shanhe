@@ -289,6 +289,113 @@
   }
   .empty .e-msg { margin-bottom: 16px; }
 
+  /* ===== 入场动画（点击「诗人足迹」后播放 · 电影长卷版） ===== */
+  #intro {
+    position: fixed; inset: 0; z-index: 99;
+    background: radial-gradient(ellipse at 50% 34%, #26211a 0%, #17130e 62%, #0d0b07 100%);
+    cursor: pointer;
+    overflow: hidden;
+    color: #e8ddc4;
+  }
+  #intro.out { opacity: 0; transition: opacity .9s ease-out; pointer-events: none; }
+  /* 暗角（电影画面四周压暗） */
+  #intro::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 46%, transparent 52%, rgba(0,0,0,.5) 100%);
+  }
+  /* 流动的山岚 */
+  #intro .mist {
+    position: absolute; width: 140vw; height: 60vh; pointer-events: none;
+    background: radial-gradient(ellipse, rgba(214,190,148,.06) 0%, transparent 68%);
+  }
+  #intro .mist.m1 { top: 6%; left: -22vw; animation: mistDrift 16s ease-in-out -3s infinite alternate; }
+  #intro .mist.m2 { bottom: -8%; right: -32vw; animation: mistDrift 21s ease-in-out infinite alternate; }
+  @keyframes mistDrift { from { transform: translateX(0); } to { transform: translateX(6vw); } }
+  /* 远山剪影 */
+  #intro .mtn { position: absolute; left: 0; bottom: 0; width: 100%; height: 24vh; opacity: 0; animation: introMtn 1.4s ease-out both; }
+  @keyframes introMtn { from { opacity: 0; transform: translateY(56px); } to { opacity: 1; transform: translateY(0); } }
+  /* 诗人帧：一位诗人独占一幕 */
+  #intro .frame {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; gap: clamp(18px, 4vw, 48px);
+    opacity: 0;
+    animation: frameCycle 1.3s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes frameCycle {
+    0%   { opacity: 0; }
+    18%  { opacity: 1; }
+    78%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  #intro .namecol { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  #intro .pname {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    writing-mode: vertical-rl;
+    font-size: clamp(44px, 9vw, 84px);
+    font-weight: 500;
+    color: #f0e6cd;
+    letter-spacing: 14px;
+    text-shadow: 0 0 24px rgba(232,221,196,.18);
+  }
+  #intro .seal {
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    background: #a3402f; color: #f5ecd8;
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 17px;
+    border-radius: 3px;
+    transform: rotate(-3deg);
+    box-shadow: 0 0 14px rgba(163,64,47,.35);
+  }
+  #intro .verse {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: clamp(26px, 5.4vw, 46px);
+    letter-spacing: clamp(4px, 1vw, 10px);
+    color: #e8ddc4;
+    white-space: nowrap;
+  }
+  #intro .verse .ch { display: inline-block; opacity: 0; animation: chIn .55s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes chIn { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+  /* 主角帧（苏轼）：名句染朱红 */
+  #intro .frame.hero .verse { color: #d4694f; }
+  #intro .frame.hero .verse .ch { text-shadow: 0 0 26px rgba(212,105,79,.32); }
+  /* 卷末题名 */
+  #introTitle {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center; opacity: 0;
+    animation: introTitle 1.1s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes introTitle { from { opacity: 0; transform: translate(-50%, -46%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+  #introTitle h2 {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: clamp(34px, 6.5vw, 58px);
+    font-weight: 500;
+    color: #f0e6cd;
+    letter-spacing: 20px;
+    padding-left: 20px;
+    white-space: nowrap;
+  }
+  #introTitle p { font-size: 13px; color: #a3916f; letter-spacing: 7px; padding-left: 7px; margin-top: 14px; white-space: nowrap; }
+  /* 底部行迹进度线：朱红一线从左走到右，即「足迹」 */
+  #introTrack { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: rgba(232,221,196,.07); }
+  #introTrack::after {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 0;
+    background: linear-gradient(90deg, #7a2f22, #c4523d);
+    animation: trackGrow 5.6s linear both;
+  }
+  @keyframes trackGrow { to { width: 100%; } }
+  #introSkip {
+    position: absolute; right: 22px; bottom: 20px;
+    font-size: 12px; color: #a3916f; letter-spacing: 3px;
+    opacity: 0; animation: skipIn .8s ease-out 1s both;
+  }
+  @keyframes skipIn { to { opacity: .85; } }
+  @media (max-width: 560px) {
+    #intro .frame { flex-direction: column; gap: 22px; }
+    #intro .pname { writing-mode: horizontal-tb; letter-spacing: 10px; }
+  }
+
   /* ===== 响应式 ===== */
   @media (max-width: 920px) {
     .layout { grid-template-columns: 1fr; }
@@ -639,6 +746,128 @@
       document.getElementById("timeline").innerHTML =
         '<div class="empty">足迹长卷未能展开：' + esc(e.message) + '<br>请确认通过 http://localhost:8080 访问（非本地文件打开）<br><a href="javascript:location.reload()" style="display:inline-block;margin-top:12px;padding:8px 24px;font-family:\'STKaiti\',\'KaiTi\',\'楷体\',serif;font-size:14px;letter-spacing:2px;color:#fdfbf5;background:#a3402f;border-radius:18px;text-decoration:none;transition:background .2s,transform .2s;" onmouseover="this.style.background=\'#8f3526\';this.style.transform=\'scale(1.05)\'" onmouseout="this.style.background=\'#a3402f\';this.style.transform=\'\'">重试</a></div>';
     });
+</script>
+
+<script>
+/* ===== 诗人足迹 · 入场动画（电影长卷版） =====
+   暗色水墨影幕：山岚流动、远山浮现，八位诗人逐一登场——
+   竖排大名 + 朱红朝代印章 + 名句逐字亮起，
+   末幕苏轼「一蓑烟雨任平生」染朱收束，题「诗人足迹」后
+   整幕淡出、展开行迹长卷（暗→亮的转场即「入卷」）。
+   · 点击任意处 / 回车 / ESC / 空格 跳过
+   · 系统开启「减弱动态效果」时不播放 */
+(function () {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  var POETS = [
+    { name: "李白",   dynasty: "唐", verse: "天生我材必有用" },
+    { name: "王维",   dynasty: "唐", verse: "明月松间照" },
+    { name: "杜甫",   dynasty: "唐", verse: "会当凌绝顶" },
+    { name: "白居易", dynasty: "唐", verse: "最爱湖东行不足" },
+    { name: "李清照", dynasty: "宋", verse: "生当作人杰" },
+    { name: "陆游",   dynasty: "宋", verse: "铁马冰河入梦来" },
+    { name: "辛弃疾", dynasty: "宋", verse: "醉里挑灯看剑" },
+    { name: "苏轼",   dynasty: "宋", verse: "一蓑烟雨任平生", hero: true }
+  ];
+  var FRAME_STEP = 0.62;                             // 每幕间隔（秒）
+  var TITLE_AT = POETS.length * FRAME_STEP - 0.2;    // 题名登场时刻（秒）
+  var DISMISS_AT = (TITLE_AT + 1.7) * 1000;          // 自动收幕（毫秒）
+
+  var NS = "http://www.w3.org/2000/svg";
+  var intro = document.createElement("div");
+  intro.id = "intro";
+  intro.setAttribute("aria-hidden", "true");
+
+  /* 山岚（两层，反向缓慢漂移） */
+  ["m1", "m2"].forEach(function (c) {
+    var m = document.createElement("div");
+    m.className = "mist " + c;
+    intro.appendChild(m);
+  });
+
+  /* 远山剪影（贴底，两端拉伸） */
+  var mtn = document.createElementNS(NS, "svg");
+  mtn.setAttribute("class", "mtn");
+  mtn.setAttribute("viewBox", "0 0 1000 200");
+  mtn.setAttribute("preserveAspectRatio", "none");
+  [
+    ["M0 200 L0 122 Q 125 30 250 110 Q 360 170 470 88 Q 600 8 720 95 Q 850 168 1000 96 L 1000 200 Z", ".5"],
+    ["M0 200 L0 152 Q 150 82 300 146 Q 430 196 560 132 Q 700 72 840 142 Q 930 176 1000 152 L 1000 200 Z", ".65"]
+  ].forEach(function (m) {
+    var p = document.createElementNS(NS, "path");
+    p.setAttribute("d", m[0]);
+    p.setAttribute("fill", "#080604");
+    p.setAttribute("fill-opacity", m[1]);
+    mtn.appendChild(p);
+  });
+  intro.appendChild(mtn);
+
+  /* 诗人帧：一幕一诗人，交叉淡入淡出 */
+  POETS.forEach(function (p, i) {
+    var f = document.createElement("div");
+    f.className = "frame" + (p.hero ? " hero" : "");
+    f.style.animationDelay = (i * FRAME_STEP) + "s";
+
+    var verse = document.createElement("div");
+    verse.className = "verse";
+    p.verse.split("").forEach(function (ch, j) {
+      var s = document.createElement("span");
+      s.className = "ch";
+      s.textContent = ch;
+      s.style.animationDelay = (i * FRAME_STEP + 0.12 + j * 0.05) + "s";
+      verse.appendChild(s);
+    });
+
+    var col = document.createElement("div");
+    col.className = "namecol";
+    var seal = document.createElement("div");
+    seal.className = "seal";
+    seal.textContent = p.dynasty;
+    var nm = document.createElement("div");
+    nm.className = "pname";
+    nm.textContent = p.name;
+    col.appendChild(seal);
+    col.appendChild(nm);
+
+    f.appendChild(verse);
+    f.appendChild(col);
+    intro.appendChild(f);
+  });
+
+  /* 卷末题名 */
+  var title = document.createElement("div");
+  title.id = "introTitle";
+  title.style.animationDelay = TITLE_AT + "s";
+  title.innerHTML = "<h2>诗人足迹</h2><p>山河为卷 · 足印成诗</p>";
+
+  var track = document.createElement("div");
+  track.id = "introTrack";
+
+  var skip = document.createElement("div");
+  skip.id = "introSkip";
+  skip.textContent = "轻点任意处 · 展开长卷";
+
+  intro.appendChild(title);
+  intro.appendChild(track);
+  intro.appendChild(skip);
+  document.body.appendChild(intro);
+
+  /* 收幕：手动跳过或到时自动淡出 */
+  var closed = false;
+  function dismiss() {
+    if (closed) return;
+    closed = true;
+    intro.classList.add("out");
+    setTimeout(function () { intro.remove(); }, 1000);
+    document.removeEventListener("keydown", onKey);
+  }
+  function onKey(e) {
+    if (e.key === "Escape" || e.key === "Enter" || e.key === " ") dismiss();
+  }
+  intro.addEventListener("click", dismiss);
+  document.addEventListener("keydown", onKey);
+  setTimeout(dismiss, DISMISS_AT);
+})();
 </script>
 </body>
 </html>
