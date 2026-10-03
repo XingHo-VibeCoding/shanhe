@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>诗人足迹 · 入场动画方案对比（临时文件，选完即删）</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d0b07; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+  .head { padding: 44px 20px 32px; text-align: center; color: #e8ddc4; }
+  .head h1 { font-family: "STKaiti", "KaiTi", "楷体", serif; font-size: 26px; letter-spacing: 6px; font-weight: 500; }
+  .head p { font-size: 13px; color: #a3916f; margin-top: 10px; letter-spacing: 2px; line-height: 1.9; }
+
+  .stage { position: relative; height: 100vh; overflow: hidden; }
+  .label { position: absolute; top: 16px; left: 16px; z-index: 30; background: rgba(13,11,7,.78); color: #e8ddc4; font-size: 13px; letter-spacing: 2px; padding: 7px 14px; border-radius: 4px; border: 1px solid rgba(232,221,196,.2); }
+  .replay { position: absolute; right: 16px; top: 16px; z-index: 30; background: rgba(163,64,47,.88); color: #f5ecd8; border: none; font-size: 13px; letter-spacing: 2px; padding: 7px 14px; border-radius: 4px; cursor: pointer; }
+  .replay:hover { background: #a3402f; }
+
+  .beat { position: absolute; opacity: 0; }
+  .bmeta { font-size: 14px; letter-spacing: 6px; }
+  .bverse { font-family: "STKaiti", "KaiTi", "楷体", serif; white-space: nowrap; }
+  .ch { display: inline-block; opacity: 0; }
+  .stage.run .beat { animation: beatCycle 1.35s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes beatCycle { 0% { opacity: 0; } 16% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+  .stage.run .ch { animation: chIn .5s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes chIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .ttl { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; opacity: 0; z-index: 10; }
+  .stage.run .ttl { animation: ttlIn 1.1s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes ttlIn { from { opacity: 0; transform: translate(-50%,-44%); } to { opacity: 1; transform: translate(-50%,-50%); } }
+  .ttl h2 { font-family: "STKaiti", "KaiTi", "楷体", serif; font-weight: 500; letter-spacing: 18px; padding-left: 18px; white-space: nowrap; }
+  .ttl p { font-size: 13px; letter-spacing: 6px; padding-left: 6px; margin-top: 12px; white-space: nowrap; }
+
+  /* ===== 方案 A：名画运镜（千里江山图为底 + 右侧竖排题款） ===== */
+  .vA .bg { position: absolute; inset: -8%; background: url(assets/pic_qljs.jpg) center 35% / cover; }
+  .stage.run .vA .bg { animation: panA 10s linear both; }
+  @keyframes panA { from { transform: scale(1.18) translate3d(3%,0,0); } to { transform: scale(1.06) translate3d(-3%,0,0); } }
+  /* 渐变从左淡到右浓，给右侧题款留深底以保证文字可读 */
+  .vA .shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8,6,3,.12) 0%, rgba(8,6,3,.04) 30%, rgba(8,6,3,.5) 68%, rgba(8,6,3,.82) 100%); }
+  /* 右侧题款列：朱红印章 + 竖排大名 + 竖排名句（整列淡入，不逐字弹） */
+  .vA .beat { right: 9%; left: auto; bottom: auto; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: flex-end; gap: 16px; }
+  .vA .bmeta { display: contents; }
+  .vA .sep { display: none; }
+  .vA .bdyn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    background: #a3402f; color: #f5ecd8; border-radius: 3px; transform: rotate(-3deg);
+    font-family: "STKaiti","KaiTi","楷体",serif; font-size: 16px; order: 3;
+    box-shadow: 0 0 14px rgba(163,64,47,.4); }
+  .vA .bname { writing-mode: vertical-rl; font-family: "STKaiti","KaiTi","楷体",serif;
+    font-size: clamp(36px, 7vw, 60px); color: #f2e9d2; letter-spacing: 12px; order: 1;
+    text-shadow: 0 2px 16px rgba(0,0,0,.6); }
+  .vA .bverse { writing-mode: vertical-rl; font-family: "STKaiti","KaiTi","楷体",serif;
+    font-size: clamp(22px, 4vw, 36px); color: #e8dcc0; letter-spacing: 7px; order: 2;
+    text-shadow: 0 2px 14px rgba(0,0,0,.55); }
+  .vA .beat.hero .bverse { color: #e8b89c; }
+  .vA .beat.hero .bdyn { background: #c4523d; }
+  .stage.run .vA .beat { animation: beatA 1.4s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes beatA {
+    0%   { opacity: 0; transform: translateY(-50%) translateX(24px); }
+    16%  { opacity: 1; transform: translateY(-50%) translateX(0); }
+    80%  { opacity: 1; transform: translateY(-50%) translateX(0); }
+    100% { opacity: 0; transform: translateY(-50%) translateX(0); }
+  }
+  .stage.run .vA .ch { animation: none; opacity: 1; }   /* A 整句随列出，不逐字弹跳 */
+  .vA .ttl h2 { font-size: clamp(34px, 6vw, 56px); color: #f2e9d2; text-shadow: 0 2px 22px rgba(0,0,0,.6); }
+  .vA .ttl p { color: #d8cba9; }
+
+  /* ===== 方案 B：暗幕大字（纯排版，一句占满一屏） ===== */
+  .vB { background: radial-gradient(ellipse at 50% 36%, #221d15 0%, #14100b 62%, #0b0906 100%); }
+  .vB::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 46%, transparent 50%, rgba(0,0,0,.55) 100%); }
+  .vB .beat { left: 50%; top: 44%; transform: translate(-50%,-50%); }
+  .vB .bmeta { color: #a3916f; text-align: center; margin-bottom: 14px; }
+  .vB .bverse { font-size: clamp(34px, 6.4vw, 64px); color: #ede2c7; letter-spacing: clamp(6px, 1.4vw, 14px); text-align: center; text-shadow: 0 0 30px rgba(237,226,199,.14); }
+  .vB .beat.hero .bverse { color: #d4694f; text-shadow: 0 0 34px rgba(212,105,79,.3); }
+  .vB .ttl h2 { font-size: clamp(32px, 6vw, 54px); color: #ede2c7; }
+  .vB .ttl p { color: #a3916f; }
+
+  /* ===== 方案 C：宣纸墨晕（浅色 + 水墨晕染 + 潇湘图压底） ===== */
+  .vC { background: #f4eee1; }
+  .vC .blob { position: absolute; width: 46vw; height: 46vw; border-radius: 50%; background: radial-gradient(circle, rgba(58,50,38,.14) 0%, rgba(58,50,38,.05) 52%, transparent 72%); filter: blur(28px); opacity: 0; }
+  .vC .blob.b1 { top: 6%; left: -8vw; }
+  .vC .blob.b2 { bottom: -10%; right: -6vw; }
+  .stage.run .vC .blob { animation: bloom 6.5s ease-out both; }
+  @keyframes bloom { 0% { transform: scale(.15); opacity: 0; } 30% { opacity: .85; } 100% { transform: scale(1.1); opacity: .65; } }
+  .vC .paint { position: absolute; left: 0; right: 0; bottom: 0; height: 30%; background: url(assets/xiaoxiang.jpg) center 60% / cover; opacity: .92;
+    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,.95), transparent); mask-image: linear-gradient(to top, rgba(0,0,0,.95), transparent); }
+  .vC .beat { left: 50%; top: 40%; transform: translate(-50%,-50%); }
+  .vC .bmeta { color: #8a7a5f; text-align: center; margin-bottom: 12px; }
+  .vC .bverse { font-size: clamp(30px, 5.4vw, 52px); color: #3a3226; letter-spacing: clamp(6px, 1.2vw, 12px); text-align: center; }
+  .vC .beat.hero .bverse { color: #a3402f; }
+  .vC .ttl h2 { font-size: clamp(30px, 5.6vw, 50px); color: #3a3226; }
+  .vC .ttl p { color: #8a7a5f; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>入场动画 · 三个方案</h1>
+    <p>往下滚动，每个方案自动播放一遍（右上角可重播）<br>看完回我一个字母：A / B / C —— 选完我把选中的装进「诗人足迹」并删掉这个临时页</p>
+  </div>
+
+  <section class="stage vA" id="stageA">
+    <div class="label">方案 A · 名画运镜（千里江山图为底）</div>
+    <button class="replay">↻ 重播</button>
+    <div class="scr" id="scrA"></div>
+  </section>
+
+  <section class="stage vB" id="stageB">
+    <div class="label">方案 B · 暗幕大字（一句占满一屏）</div>
+    <button class="replay">↻ 重播</button>
+    <div class="scr" id="scrB"></div>
+  </section>
+
+  <section class="stage vC" id="stageC">
+    <div class="label">方案 C · 宣纸墨晕（浅色水墨 + 潇湘图压底）</div>
+    <button class="replay">↻ 重播</button>
+    <div class="scr" id="scrC"></div>
+  </section>
+
+<script>
+  var POETS = [
+    { name: "李白",   dynasty: "唐", verse: "天生我材必有用" },
+    { name: "王维",   dynasty: "唐", verse: "明月松间照" },
+    { name: "杜甫",   dynasty: "唐", verse: "会当凌绝顶" },
+    { name: "白居易", dynasty: "唐", verse: "最爱湖东行不足" },
+    { name: "李清照", dynasty: "宋", verse: "生当作人杰" },
+    { name: "陆游",   dynasty: "宋", verse: "铁马冰河入梦来" },
+    { name: "辛弃疾", dynasty: "宋", verse: "醉里挑灯看剑" },
+    { name: "苏轼",   dynasty: "宋", verse: "一蓑烟雨任平生", hero: true }
+  ];
+  var STEP = 0.85;
+  var TITLE_AT = POETS.length * STEP - 0.25;
+
+  function beatsHtml() {
+    var html = "";
+    POETS.forEach(function (p, i) {
+      var chars = "";
+      p.verse.split("").forEach(function (ch, j) {
+        chars += '<span class="ch" style="animation-delay:' + (i * STEP + 0.12 + j * 0.045) + 's">' + ch + '</span>';
+      });
+      html += '<div class="beat' + (p.hero ? " hero" : "") + '" style="animation-delay:' + (i * STEP) + 's">'
+           +   '<div class="bmeta"><span class="bdyn">' + p.dynasty + '</span><span class="sep"> · </span><span class="bname">' + p.name + '</span></div>'
+           +   '<div class="bverse">' + chars + '</div>'
+           + '</div>';
+    });
+    return html;
+  }
+  var ttlHtml = '<div class="ttl" style="animation-delay:' + TITLE_AT + 's"><h2>诗人足迹</h2><p>山河为卷 · 足印成诗</p></div>';
+
+  document.getElementById("scrA").innerHTML = '<div class="bg"></div><div class="shade"></div>' + beatsHtml() + ttlHtml;
+  document.getElementById("scrB").innerHTML = beatsHtml() + ttlHtml;
+  document.getElementById("scrC").innerHTML = '<div class="blob b1"></div><div class="blob b2"></div><div class="paint"></div>' + beatsHtml() + ttlHtml;
+
+  /* 滚动到可视区自动播一遍；重播按钮可反复看 */
+  document.querySelectorAll(".stage").forEach(function (st) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        if (en.isIntersecting) { run(); io.disconnect(); }
+      });
+    }, { threshold: 0.4 });
+    io.observe(st);
+    st.querySelector(".replay").addEventListener("click", function (e) { e.stopPropagation(); run(); });
+    function run() {
+      st.classList.remove("run");
+      void st.offsetWidth;   // 强制回流，让动画从头播
+      st.classList.add("run");
+    }
+  });
+</script>
+</body>
+</html>
