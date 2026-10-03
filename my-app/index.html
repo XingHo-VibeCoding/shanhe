@@ -306,6 +306,30 @@
       font-weight: 500;
       margin-bottom: 10px;
     }
+    .recommend-head {
+      font-family: "STKaiti", "KaiTi", "楷体", serif;
+      font-size: 17px;
+      font-weight: 500;
+      color: #3a3226;
+      letter-spacing: 4px;
+      margin: 6px 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .recommend-head::before,
+    .recommend-head::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #d8cdb8;
+    }
+    .poem-card h2 a {
+      color: #3a3226;
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .poem-card h2 a:hover { color: #a3402f; }
     .title-item {
       background: #fdfbf5;
       border: 1px solid #d8cdb8;
@@ -370,7 +394,8 @@
       result.innerHTML = '<div class="loading">正在查询诗词库，请稍候…</div>';
 
       if (!keyword) {
-        result.innerHTML = '<div class="empty">请输入诗人姓名或诗词名再查询</div>';
+        // 无输入 → 展示推荐诗词
+        loadRecommendations();
         return;
       }
 
@@ -405,6 +430,56 @@
     function fillSearch(kw) {
       document.getElementById("searchInput").value = kw;
       searchPoems(1);
+    }
+
+    // ========== 推荐诗词（无输入时展示本地名篇） ==========
+    async function loadRecommendations() {
+      const result = document.getElementById("result");
+      const count = document.getElementById("count");
+      count.textContent = "";
+      result.innerHTML = '<div class="loading">正在挑选名篇，请稍候…</div>';
+      currentPoet = "";
+      currentPage = 1;
+      totalPages = 1;
+
+      try {
+        const resp = await fetch(API_BASE + "/recommend");
+        const json = await resp.json();
+        if (json.ret_code !== "0" || !(json.poemInfo || []).length) {
+          result.innerHTML = '<div class="empty">推荐暂不可用，输入诗人姓名或诗词名开始查询</div>';
+          return;
+        }
+        renderRecommendations(json.poemInfo);
+      } catch (e) {
+        result.innerHTML = '<div class="error">推荐暂时取不到——后端服务可能没有启动。'
+          + '<div class="err-detail">（技术信息：' + e.message + '）</div>'
+          + '<button class="retry-btn" onclick="loadRecommendations()">重试</button></div>';
+      }
+    }
+
+    function renderRecommendations(list) {
+      const result = document.getElementById("result");
+      const cards = list.map(p => {
+        const title = p.title || "无题";
+        const author = p.poet || "佚名";
+        const dynasty = p.dynasty || "未知";
+        const contentHtml = p.content || "（无内容）";
+        const transHtml = p.translation || "";
+        const annHtml = p.annotation || "";
+        return `
+          <div class="poem-card">
+            <h2><a href="detail.html?title=${encodeURIComponent(title)}">${escapeHtml(title)}</a></h2>
+            <div class="poem-meta">${escapeHtml(author)} · ${escapeHtml(dynasty)}</div>
+            <div class="poem-content">${escapeHtml(contentHtml)}</div>
+            <div class="section-title">译文</div>
+            <div class="translation">${escapeHtml(transHtml) || "（暂无译文）"}</div>
+            <div class="section-title">注释</div>
+            <div class="annotation">${escapeHtml(annHtml) || "（暂无注释）"}</div>
+          </div>
+        `;
+      }).join("");
+      result.innerHTML = '<div class="recommend-head">推 荐 诗 词</div>' + cards;
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function renderResult(json) {
@@ -654,12 +729,17 @@
       }
     });
 
-    // 初始化：若链接带了 keyword 参数（从首页搜索框跳转而来）就自动搜它，否则默认展示李白
+    // 初始化：若链接带了 keyword 参数（从首页搜索框跳转而来）就自动搜它；
+    // 否则保持输入框清空，下方展示推荐诗词
     (function init() {
       const params = new URLSearchParams(location.search);
-      const kw = params.get("keyword");
-      document.getElementById("searchInput").value = kw || "李白";
-      searchPoems(1);
+      const kw = (params.get("keyword") || "").trim();
+      document.getElementById("searchInput").value = kw;
+      if (kw) {
+        searchPoems(1);
+      } else {
+        loadRecommendations();
+      }
     })();
   </script>
 </body>

@@ -205,6 +205,40 @@ def static_files(filename):
     return send_from_directory(FRONTEND_DIR, filename)
 
 
+@app.route("/recommend")
+def recommend():
+    """
+    推荐诗词接口：查询页无输入时展示的名篇推荐。
+    从本地 poems.db 按知名度（popularity）降序取 8 首，
+    优先返回带译文的（五件套更完整），不足时用其他名篇补齐。
+    返回格式与 /search 的本地库结果一致，前端可复用渲染逻辑。
+    """
+    limit = 8
+    rows = db_query(
+        "SELECT * FROM poems WHERE content != '' AND translation != '' "
+        "ORDER BY popularity DESC, title LIMIT ?",
+        (limit,),
+    )
+    if len(rows) < limit:
+        seen = {(r.get("title"), r.get("poet")) for r in rows}
+        extra = db_query(
+            "SELECT * FROM poems WHERE content != '' "
+            "ORDER BY popularity DESC, title LIMIT 50"
+        )
+        for r in extra:
+            key = (r.get("title"), r.get("poet"))
+            if key in seen:
+                continue
+            rows.append(r)
+            seen.add(key)
+            if len(rows) >= limit:
+                break
+
+    result = _poems_from_db(rows, len(rows), 1)
+    result["match_type"] = "recommend"
+    return jsonify(result)
+
+
 @app.route("/suggest")
 def suggest():
     """
