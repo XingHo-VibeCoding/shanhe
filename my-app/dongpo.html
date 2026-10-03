@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>苏轼｜此身如传舍，何处是吾乡</title>
+
+<!-- 字体：思源宋体（标题）/ 思源黑体（正文） -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --paper: #f3ebd9;
+    --paper-light: #faf4e6;
+    --paper-dark: #e8dcc0;
+    --ink: #2a241e;
+    --ink-soft: #5a5043;
+    --ink-light: #8a7a5f;
+    --qingdai: #3d5560;
+    --zhusha: #a3402f;
+    --zhusha-soft: #c9614a;
+    --muted: #a89980;
+    --border: rgba(42, 36, 30, 0.15);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.8;
+    overflow-x: hidden;
+    position: relative;
+    --scroll: 0;
+  }
+
+  /* 背景水墨晕染（径向渐变 + 远山 SVG） */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 15% 85%, rgba(61, 85, 96, 0.08), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 85% 15%, rgba(163, 64, 47, 0.05), transparent 70%),
+      radial-gradient(ellipse 100% 60% at 50% 100%, rgba(42, 36, 30, 0.06), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    transform: translateY(calc(var(--scroll) * -0.12px));
+    transition: transform 0.3s ease-out;
+  }
+
+  /* 底部远山剪影 */
+  body::after {
+    content: '';
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 32vh;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 300' preserveAspectRatio='xMidYMax slice'><path d='M0 300 L0 180 Q 150 100 280 170 Q 380 220 480 140 Q 600 60 720 150 Q 850 220 980 130 Q 1100 80 1200 160 L 1200 300 Z' fill='%233a3226' fill-opacity='0.07'/><path d='M0 300 L0 220 Q 200 160 380 210 Q 540 250 720 180 Q 900 120 1080 200 Q 1180 240 1200 220 L 1200 300 Z' fill='%233a3226' fill-opacity='0.1'/></svg>") center bottom / cover no-repeat;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.8;
+    transform: translateY(calc(var(--scroll) * -0.05px));
+    transition: transform 0.3s ease-out;
+  }
+
+  h1, h2, h3, .serif {
+    font-family: "Noto Serif SC", "STSong", "SimSun", serif;
+    font-weight: 700;
+  }
+
+  /* ===== Hero 首屏 ===== */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+  }
+
+  .hero-seal-top {
+    display: inline-block;
+    padding: 6px 12px;
+    border: 1.5px solid var(--zhusha);
+    color: var(--zhusha);
+    font-family: "Noto Serif SC", serif;
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeIn 1.5s 0.2s ease-out forwards;
+  }
+
+  .hero-title {
+    font-size: clamp(80px, 16vw, 200px);
+    color: var(--ink);
+    letter-spacing: 0.3em;
+    padding-left: 0.3em;
+    font-weight: 900;
+    line-height: 1;
+    opacity: 0;
+    animation: fadeIn 2s 0.4s ease-out forwards;
+  }
+
+  .hero-divider {
+    width: 1px;
+    height: 70px;
+    background: var(--ink-light);
+    margin: 2.5rem auto;
+    transform-origin: top;
+    transform: scaleY(0);
+    animation: dividerGrow 1.2s 1.4s ease-out forwards;
+  }
+
+  @keyframes dividerGrow {
+    to { transform: scaleY(1); }
+  }
+
+  .hero-subtitle {
+    font-family: "Noto Serif SC", serif;
+    font-size: clamp(20px, 3.2vw, 30px);
+    color: var(--ink-soft);
+    letter-spacing: 0.4em;
+    padding-left: 0.4em;
+    opacity: 0;
+    animation: fadeIn 2s 1.6s ease-out forwards;
+  }
+
+  .hero-hint {
+    font-size: 13px;
+    color: var(--ink-light);
+    letter-spacing: 0.35em;
+    padding-left: 0.35em;
+    margin-top: 4rem;
+    opacity: 0;
+    animation: fadeIn 1.5s 2.8s ease-out forwards, bob 2s 4s ease-in-out infinite;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* ===== Journey Section ===== */
+  .journey-section {
+    padding: 5rem 2rem 6rem;
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .section-intro {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .section-intro h2 {
+    font-size: clamp(34px, 4.5vw, 54px);
+    color: var(--ink);
+    letter-spacing: 0.3em;
+    padding-left: 0.3em;
+    margin-bottom: 1rem;
+  }
+
+  .section-intro p {
+    font-family: "Noto Serif SC", serif;
+    font-size: clamp(15px, 1.8vw, 18px);
+    color: var(--ink-soft);
+    letter-spacing: 0.15em;
+  }
+
+  .map-wrap {
+    position: relative;
+    width: 100%;
+    height: 62vh;
+    min-height: 460px;
+    /* 古画装裱：外细框 + 内朱红细线双框 */
+    border: 1px solid rgba(42, 36, 30, 0.3);
+    outline: 1px solid rgba(163, 64, 47, 0.35);
+    outline-offset: -7px;
+    padding: 7px;
+    background: var(--paper-light);
+    box-shadow: 0 6px 36px rgba(42, 36, 30, 0.12);
+    overflow: hidden;
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+    background: var(--paper);
+  }
+
+  /* 水墨滤镜只作用于瓦片层——标记和朱红轨迹保持本色 */
+  .leaflet-tile-pane {
+    filter: grayscale(1) sepia(0.52) saturate(0.55) contrast(0.82) brightness(1.15);
+    opacity: 0.68;
+  }
+
+  /* 宣纸色罩 + 四角晕影（画卷感） */
+  .map-wash {
+    position: absolute; inset: 7px; z-index: 450;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at center, transparent 52%, rgba(90, 74, 50, 0.16) 100%),
+      linear-gradient(180deg, rgba(243,235,217,0.30), rgba(243,235,217,0.10) 32%, rgba(243,235,217,0.10) 68%, rgba(243,235,217,0.32));
+  }
+
+  /* 左下角淡淡的画卷题字水印 */
+  .map-mark {
+    position: absolute; left: 22px; bottom: 16px; z-index: 460;
+    pointer-events: none;
+    font-family: "Noto Serif SC", serif;
+    writing-mode: vertical-rl;
+    font-size: 15px;
+    color: rgba(90, 74, 50, 0.35);
+    letter-spacing: 0.35em;
+    line-height: 1;
+  }
+
+  /* 四角朱红角花（装裱角线） */
+  .map-frame {
+    position: absolute; inset: 14px; z-index: 460; pointer-events: none;
+    --c: rgba(163, 64, 47, 0.55);
+    background:
+      linear-gradient(var(--c), var(--c)) top left / 20px 1.5px,
+      linear-gradient(var(--c), var(--c)) top left / 1.5px 20px,
+      linear-gradient(var(--c), var(--c)) top right / 20px 1.5px,
+      linear-gradient(var(--c), var(--c)) top right / 1.5px 20px,
+      linear-gradient(var(--c), var(--c)) bottom left / 20px 1.5px,
+      linear-gradient(var(--c), var(--c)) bottom left / 1.5px 20px,
+      linear-gradient(var(--c), var(--c)) bottom right / 20px 1.5px,
+      linear-gradient(var(--c), var(--c)) bottom right / 1.5px 20px;
+    background-repeat: no-repeat;
+  }
+
+  /* ===== 足迹标记（古风印章式） ===== */
+  .dg-icon { background: none; border: none; }
+
+  .dg-marker {
+    position: relative;
+    width: 18px; height: 18px;
+  }
+
+  /* 扩大点击热区（标记太小不好点） */
+  .dg-marker::after {
+    content: '';
+    position: absolute; inset: -12px;
+    border-radius: 50%;
+  }
+
+  .dg-marker .dot {
+    position: absolute; inset: 3px;
+    border-radius: 50%;
+    background: var(--zhusha);
+    border: 2px solid #faf4e6;
+    box-shadow: 0 0 0 2px rgba(163, 64, 47, 0.3), 0 2px 8px rgba(163, 64, 47, 0.45);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, box-shadow 0.3s;
+  }
+
+  .dg-marker .halo {
+    position: absolute; inset: -5px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(163, 64, 47, 0.4);
+    opacity: 0.6;
+  }
+
+  .dg-marker .placelabel {
+    position: absolute;
+    top: 24px; left: 50%;
+    transform: translateX(-50%);
+    font-family: "Noto Serif SC", serif;
+    font-size: 12px;
+    color: #5a5043;
+    white-space: nowrap;
+    letter-spacing: 0.1em;
+    text-shadow: 0 1px 3px rgba(243, 235, 217, 0.95), 0 0 8px rgba(243, 235, 217, 0.95);
+    transition: color 0.3s, font-size 0.3s, opacity 0.25s;
+    opacity: 0; /* 默认隐藏：密集处地名会叠成一团 */
+  }
+
+  .dg-marker:hover .placelabel { opacity: 1; }
+  .dg-marker.now .placelabel { opacity: 1; }
+  /* 放大到一定级别后全部显示 */
+  .map-wrap.labels-on .dg-marker .placelabel { opacity: 1; }
+
+  /* 未到之站：空心淡色 */
+  .dg-marker.future .dot {
+    background: rgba(243, 235, 217, 0.9);
+    border-color: #b3a488;
+    box-shadow: 0 1px 4px rgba(42, 36, 30, 0.15);
+  }
+  .dg-marker.future .halo { border-color: rgba(138, 122, 95, 0.3); opacity: 0.5; }
+  .dg-marker.future .placelabel { color: #a89980; }
+
+  /* 当前之站：放大 + 光晕呼吸 + 朱红地名 */
+  .dg-marker.now .dot { transform: scale(1.35); }
+  .dg-marker.now .halo { animation: haloPulse 2.2s ease-in-out infinite; }
+  .dg-marker.now .placelabel { color: var(--zhusha); font-weight: 700; font-size: 13px; }
+
+  @keyframes haloPulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.6); opacity: 0.1; }
+  }
+
+  /* hover 光晕（柔和放大） */
+  .dg-marker:hover .dot { transform: scale(1.25); }
+  .dg-marker.now:hover .dot { transform: scale(1.45); }
+
+  /* ===== 徒步过渡：背行囊的书生（水墨剪影，固定侧身姿态，只做平移） ===== */
+  .walker-icon { background: none; border: none; }
+  .walker {
+    width: 44px; height: 54px;
+    filter: drop-shadow(0 3px 6px rgba(42, 36, 30, 0.28));
+  }
+  .walker svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  /* 移动端小人缩小，保持轻巧 */
+  @media (max-width: 768px) {
+    .walker { width: 34px; height: 42px; }
+  }
+
+  /* ===== 重走一生按钮 ===== */
+  .tour-btn {
+    position: absolute; left: 20px; top: 20px; z-index: 650;
+    font-family: "Noto Serif SC", serif;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    padding: 8px 14px 8px 16px;
+    background: rgba(250, 244, 230, 0.94);
+    color: var(--zhusha);
+    border: 1px solid rgba(163, 64, 47, 0.5);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 12px rgba(42, 36, 30, 0.14);
+    user-select: none;
+  }
+
+  .tour-btn:hover {
+    background: var(--zhusha);
+    color: #faf4e6;
+  }
+
+  .tour-btn.touring {
+    background: var(--zhusha);
+    color: #faf4e6;
+  }
+
+  /* 地图右上角朱红印章 */
+  .map-seal {
+    position: absolute;
+    top: 18px; right: 18px;
+    width: 56px; height: 56px;
+    background: var(--zhusha);
+    color: var(--paper-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: "Noto Serif SC", serif;
+    font-size: 16px;
+    font-weight: 700;
+    z-index: 600;
+    box-shadow: 0 3px 14px rgba(163, 64, 47, 0.3);
+    opacity: 0.92;
+    line-height: 1.15;
+    pointer-events: none;
+  }
+
+  /* ===== Timeline ===== */
+  .timeline {
+    margin-top: 3rem;
+    padding: 0 1rem;
+    position: relative;
+  }
+
+  .timeline-info {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    min-height: 100px;
+  }
+
+  .timeline-info .year {
+    font-family: "Noto Serif SC", serif;
+    font-size: clamp(40px, 6vw, 64px);
+    color: var(--zhusha);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    display: block;
+    line-height: 1.1;
+  }
+
+  .timeline-info .event {
+    font-size: clamp(15px, 1.8vw, 18px);
+    color: var(--ink-soft);
+    letter-spacing: 0.18em;
+    margin-top: 0.5rem;
+    display: block;
+  }
+
+  .timeline-track {
+    position: relative;
+    height: 60px;
+    margin: 1rem 0;
+    padding: 0 8px;
+  }
+
+  .timeline-line {
+    position: absolute;
+    top: 50%;
+    left: 8px; right: 8px;
+    height: 2px;
+    background: var(--ink-light);
+    opacity: 0.3;
+    transform: translateY(-50%);
+  }
+
+  .timeline-progress {
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    height: 2px;
+    background: var(--zhusha);
+    width: 0;
+    transform: translateY(-50%);
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .timeline-points {
+    position: absolute;
+    top: 50%;
+    left: 8px; right: 8px;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+  }
+
+  .tl-point {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--ink-light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .tl-point.passed {
+    background: var(--zhusha);
+    border-color: var(--zhusha);
+  }
+
+  .tl-point.active {
+    background: var(--zhusha);
+    border-color: var(--zhusha);
+    transform: scale(1.4);
+    box-shadow: 0 0 0 5px rgba(163, 64, 47, 0.18);
+  }
+
+  .tl-point:hover {
+    transform: scale(1.3);
+    border-color: var(--zhusha-soft);
+  }
+
+  .tl-point .tl-label {
+    position: absolute;
+    top: -26px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .tl-point:hover .tl-label,
+  .tl-point.active .tl-label {
+    opacity: 1;
+  }
+
+  /* ===== Poem Card ===== */
+  .poem-card {
+    position: fixed;
+    top: 50%; left: -440px;
+    transform: translateY(-50%);
+    width: 380px;
+    max-width: 90vw;
+    background: rgba(250, 244, 230, 0.97);
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 50px rgba(42, 36, 30, 0.22);
+    padding: 1.8rem 2rem;
+    z-index: 1000;
+    transition: left 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    border-left: 4px solid var(--zhusha);
+  }
+
+  .poem-card.show {
+    left: 24px;
+  }
+
+  .poem-card .close {
+    position: absolute;
+    top: 10px; right: 14px;
+    width: 28px; height: 28px;
+    font-size: 22px;
+    color: var(--ink-light);
+    cursor: pointer;
+    background: none;
+    border: none;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+  }
+
+  .poem-card .close:hover { color: var(--zhusha); }
+
+  .poem-card .year {
+    font-family: "Noto Serif SC", serif;
+    color: var(--zhusha);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.3rem;
+  }
+
+  .poem-card .place {
+    font-family: "Noto Serif SC", serif;
+    font-size: 28px;
+    color: var(--ink);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .poem-card .event {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px dashed var(--border);
+    line-height: 1.7;
+  }
+
+  .poem-card .poem-title {
+    font-family: "Noto Serif SC", serif;
+    font-size: 15px;
+    color: var(--qingdai);
+    margin-bottom: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  .poem-card .poem-text {
+    font-family: "Noto Serif SC", serif;
+    font-size: 17px;
+    color: var(--ink);
+    line-height: 2.2;
+    letter-spacing: 0.06em;
+  }
+
+  .poem-card .poem-text .line {
+    display: block;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: lineIn 1.2s ease-out forwards;
+  }
+
+  @keyframes lineIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== Epilogue 尾声 ===== */
+  .epilogue {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6rem 2rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .epilogue-content {
+    max-width: 740px;
+  }
+
+  .epilogue-content p {
+    font-family: "Noto Serif SC", serif;
+    font-size: clamp(17px, 2.2vw, 22px);
+    color: var(--ink-soft);
+    line-height: 2.4;
+    letter-spacing: 0.12em;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 1.6s ease-out, transform 1.6s ease-out;
+  }
+
+  .epilogue-content p.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .epilogue-content .quote {
+    font-size: clamp(26px, 4vw, 38px);
+    color: var(--zhusha);
+    margin: 2.5rem 0;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    line-height: 1.6;
+  }
+
+  .epilogue-end {
+    margin-top: 3rem;
+    font-size: 13px;
+    color: var(--ink-light);
+    letter-spacing: 0.4em;
+  }
+
+  /* ===== 竹叶飘落 ===== */
+  .leaves {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    overflow: hidden;
+  }
+
+  .leaf {
+    position: absolute;
+    width: 9px; height: 16px;
+    background: rgba(61, 85, 96, 0.18);
+    border-radius: 0 100% 0 100%;
+    top: -20px;
+    animation: leafFall linear infinite;
+  }
+
+  @keyframes leafFall {
+    0% {
+      transform: translateY(-20px) translateX(0) rotate(0deg);
+      opacity: 0;
+    }
+    10% { opacity: 0.45; }
+    90% { opacity: 0.4; }
+    100% {
+      transform: translateY(105vh) translateX(80px) rotate(540deg);
+      opacity: 0;
+    }
+  }
+
+  /* ===== 音乐开关 ===== */
+  .music-toggle {
+    position: fixed;
+    bottom: 24px; left: 24px;
+    width: 46px; height: 46px;
+    background: var(--paper-light);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 999;
+    box-shadow: 0 4px 16px rgba(42, 36, 30, 0.1);
+    transition: all 0.3s ease;
+    color: var(--ink-soft);
+    user-select: none;
+  }
+
+  .music-toggle:hover {
+    transform: scale(1.08);
+    border-color: var(--zhusha);
+    color: var(--zhusha);
+  }
+
+  .music-toggle.playing {
+    background: var(--zhusha);
+    color: var(--paper-light);
+    border-color: var(--zhusha);
+  }
+
+  .music-toggle .icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .music-toggle .label {
+    position: absolute;
+    left: 58px;
+    white-space: nowrap;
+    font-size: 11px;
+    color: var(--ink-light);
+    letter-spacing: 0.2em;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .music-toggle:hover .label {
+    opacity: 1;
+  }
+
+  /* Leaflet 自定义样式 */
+  .leaflet-container {
+    background: var(--paper) !important;
+    font-family: "Noto Sans SC", sans-serif !important;
+  }
+
+  .leaflet-popup-content-wrapper {
+    background: var(--paper-light) !important;
+    color: var(--ink) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 4px 20px rgba(42, 36, 30, 0.15) !important;
+    border-radius: 2px !important;
+  }
+
+  .leaflet-popup-tip {
+    background: var(--paper-light) !important;
+  }
+
+  .leaflet-popup-content {
+    margin: 10px 14px !important;
+    font-family: "Noto Serif SC", serif !important;
+  }
+
+  .leaflet-control-zoom a {
+    background: var(--paper-light) !important;
+    color: var(--ink-soft) !important;
+    border: 1px solid var(--border) !important;
+  }
+
+  .leaflet-control-zoom a:hover {
+    background: var(--paper-dark) !important;
+    color: var(--zhusha) !important;
+  }
+
+  /* 中国境外遮罩：只做视觉遮挡，不拦截鼠标（穿透让地图可拖拽/点击） */
+  .china-mask {
+    pointer-events: none;
+  }
+
+  .custom-tooltip {
+    background: var(--ink) !important;
+    color: var(--paper-light) !important;
+    border: none !important;
+    font-family: "Noto Serif SC", serif !important;
+    font-size: 12px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+    padding: 4px 10px !important;
+    letter-spacing: 0.1em;
+  }
+
+  .leaflet-tooltip-top:before {
+    border-top-color: var(--ink) !important;
+  }
+
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .poem-card {
+      left: -100% !important;
+      right: auto;
+      width: 100%;
+      bottom: 0; top: auto;
+      transform: none;
+      border-radius: 0;
+      border-left: none;
+      border-top: 4px solid var(--zhusha);
+      max-width: 100vw;
+    }
+    .poem-card.show {
+      left: 0 !important;
+    }
+    .timeline-info .year { font-size: 38px; }
+    .map-seal { width: 48px; height: 48px; font-size: 14px; }
+    .journey-section { padding: 3rem 1rem 5rem; }
+  }
+
+  /* 减弱动态效果 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .leaf { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Hero 首屏 ===== -->
+<header class="hero">
+  <div class="hero-seal-top">东 · 坡 · 居 · 士</div>
+  <h1 class="hero-title">苏轼</h1>
+  <div class="hero-divider"></div>
+  <p class="hero-subtitle">此身如传舍，何处是吾乡</p>
+  <p class="hero-hint">向下滚动 · 随苏轼漫游一生</p>
+</header>
+
+<!-- ===== Journey 主体 ===== -->
+<section class="journey-section">
+  <div class="section-intro">
+    <h2>万 里 迹</h2>
+    <p>眉山生，常州卒。一蓑烟雨，半生流离。</p>
+  </div>
+
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="map-wash"></div>
+    <div class="map-frame"></div>
+    <div class="map-mark">东坡行迹</div>
+    <div class="map-seal"><span>东</span><span>坡</span></div>
+    <button class="tour-btn" id="tourBtn">↻ 重走一生</button>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-info">
+      <span class="year">1037</span>
+      <span class="event">眉山 · 生于眉山</span>
+    </div>
+    <div class="timeline-track">
+      <div class="timeline-line"></div>
+      <div class="timeline-progress"></div>
+      <div class="timeline-points"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Epilogue 尾声 ===== -->
+<footer class="epilogue">
+  <div class="epilogue-content">
+    <p>眉山一别，万里飘零。</p>
+    <p>他曾立于庙堂之高，也曾躬耕于东坡之野；曾醉卧西湖之畔，也曾渡海至天涯之外。</p>
+    <p class="quote">问汝平生功业，<br/>黄州惠州儋州。</p>
+    <p>六十六年，一蓑烟雨，半生流离。所到之处，皆成诗篇；所历之境，皆见山河。</p>
+    <p>建中靖国元年，公元一一〇一年，卒于常州。此身如传舍，何处是吾乡。</p>
+    <p class="epilogue-end">—— 终 ——</p>
+  </div>
+</footer>
+
+<!-- ===== 竹叶飘落容器 ===== -->
+<div class="leaves" aria-hidden="true"></div>
+
+<!-- ===== 音乐开关 ===== -->
+<button class="music-toggle" aria-label="背景音乐开关">
+  <span class="icon">♪</span>
+  <span class="label">点击播放</span>
+</button>
+
+<!-- ===== 诗词卡片 ===== -->
+<div class="poem-card" role="dialog" aria-label="诗人事件卡片">
+  <button class="close" aria-label="关闭">×</button>
+  <div class="year">1037</div>
+  <div class="place">眉山</div>
+  <div class="event">生于眉山</div>
+  <div class="poem-title"></div>
+  <div class="poem-text"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ===== 苏轼一生足迹数据（写进网页） ===== */
+/* 诗词按时间线合理位置配置：用户清单标注《自题金山画像》为参考，
+   该诗实为临终总结之作，故置于 1101 常州；其余名篇按所写地点对应。 */
+const journey = [
+  { year: 1037, place: "眉山", event: "苏轼生于四川眉山，字子瞻，号东坡居士。", poem: "", poem_text: "", lat: 30.08, lng: 103.85 },
+  { year: 1057, place: "汴京", event: "与弟苏辙同登进士第，名动京师，欧阳修曰「老夫当避此人」。", poem: "", poem_text: "", lat: 34.80, lng: 114.31 },
+  { year: 1061, place: "凤翔", event: "初仕凤翔府签判，始入仕途。", poem: "", poem_text: "", lat: 34.52, lng: 107.38 },
+  { year: 1071, place: "杭州", event: "通判杭州，泛舟西湖，吟咏江山。", poem: "《饮湖上初晴后雨》", poem_text: "水光潋滟晴方好，山色空蒙雨亦奇。欲把西湖比西子，淡妆浓抹总相宜。", lat: 30.27, lng: 120.16 },
+  { year: 1074, place: "密州", event: "知密州，中秋怀弟，作《水调歌头》。", poem: "《水调歌头·明月几时有》", poem_text: "明月几时有？把酒问青天。不知天上宫阙，今夕是何年。但愿人长久，千里共婵娟。", lat: 36.00, lng: 119.40 },
+  { year: 1077, place: "徐州", event: "知徐州，率民抗洪，筑黄楼以镇水。", poem: "", poem_text: "", lat: 34.27, lng: 117.18 },
+  { year: 1079, place: "湖州→乌台", event: "知湖州，因诗获罪，下御史台狱，史称「乌台诗案」。", poem: "", poem_text: "", lat: 30.87, lng: 120.09 },
+  { year: 1080, place: "黄州", event: "贬黄州团练副使，躬耕东坡，自号「东坡居士」。", poem: "《念奴娇·赤壁怀古》《定风波》", poem_text: "大江东去，浪淘尽，千古风流人物。莫听穿林打叶声，何妨吟啸且徐行。竹杖芒鞋轻胜马，谁怕？一蓑烟雨任平生。", lat: 30.45, lng: 114.88 },
+  { year: 1084, place: "汝州", event: "移汝州团练副使，途经金陵，作《赤壁赋》。", poem: "", poem_text: "", lat: 34.16, lng: 112.24 },
+  { year: 1089, place: "杭州", event: "再守杭州，疏浚西湖，筑苏堤，民称「苏公堤」。", poem: "", poem_text: "", lat: 30.27, lng: 120.16 },
+  { year: 1094, place: "惠州", event: "贬惠州，安于岭南，「日啖荔枝三百颗」。", poem: "《食荔枝》", poem_text: "罗浮山下四时春，卢橘杨梅次第新。日啖荔枝三百颗，不辞长作岭南人。", lat: 23.11, lng: 114.42 },
+  { year: 1097, place: "儋州", event: "再贬海南儋州，「食芋饮水，著书以为乐」，办学教书。", poem: "", poem_text: "", lat: 19.52, lng: 109.58 },
+  { year: 1100, place: "北归", event: "遇赦北归，渡海而作「九死南荒吾不恨」。", poem: "《六月二十日夜渡海》", poem_text: "参横斗转欲三更，苦雨终风也解晴。云散月明谁点缀？天容海色本澄清。九死南荒吾不恨，兹游奇绝冠平生。", lat: 20.04, lng: 110.20 },
+  { year: 1101, place: "常州", event: "建中靖国元年，卒于常州，享年六十六。", poem: "《自题金山画像》", poem_text: "心似已灰之木，身如不系之舟。问汝平生功业，黄州惠州儋州。", lat: 31.78, lng: 119.97 }
+];
+
+/* ===== 弧线绘制（古航程图式） =====
+   直线硬连会因苏轼一生反复横跳而显得杂乱；
+   改为相邻段交替弯曲的弧线，交织成行迹网。
+   注意：lat/lng 必须分开命名，避免两轴写反（曾导致控制点跑到纬度 100+）。 */
+function arcPoints(a, b, segIdx) {
+  const lat1 = a[0], lng1 = a[1];
+  const lat2 = b[0], lng2 = b[1];
+  const dLat = lat2 - lat1, dLng = lng2 - lng1;
+  const len = Math.sqrt(dLat * dLat + dLng * dLng);
+  if (len < 1e-6) return [a, b];
+
+  const bend = Math.min(0.18, 0.05 + len * 0.035); // 弯度随段长自适应，克制
+  const dir = segIdx % 2 === 0 ? 1 : -1;           // 相邻段交替方向
+
+  // 垂直于 A→B 的单位法向量（在 纬度/经度 两个分量上）
+  const nLat = -dLng / len * dir;
+  const nLng = dLat / len * dir;
+
+  const mLat = (lat1 + lat2) / 2, mLng = (lng1 + lng2) / 2;
+  const cLat = mLat + nLat * len * bend;  // 控制点纬度
+  const cLng = mLng + nLng * len * bend;  // 控制点经度
+
+  const n = Math.max(18, Math.round(len * 8));
+  const out = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, it = 1 - t;
+    out.push([
+      it * it * lat1 + 2 * it * t * cLat + t * t * lat2,
+      it * it * lng1 + 2 * it * t * cLng + t * t * lng2
+    ]);
+  }
+  return out;
+}
+
+/* 拼接 from..to 段的连续弧线（段间共享端点，无缝） */
+function buildArcPath(from, to) {
+  const pts = journey.map(p => [p.lat, p.lng]);
+  const out = [];
+  for (let i = from; i < to; i++) {
+    const seg = arcPoints(pts[i], pts[i + 1], i);
+    out.push.apply(out, seg.slice(0, -1));
+  }
+  out.push(pts[to]);
+  return out;
+}
+
+let map, markers = [], drawnPath, haloPath, ghostPath;
+let currentStep = -1;
+let userInteracting = false; // 用户主动操作（点标记/点时间线）时暂停滚动联动
+
+/* ===== 初始化水墨地图 ===== */
+function initMap() {
+  // 中国大致范围（陆地 + 南海，含边界站点缓冲）——用于锁定地图与初始视图
+  const CHINA_BOUNDS = L.latLngBounds([17.8, 72.8], [53.8, 135.3]);
+
+  map = L.map('map', {
+    zoomControl: false,
+    scrollWheelZoom: true,
+    attributionControl: false,
+    minZoom: 3,
+    maxZoom: 8,
+    maxBounds: CHINA_BOUNDS,        // 平移锁定在中国境内，拖不出去
+    maxBoundsViscosity: 1.0          // 边界硬性，不越界、不回弹
+  }).fitBounds(CHINA_BOUNDS, { animate: false });  // 初始视图：瞬间定位并缩放到中国全境（不做从境外飞入的动画）
+  map.setMinZoom(map.getZoom());     // 锁定最小缩放 = 恰好容纳中国全境，避免缩到境外
+
+  // 水墨风瓦片（高德灰色底图 style=8，国内访问稳定；CSS filter 调宣纸感）
+  // 备用源顺序：高德灰 → jsdelivr 镜像兜底（OSM/CartoDB 在国内超时）
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+    subdomains: ['1', '2', '3', '4'],
+    maxZoom: 18,
+    bounds: CHINA_BOUNDS,            // 只请求与中国范围相交的瓦片，境外瓦片不加载
+    attribution: '高德地图'
+  }).addTo(map);
+
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  const allPoints = journey.map(p => [p.lat, p.lng]);
+
+  buildFullPath(); // 预计算整条行迹采样点（供生长动画使用）
+
+  // 未到地点：暖灰虚线弧线（古航程图式）
+  ghostPath = L.polyline(buildArcPath(0, journey.length - 1), {
+    color: '#a8977a',
+    weight: 1.5,
+    opacity: 0.5,
+    dashArray: '5 7',
+    lineCap: 'round'
+  }).addTo(map);
+
+  // 已走过轨迹：白色衬底线（让朱红从地图上浮起来，先加在下层）
+  haloPath = L.polyline([], {
+    color: '#faf4e6',
+    weight: 5.5,
+    opacity: 0.75,
+    lineCap: 'round'
+  }).addTo(map);
+
+  // 已走过：朱红主线（后加在上层）
+  drawnPath = L.polyline([], {
+    color: '#a3402f',
+    weight: 3,
+    opacity: 0.9,
+    lineCap: 'round'
+  }).addTo(map);
+
+  // 古风印章式标记（divIcon：朱红圆点 + 光晕环 + 常驻地名）
+  journey.forEach((p, i) => {
+    const icon = L.divIcon({
+      className: 'dg-icon',
+      html: '<div class="dg-marker future">'
+          + '<span class="halo"></span>'
+          + '<span class="dot"></span>'
+          + '<span class="placelabel">' + p.place.split('→')[0] + '</span>'
+          + '</div>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+    const marker = L.marker([p.lat, p.lng], { icon: icon, keyboard: false }).addTo(map);
+
+    marker.bindTooltip(p.year + ' · ' + p.place, {
+      direction: 'top',
+      offset: [0, -12],
+      className: 'custom-tooltip',
+      opacity: 0.95
+    });
+
+    marker.on('click', () => {
+      userInteracting = true;
+      stopTour();
+      jumpTo(i);
+      setTimeout(() => { userInteracting = false; }, 3000);
+    });
+
+    markers.push(marker);
+  });
+
+  // 放大到 6 级以上时展开全部地名（低缩放只留当前站，避免叠字）
+  map.on('zoomend', () => {
+    document.querySelector('.map-wrap')
+      .classList.toggle('labels-on', map.getZoom() >= 6);
+  });
+
+  // 中国境外遮罩：一个覆盖全球的大多边形，中间挖掉中国框（fillRule evenodd）。
+  // 境外部分被盖成宣纸色，视觉上「隐藏/裁剪」掉境外地图数据。
+  L.polygon([
+    [[85, -180], [85, 180], [-85, 180], [-85, -180]],                    // 外环：覆盖全球
+    [[CHINA_BOUNDS.getNorth(), CHINA_BOUNDS.getWest()],                  // 内环：中国框（挖空）
+     [CHINA_BOUNDS.getNorth(), CHINA_BOUNDS.getEast()],
+     [CHINA_BOUNDS.getSouth(), CHINA_BOUNDS.getEast()],
+     [CHINA_BOUNDS.getSouth(), CHINA_BOUNDS.getWest()]]
+  ], {
+    stroke: false,
+    fillColor: '#f3ebd9',      // 宣纸米白，与页面底色一致
+    fillOpacity: 1,
+    interactive: false,
+    className: 'china-mask'    // 配合 CSS 让鼠标事件穿透
+  }).addTo(map);
+}
+
+/* 标记状态切换：future / passed / now */
+function setMarkerState(i, state) {
+  const el = markers[i].getElement();
+  if (!el) return;
+  const m = el.querySelector('.dg-marker');
+  if (m) {
+    m.classList.remove('future', 'passed', 'now');
+    m.classList.add(state);
+  }
+}
+
+/* ===== 轨迹逐段生长（一笔一笔绘制）=====
+   旧做法是「临时线段 + strokeDashoffset 像素动画」，问题在于：
+   每切换一站都会 flyTo 缩放，地图一变、路径屏幕长度就变了，
+   而 dasharray 仍按旧像素长度计算 → 线会缺一段再补上（闪）；
+   且白色衬底 haloPath 立刻跳到新站、朱红主线却延迟 950ms 才补，
+   于是白线先露出一截（更闪）。
+   现改为：预计算整条行迹的采样点，用 rAF 按「点数」生长，
+   主线与衬底每帧同步重设 —— 无临时图层、无 dasharray，切换不闪。 */
+let FULL_PATH = [];   // 0 → 末站 的完整采样点
+let SEG_END = [];     // 到达第 i 站时，对应 FULL_PATH 的末尾索引（含）
+let drawnCount = 1;   // 当前已绘制到的点数（小数表示生长中）
+let drawRaf = null;
+
+function buildFullPath() {
+  const pts = journey.map(p => [p.lat, p.lng]);
+  FULL_PATH = [pts[0]];
+  SEG_END = [0];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const seg = arcPoints(pts[i], pts[i + 1], i);
+    for (let k = 1; k < seg.length; k++) FULL_PATH.push(seg[k]); // 跳过重复端点
+    SEG_END.push(FULL_PATH.length - 1);
+  }
+  drawnCount = 1; // 初始只有起点
+}
+
+/* 把当前生长进度画出来（主线与衬底始终同一份点，绝不脱节） */
+function paintProgress(count) {
+  const n = Math.max(1, Math.min(FULL_PATH.length, Math.round(count)));
+  const slice = FULL_PATH.slice(0, n);
+  drawnPath.setLatLngs(slice);
+  haloPath.setLatLngs(slice);
+}
+
+/* 平滑生长 / 收缩到第 idx 站；instant=true 时直接到位 */
+function animateTo(idx, instant) {
+  const target = SEG_END[idx] + 1;
+  if (drawRaf) { cancelAnimationFrame(drawRaf); drawRaf = null; }
+  const delta = Math.abs(target - drawnCount);
+  if (instant || delta < 2) {
+    drawnCount = target;
+    paintProgress(drawnCount);
+    return;
+  }
+  const start = drawnCount;
+  const dur = Math.min(900, 240 + delta * 5);
+  const t0 = performance.now();
+  function tick(now) {
+    const t = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - t, 3); // easeOutCubic：起笔快、收笔缓
+    drawnCount = start + (target - start) * e;
+    paintProgress(drawnCount);
+    if (t < 1) {
+      drawRaf = requestAnimationFrame(tick);
+    } else {
+      drawnCount = target;
+      paintProgress(target);
+      drawRaf = null;
+    }
+  }
+  drawRaf = requestAnimationFrame(tick);
+}
+
+/* ===== 徒步过渡：书生沿足迹弧线走向下一站 =====
+   触发：相邻站前进（巡游每一步 / 点击「下一站」）时，用一位背行囊的
+   书生沿两站之间的弧线徒步走过，替代现代的 flyTo 飞行。
+   做法：先 flyToBounds 快速框住起终点（0.5s），moveend 后地图静止，
+   再用 rAF 沿 arcPoints 弧线逐帧移动小人、轨迹同步点亮——静止时
+   setLatLng 不触发二次缩放，彻底避开之前的「闪 / 飘」问题。 */
+let walkToken = 0;
+let walkerMarker = null;
+let walkerRaf = null;
+
+function walkerHtml() {
+  return '<div class="walker">'
+    + '<svg viewBox="0 0 44 54" xmlns="http://www.w3.org/2000/svg">'
+    +   '<line x1="31" y1="10" x2="27" y2="50" stroke="#8a7a5f" stroke-width="1.6" stroke-linecap="round"/>'  // 竹杖
+    +   '<g class="bundle">'                                                                                     // 行囊
+    +     '<ellipse cx="14.5" cy="22" rx="7" ry="6.2" fill="#2a241e"/>'
+    +     '<path d="M14.5 16 L21 9 M14.5 16 L8.5 10.5" stroke="#a3402f" stroke-width="1.2" stroke-linecap="round"/>'
+    +     '<circle cx="14.5" cy="16" r="1.7" fill="#a3402f"/>'
+    +   '</g>'
+    +   '<g class="body">'                                                                                       // 长袍身
+    +     '<path d="M24 14 Q30 20 29.5 36 L20.5 36 Q18.5 25 19 15.5 Z" fill="#2a241e"/>'
+    +   '</g>'
+    +   '<g class="head">'                                                                                       // 头 + 方巾 + 朱红发带
+    +     '<circle cx="24.8" cy="9" r="4.3" fill="#2a241e"/>'
+    +     '<path d="M21 7 Q24.8 2 28.6 7 Q24.8 5 21 7 Z" fill="#2a241e"/>'
+    +     '<path d="M21.4 6.6 L28.2 6.6" stroke="#a3402f" stroke-width="1.1"/>'
+    +   '</g>'
+    +   '<path d="M27.5 20 L32 15.5" stroke="#2a241e" stroke-width="2.4" stroke-linecap="round"/>'               // 持杖臂
+    +   '<g class="leg leg-f"><path d="M25 34 L28.5 47 L25.5 50" fill="none" stroke="#2a241e" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></g>'
+    +   '<g class="leg leg-b"><path d="M23 34 L18.5 46 L21 49" fill="none" stroke="#2a241e" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></g>'
+    + '</svg></div>';
+}
+
+function ensureWalker() {
+  if (!walkerMarker) {
+    const mobile = window.innerWidth <= 768;
+    const w = mobile ? 34 : 44, h = mobile ? 42 : 54;
+    walkerMarker = L.marker([0, 0], {
+      icon: L.divIcon({ className: 'walker-icon', html: walkerHtml(), iconSize: [w, h], iconAnchor: [w / 2, h - 2] }),
+      interactive: false, keyboard: false, zIndexOffset: 1000
+    });
+  }
+  return walkerMarker;
+}
+
+function cancelWalk() {
+  walkToken++;
+  if (walkerRaf) { cancelAnimationFrame(walkerRaf); walkerRaf = null; }
+  if (walkerMarker) { walkerMarker.remove(); }
+}
+
+function walkTransition(from, to) {
+  cancelWalk();
+  flyToken++;                            // 使任何残留的 flyTo moveend 回调失效
+  const token = walkToken;
+
+  const A = [journey[from].lat, journey[from].lng];
+  const B = [journey[to].lat, journey[to].lng];
+  const seg = arcPoints(A, B, from);     // 本段弧线采样点（小人行走路径）
+  const westbound = B[1] < A[1];         // 向西（经度减小）则整体水平翻转，只朝左右两向，不逐帧转向
+
+  // 先快速框住本段（起终点同框），地图静止后再开始徒步
+  map.flyToBounds(L.latLngBounds([A, B]), { padding: [80, 80], maxZoom: 7, duration: 0.5 });
+  map.once('moveend', function () {
+    if (token !== walkToken) return;     // 已被新的切换取代
+    beginWalk(seg, from, to, westbound);
+  });
+}
+
+function beginWalk(seg, from, to, westbound) {
+  const w = ensureWalker();
+  w.addTo(map);
+  w.setLatLng(seg[0]);
+
+  // 固定侧身姿态：只按行进大方向做水平翻转，绝不逐帧旋转（避免陀螺式转向）
+  const inner = w.getElement() && w.getElement().querySelector('.walker');
+  if (inner) inner.style.transform = westbound ? 'scaleX(-1)' : '';
+
+  const startCount = SEG_END[from] + 1;   // 已画到的点数（上一站）
+  const endCount = SEG_END[to] + 1;       // 本段画完后的点数
+  const span = endCount - startCount;
+  drawnCount = startCount;
+  paintProgress(startCount);
+
+  const dur = Math.min(2400, Math.max(1200, span * 20));  // 从容行走，1.2~2.4s
+  const t0 = performance.now();
+  const last = seg.length - 1;
+
+  function frame(now) {
+    const t = Math.min(1, (now - t0) / dur);
+    const pos = t * last;                 // 匀速行走
+    const i0 = Math.floor(pos);
+    const i1 = Math.min(last, i0 + 1);
+    const f = pos - i0;
+    const lat = seg[i0][0] + (seg[i1][0] - seg[i0][0]) * f;
+    const lng = seg[i0][1] + (seg[i1][1] - seg[i0][1]) * f;
+    w.setLatLng([lat, lng]);              // 小人沿弧线移动
+    paintProgress(startCount + t * span); // 轨迹跟着小人一笔点亮
+    if (t < 1) {
+      walkerRaf = requestAnimationFrame(frame);
+    } else {
+      drawnCount = endCount;
+      paintProgress(endCount);
+      w.remove();
+      walkerRaf = null;
+      showPoemCard(to);                   // 到达后弹出诗词卡片
+    }
+  }
+  walkerRaf = requestAnimationFrame(frame);
+}
+
+/* ===== 时间线点位构建 ===== */
+function buildTimelinePoints() {
+  const container = document.querySelector('.timeline-points');
+  container.innerHTML = '';
+  journey.forEach((p, i) => {
+    const pt = document.createElement('div');
+    pt.className = 'tl-point';
+    pt.setAttribute('role', 'button');
+    pt.setAttribute('tabindex', '0');
+    pt.setAttribute('aria-label', p.year + ' ' + p.place);
+    pt.innerHTML = '<span class="tl-label">' + p.year + '</span>';
+    pt.addEventListener('click', () => {
+      userInteracting = true;
+      jumpTo(i);
+      setTimeout(() => { userInteracting = false; }, 3000);
+    });
+    container.appendChild(pt);
+  });
+}
+
+/* ===== 跳转到指定步骤 ===== */
+function jumpTo(i) {
+  updateToStep(i);
+}
+
+/* ===== 更新到第 n 步 ===== */
+let flyToken = 0;
+
+function updateToStep(n) {
+  if (n === currentStep) return;
+  const prev = currentStep;
+  n = Math.max(0, Math.min(journey.length - 1, n));
+  currentStep = n;
+
+  // 标记状态：走过的 = 实心朱红，当前 = 呼吸光晕，未到 = 空心淡色
+  markers.forEach((_, i) => {
+    if (i < n) setMarkerState(i, 'passed');
+    else if (i === n) setMarkerState(i, 'now');
+    else setMarkerState(i, 'future');
+  });
+
+  // 更新时间线
+  updateTimeline(n);
+
+  // 相邻站前进（且系统未开启「减弱动态效果」）→ 书生徒步过渡；否则飞行直达
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isWalk = !reduced && prev >= 0 && n === prev + 1;
+
+  if (isWalk) {
+    walkTransition(prev, n);              // 诗词卡片在书生到达后再弹出
+  } else {
+    cancelWalk();                         // 清掉可能残留的徒步/小人
+    showPoemCard(n);
+    const p = journey[n];
+    const token = ++flyToken;
+    map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 5), { duration: 0.8 });
+    map.once('moveend', function () {
+      if (token !== flyToken) return;
+      animateTo(n, false);
+    });
+  }
+}
+
+
+/* ===== 更新时间线显示 ===== */
+function updateTimeline(n) {
+  document.querySelector('.timeline-info .year').textContent = journey[n].year;
+  document.querySelector('.timeline-info .event').textContent = journey[n].place + ' · ' + journey[n].event;
+
+  const progress = journey.length > 1 ? (n / (journey.length - 1)) * 100 : 0;
+  document.querySelector('.timeline-progress').style.width = progress + '%';
+
+  document.querySelectorAll('.tl-point').forEach((pt, i) => {
+    pt.classList.toggle('passed', i < n);
+    pt.classList.toggle('active', i === n);
+  });
+}
+
+/* ===== 显示诗词卡片 ===== */
+function showPoemCard(n) {
+  const p = journey[n];
+  const card = document.querySelector('.poem-card');
+
+  card.querySelector('.year').textContent = p.year;
+  card.querySelector('.place').textContent = p.place;
+  card.querySelector('.event').textContent = p.event;
+
+  const titleEl = card.querySelector('.poem-title');
+  const textEl = card.querySelector('.poem-text');
+
+  if (p.poem) {
+    titleEl.style.display = '';
+    titleEl.textContent = p.poem;
+    // 按句号分句，每句淡入
+    const lines = p.poem_text.split('。').filter(s => s.trim());
+    textEl.innerHTML = lines.map((l, i) =>
+      '<span class="line" style="animation-delay:' + (i * 0.28) + 's">' + l + '。</span>'
+    ).join('');
+  } else {
+    titleEl.style.display = 'none';
+    textEl.innerHTML = '<span class="line">此年无对应名篇传世</span>';
+  }
+
+  card.classList.add('show');
+}
+
+/* ===== 关闭卡片 ===== */
+function hidePoemCard() {
+  document.querySelector('.poem-card').classList.remove('show');
+}
+
+function setupCardClose() {
+  const card = document.querySelector('.poem-card');
+  card.querySelector('.close').addEventListener('click', hidePoemCard);
+  // 点地图空白处随手关卡片
+  map.on('click', hidePoemCard);
+  // ESC 随手关
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hidePoemCard();
+  });
+}
+
+/* ===== 滚动联动（自动推进时间线） ===== */
+function setupScrollSync() {
+  const journeySection = document.querySelector('.journey-section');
+  let scrollTimer = null;
+
+  function onScroll() {
+    // 视差：更新 CSS 变量
+    const y = window.scrollY;
+    document.body.style.setProperty('--scroll', y);
+
+    if (userInteracting) return;
+
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      const rect = journeySection.getBoundingClientRect();
+      const wh = window.innerHeight;
+      const total = rect.height + wh;
+      const scrolled = wh - rect.top;
+      let progress = Math.max(0, Math.min(1, scrolled / total));
+      // 在前 70% 视口内完成全部推进
+      progress = Math.min(1, progress / 0.7);
+      const step = Math.round(progress * (journey.length - 1));
+      if (step !== currentStep) {
+        updateToStep(step);
+      }
+    }, 60);
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // 尾声文字淡入
+  const epilogueParas = document.querySelectorAll('.epilogue-content p');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const delay = Array.from(epilogueParas).indexOf(e.target) * 200;
+        setTimeout(() => e.target.classList.add('visible'), delay);
+      }
+    });
+  }, { threshold: 0.25 });
+  epilogueParas.forEach(p => observer.observe(p));
+}
+
+/* ===== 竹叶飘落 ===== */
+function spawnLeaves() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const container = document.querySelector('.leaves');
+  const count = 8;
+  for (let i = 0; i < count; i++) {
+    const leaf = document.createElement('div');
+    leaf.className = 'leaf';
+    leaf.style.left = (Math.random() * 100) + '%';
+    leaf.style.animationDuration = (18 + Math.random() * 12) + 's';
+    leaf.style.animationDelay = (Math.random() * 20) + 's';
+    leaf.style.opacity = (0.12 + Math.random() * 0.18);
+    leaf.style.transform = 'scale(' + (0.6 + Math.random() * 0.6) + ')';
+    container.appendChild(leaf);
+  }
+}
+
+/* ===== 背景音乐（Web Audio 合成五声音阶，不自动播放） ===== */
+let audioCtx = null;
+let musicPlaying = false;
+let musicTimer = null;
+
+function startMusic() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  musicPlaying = true;
+  // 五声音阶（G3 A3 C4 D4 E4 G4 A4）—— 宫商角徵羽调式
+  const notes = [196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00];
+  // 简易旋律节奏（每个音的停留时长，单位毫秒）
+  const rhythm = [1400, 1200, 1600, 1200, 1400, 1800, 1200];
+  let i = 0;
+
+  function playNote() {
+    if (!musicPlaying) return;
+
+    const now = audioCtx.currentTime;
+    const freq = notes[i % notes.length];
+    const dur = rhythm[i % rhythm.length] / 1000;
+    i++;
+
+    // 主音（正弦波模拟古琴散音）
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+
+    // 泛音（高八度，音量小，模拟琴弦余韵）
+    const osc2 = audioCtx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.value = freq * 2;
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.13, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + dur * 1.4);
+
+    const gain2 = audioCtx.createGain();
+    gain2.gain.setValueAtTime(0, now);
+    gain2.gain.linearRampToValueAtTime(0.035, now + 0.05);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.9);
+
+    osc.connect(gain);
+    osc2.connect(gain2);
+    gain.connect(audioCtx.destination);
+    gain2.connect(audioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + dur * 1.4);
+    osc2.start(now);
+    osc2.stop(now + dur * 0.9);
+
+    musicTimer = setTimeout(playNote, dur * 1000);
+  }
+
+  playNote();
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; }
+}
+
+function setupMusicToggle() {
+  const btn = document.querySelector('.music-toggle');
+  const icon = btn.querySelector('.icon');
+  const label = btn.querySelector('.label');
+
+  btn.addEventListener('click', () => {
+    if (musicPlaying) {
+      stopMusic();
+      btn.classList.remove('playing');
+      icon.textContent = '♪';
+      label.textContent = '点击播放';
+    } else {
+      startMusic();
+      btn.classList.add('playing');
+      icon.textContent = '♫';
+      label.textContent = '正在播放';
+    }
+  });
+}
+
+/* ===== 自动巡游：让足迹一目了然 ===== */
+let touring = false;
+let tourTimer = null;
+
+function startTour() {
+  if (touring) return;
+  touring = true;
+  userInteracting = true; // 巡游期间暂停滚动联动
+
+  const btn = document.getElementById('tourBtn');
+  btn.classList.add('touring');
+  btn.textContent = '停 · 巡游中';
+
+  // 从眉山出发，一站一站走到常州
+  updateToStep(0);
+  let i = 0;
+  function next() {
+    if (!touring) return;
+    if (i >= journey.length - 1) { stopTour(); return; }
+    i++;
+    updateToStep(i);
+    tourTimer = setTimeout(next, 2400);
+  }
+  tourTimer = setTimeout(next, 2400);
+}
+
+function stopTour() {
+  if (!touring) return;
+  touring = false;
+  if (tourTimer) { clearTimeout(tourTimer); tourTimer = null; }
+  userInteracting = false;
+  const btn = document.getElementById('tourBtn');
+  btn.classList.remove('touring');
+  btn.textContent = '↻ 重走一生';
+}
+
+function setupTour() {
+  const btn = document.getElementById('tourBtn');
+  btn.addEventListener('click', () => {
+    if (touring) { stopTour(); }
+    else { userInteracting = true; stopTour(); startTour(); }
+  });
+
+  // 时间线点位点击 → 取消巡游，交给用户
+  document.querySelectorAll('.tl-point').forEach(pt => {
+    pt.addEventListener('click', () => { userInteracting = true; stopTour(); });
+  });
+
+  // 首次滚动到地图区域 → 自动巡游一遍（只触发一次）
+  const mapWrap = document.querySelector('.map-wrap');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        io.disconnect();
+        startTour();
+      }
+    });
+  }, { threshold: 0.45 });
+  io.observe(mapWrap);
+
+  // 巡游中用户一滚动/触摸就打断，交还控制权
+  window.addEventListener('wheel', () => { if (touring) stopTour(); }, { passive: true });
+  window.addEventListener('touchmove', () => { if (touring) stopTour(); }, { passive: true });
+}
+
+/* ===== 初始化 ===== */
+window.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  buildTimelinePoints();
+  setupCardClose();
+  setupScrollSync();
+  setupTour();
+  spawnLeaves();
+  setupMusicToggle();
+
+  // 默认展示第 0 步（眉山），让用户看到初始状态
+  setTimeout(() => updateToStep(0), 600);
+});
+</script>
+</body>
+</html>
