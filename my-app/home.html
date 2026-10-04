@@ -217,13 +217,60 @@
     color: #8a7a5f;
   }
 
-  /* ===== 每日名句（复用卷轴，墨色徽章区分） ===== */
+  /* ===== 推荐名句（复用卷轴，墨色徽章区分，上方配古画可点击放大） ===== */
   .famous-card { cursor: default; }
   .famous-card .daily-badge { background: #4a4033; }
   .famous-card .d-lines {
     font-size: 18px;
     line-height: 2;
     margin: 14px 0 10px;
+  }
+  .famous-art { margin: 2px 0 16px; }
+  .famous-art img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #d8cdb8;
+    cursor: zoom-in;
+    transition: opacity .2s;
+  }
+  .famous-art img:hover { opacity: .9; }
+  .famous-art figcaption {
+    text-align: center;
+    font-size: 12px;
+    color: #8a7a5f;
+    letter-spacing: 2px;
+    margin-top: 8px;
+  }
+
+  /* ===== 图片灯箱（点击古画全屏放大） ===== */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(26, 22, 15, .92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    cursor: zoom-out;
+  }
+  .lightbox.show { display: flex; }
+  .lightbox img {
+    max-width: 94vw;
+    max-height: 86vh;
+    border-radius: 4px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, .5);
+  }
+  .lightbox figcaption {
+    color: #f5f0e6;
+    font-size: 13px;
+    letter-spacing: 2px;
+    opacity: .85;
   }
 
   /* ===== 区块标题 ===== */
@@ -276,15 +323,43 @@
     font-size: 18px;
     font-weight: 500;
     color: #3a3226;
+    margin-top: 10px;
   }
-  .pc-meta {
+  .pc-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pc-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #d8cdb8;
+    background: #ece4d4;
+    flex-shrink: 0;
+  }
+  .pc-avatar-fb {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 20px;
+    color: #6b5d43;
+  }
+  .pc-who {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pc-author { font-size: 14px; color: #5a4f3f; font-weight: 500; }
+  .pc-tags {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 6px;
+    margin-top: 10px;
   }
-  .pc-author { font-size: 13px; color: #5a4f3f; }
   .dynasty-badge {
     font-size: 12px;
     background: #ece4d4;
@@ -433,7 +508,11 @@
     </section>
 
     <section class="daily famous-card" id="famousCard">
-      <span class="daily-badge">每日名句</span>
+      <span class="daily-badge">推荐名句</span>
+      <figure class="famous-art" id="famousArt" style="display:none">
+        <img id="famousArtImg" alt="配图古画" title="点击放大">
+        <figcaption id="famousArtCaption"></figcaption>
+      </figure>
       <div class="d-lines" id="famousContent">正在取一句诗…</div>
       <div class="d-author" id="famousSource"></div>
     </section>
@@ -452,13 +531,18 @@
     </div>
 
     <div class="section-head">
-      <h2>精选诗词</h2>
+      <h2>推荐</h2>
       <span class="num" id="listNum"></span>
     </div>
 
     <div class="poem-list" id="poemList"></div>
     <div class="state-box loading" id="stateBox">正在展开诗卷…</div>
   </main>
+
+  <div class="lightbox" id="lightbox">
+    <img id="lightboxImg" alt="古画放大">
+    <figcaption id="lightboxCaption"></figcaption>
+  </div>
 
   <div class="debug-switch" id="debugSwitch">
     <button data-state="normal" class="active">正常</button>
@@ -514,6 +598,40 @@
       { title: "念奴娇·赤壁怀古", author: "苏轼", dynasty: "宋代", line: "大江东去，浪淘尽，千古风流人物。", tags: ["怀古", "赤壁"] }
     ];
 
+    // ===== 2.5 诗人头像（assets/poets/avatars/，无头像用姓氏首字兜底）=====
+    const POET_AVATARS = {
+      "李白": "assets/poets/avatars/李白.jpg",
+      "苏轼": "assets/poets/avatars/苏轼.jpg",
+      "王维": "assets/poets/avatars/王维.jpg",
+      "杜牧": "assets/poets/avatars/杜牧.jpg",
+      "李商隐": "assets/poets/avatars/李商隐.jpg",
+      "李清照": "assets/poets/avatars/李清照.jpg",
+      "柳宗元": "assets/poets/avatars/柳宗元.jpg",
+      "欧阳修": "assets/poets/avatars/欧阳修.jpg",
+      "王安石": "assets/poets/avatars/王安石.jpg",
+      "王昌龄": "assets/poets/avatars/王昌龄.jpg",
+      "白居易": "assets/poets/avatars/白居易.JPG",
+      "辛弃疾": "assets/poets/avatars/辛弃疾.JPG",
+      "陆游": "assets/poets/avatars/陆游.jpg",
+      "陶渊明": "assets/poets/avatars/陶渊明.jpg",
+      "黄庭坚": "assets/poets/avatars/黄庭坚.png"
+    };
+    function avatarHtml(author) {
+      const f = POET_AVATARS[author];
+      if (!f) return '<span class="pc-avatar pc-avatar-fb">' + author.charAt(0) + '</span>';
+      return '<img class="pc-avatar" src="' + encodeURI(f) + '" alt="' + author + '画像" ' +
+        'onerror="this.outerHTML=\'<span class=&quot;pc-avatar pc-avatar-fb&quot;>' + author.charAt(0) + '</span>\'">';
+    }
+
+    // ===== 2.6 名句配画（公版古画，点击可放大）=====
+    const PAINTINGS = [
+      { src: "assets/paintings/qianli-jiangshan.jpg", caption: "王希孟 · 千里江山图（局部）· 北宋" },
+      { src: "assets/paintings/xishan-xinglv.jpg", caption: "范宽 · 溪山行旅图 · 北宋" },
+      { src: "assets/paintings/zaochun.jpg", caption: "郭熙 · 早春图 · 北宋" },
+      { src: "assets/paintings/fuchun-juju.jpg", caption: "黄公望 · 富春山居图（局部）· 元" },
+      { src: "assets/xiaoxiang.jpg", caption: "董源 · 潇湘图（局部）· 五代" }
+    ];
+
     // ===== 3. 状态管理与渲染 =====
     const stateBox = document.getElementById("stateBox");
     const poemList = document.getElementById("poemList");
@@ -525,12 +643,16 @@
       const href = 'detail.html?title=' + encodeURIComponent(p.title) + '&from=home';
       return (
         '<div class="poem-card" onclick="location.href=\'' + href + '\'">' +
-          '<div class="pc-title">' + p.title + '</div>' +
-          '<div class="pc-meta">' +
-            '<span class="pc-author">' + p.author + '</span>' +
-            '<span class="dynasty-badge">' + p.dynasty + '</span>' + tags +
+          '<div class="pc-head">' +
+            avatarHtml(p.author) +
+            '<div class="pc-who">' +
+              '<span class="pc-author">' + p.author + '</span>' +
+              '<span class="dynasty-badge">' + p.dynasty + '</span>' +
+            '</div>' +
           '</div>' +
+          '<div class="pc-title">' + p.title + '</div>' +
           '<div class="pc-line">' + p.line + '</div>' +
+          '<div class="pc-tags">' + tags + '</div>' +
         '</div>'
       );
     }
@@ -556,7 +678,7 @@
         stateBox.className = "state-box";
         stateBox.innerHTML =
           '<div style="width:36px;height:36px;border:2px dashed #c9bda4;border-radius:50%;margin:0 auto 10px;"></div>' +
-          '这里还空着<br>还没有精选诗词，去发现吧<br>' +
+          '这里还空着<br>还没有推荐诗词，去发现吧<br>' +
           '<button class="btn" onclick="setState(\'normal\')">去发现诗词</button>';
         return;
       }
@@ -621,6 +743,34 @@
           if (d2 && d2.famous && d2.famous.length) render(d2.famous[0]);
         })
         .catch(fallback);
+    })();
+
+    // ===== 7. 名句配画：随机挑一幅公版古画，加载失败则隐藏 =====
+    (function pickPainting() {
+      const p = PAINTINGS[Math.floor(Math.random() * PAINTINGS.length)];
+      const fig = document.getElementById("famousArt");
+      const img = document.getElementById("famousArtImg");
+      img.onload = function () { fig.style.display = ""; };
+      img.onerror = function () { fig.style.display = "none"; };
+      img.src = p.src;
+      document.getElementById("famousArtCaption").textContent = p.caption;
+    })();
+
+    // ===== 8. 灯箱：点击古画全屏放大，点击任意处 / Esc 关闭 =====
+    (function initLightbox() {
+      const lb = document.getElementById("lightbox");
+      const lbImg = document.getElementById("lightboxImg");
+      const lbCap = document.getElementById("lightboxCaption");
+      document.getElementById("famousArtImg").addEventListener("click", function (e) {
+        e.stopPropagation();
+        lbImg.src = this.src;
+        lbCap.textContent = document.getElementById("famousArtCaption").textContent;
+        lb.classList.add("show");
+      });
+      lb.addEventListener("click", function () { lb.classList.remove("show"); });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") lb.classList.remove("show");
+      });
     })();
   </script>
 </body>
