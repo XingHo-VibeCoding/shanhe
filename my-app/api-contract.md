@@ -193,25 +193,26 @@
 
 ---
 
-### 3.7 收藏列表读取 ⏳ 占位（★记录表读取）
+### 3.7 收藏列表读取 ✅ 已上线（★记录表读取）
 
 **`GET /api/favorites`**
 
-读取当前用户的收藏记录列表（含对应诗词摘要）。
+读取当前用户的收藏记录列表（含对应诗词摘要）。`favorites` 表只存 `poem_id`（外键数字），`title`/`poet` 靠 JOIN `poems`、`poets` 补出。
 
-**请求参数（Query）**：`page`（否，默认 1）
+**请求参数（Query）**：无
 
 **响应 JSON 形状**
 
 ```json
 {
-  "ret_code": "0",
-  "allNum": 12,
-  "favorites": [
-    { "id": 1, "poem_id": 1001, "title": "静夜思", "poet": "李白", "created_at": "2026-10-04T01:00:00Z" }
+  "ok": true,
+  "data": [
+    { "id": 1, "poem_id": 1001, "title": "静夜思", "poet": "李白", "dynasty": "唐代", "created_at": "2026-10-04T01:00:00+08:00" }
   ]
 }
 ```
+
+**公网地址**：`GET https://shijishanhe-d5gmc8a0k01b1e88d.service.tcloudbase.com/api/favorites`
 
 **错误返回**：500。
 
@@ -250,6 +251,35 @@
 ```
 
 **错误返回**：404（记录不存在）、500。
+
+---
+
+### 3.10 热门诗词榜 ✅ 已上线（★真实热搜数据）
+
+**`GET /api/hot`**
+
+按知名度 `popularity` 降序返回热门诗词榜（真实热搜数据，来自同步入 `poems` 表的名篇）。
+
+**请求参数（Query）**
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `limit` | 否 | 返回条数，默认 10，上限 50 |
+
+**响应 JSON 形状**
+
+```json
+{
+  "ok": true,
+  "data": [
+    { "id": 1, "title": "静夜思", "poet": "李白", "dynasty": "唐代", "content": "床前看月光…", "popularity": 100000000 }
+  ]
+}
+```
+
+**公网地址**：`GET https://shijishanhe-d5gmc8a0k01b1e88d.service.tcloudbase.com/api/hot`
+
+**错误返回**：500。
 
 ---
 
