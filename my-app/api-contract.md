@@ -56,11 +56,14 @@
 
 | 表名 | 用途 | 关键字段 |
 |------|------|----------|
-| `poems` | 诗词表（核心数据） | `id`, `title`, `poet`, `dynasty`, `content`, `translation`, `annotation`, `background`, `appreciation`, `popularity` |
+| `poems` | 诗词表（核心数据） | `id`, `title`, `poet_id`(外键→poets.id), `dynasty`, `content`, `translation`, `annotation`, `background`, `appreciation`, `popularity` |
 | `poets` | 作者表 | `id`, `name`, `dynasty`, `intro` |
-| `favorites` | 收藏记录表（用户收藏行为） | `id`, `poem_id`(关联 poems.id), `created_at` |
+| `favorites` | 收藏记录表（用户收藏行为） | `id`, `poem_id`(外键→poems.id), `created_at` |
 
-> 说明：`favorites` 就是本项目「记录表」——对应课程的「列表读取案例 GET /api/favorites」，用于记录用户收藏了哪些诗。
+> 说明：
+> - 三表靠外键关联：`poems.poet_id → poets.id`（一对多：一位作者名下多首诗）、`favorites.poem_id → poems.id`（一条收藏对应一首诗）。
+> - `favorites` 就是本项目「记录表」——对应课程的「列表读取案例 GET /api/favorites」，用于记录用户收藏了哪些诗。
+> - 建表 SQL 见 `db/schema.sql`（先删后建，含主键/外键/约束/字段注释），种子数据见 `db/seed.sql`（先 TRUNCATE 再插入，可复现）。
 
 ---
 
@@ -256,7 +259,7 @@
 |------|------|------|
 | `id` | number | 诗词唯一标识 |
 | `title` | string | 诗名 |
-| `poet` | string | 作者 |
+| `poet` | string | 作者名（展示字段，由 `poet_id` JOIN `poets.name` 得到） |
 | `dynasty` | string | 朝代 |
 | `content` | string | 原文 |
 | `translation` | string | 译文（可能为空） |
@@ -270,7 +273,7 @@
 
 ## 5. 第 3 周实施顺序（占位，后续执行）
 
-- [ ] 建表：`poems` / `poets` / `favorites`（CloudBase PostgreSQL）
+- [x] 建表：`poems` / `poets` / `favorites`（CloudBase PostgreSQL，含种子数据，见 `db/schema.sql` + `db/seed.sql`）
 - [ ] 按 §3 逐个实现接口（先列表读取 → 详情 → 搜索 → 收藏读写）
 - [ ] 跨域配置（前端调后端接口的 CORS）
 - [ ] 前端从 mock 切换为真实接口
