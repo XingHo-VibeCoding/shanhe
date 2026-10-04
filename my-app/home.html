@@ -217,6 +217,15 @@
     color: #8a7a5f;
   }
 
+  /* ===== 每日名句（复用卷轴，墨色徽章区分） ===== */
+  .famous-card { cursor: default; }
+  .famous-card .daily-badge { background: #4a4033; }
+  .famous-card .d-lines {
+    font-size: 18px;
+    line-height: 2;
+    margin: 14px 0 10px;
+  }
+
   /* ===== 区块标题 ===== */
   .section-head {
     display: flex;
@@ -423,6 +432,12 @@
       <div class="d-author">李白 · 唐代</div>
     </section>
 
+    <section class="daily famous-card" id="famousCard">
+      <span class="daily-badge">每日名句</span>
+      <div class="d-lines" id="famousContent">正在取一句诗…</div>
+      <div class="d-author" id="famousSource"></div>
+    </section>
+
     <div class="divider" aria-hidden="true">
       <svg viewBox="0 0 30 30">
         <g fill="#a3402f" opacity="0.85">
@@ -580,6 +595,33 @@
 
     // ===== 5. 初始化：模拟首次加载，再展示列表 =====
     showLoading(function () { setState("normal"); });
+
+    // ===== 6. 每日名句：从后端名句库随机取一条（顶流优先） =====
+    (function loadFamous() {
+      function render(f) {
+        document.getElementById("famousContent").textContent = "“" + f.content + "”";
+        let s = "—— " + (f.source || "");
+        if (f.author) s += " · " + f.author;
+        if (f.dynasty) s += "（" + f.dynasty + "）";
+        document.getElementById("famousSource").textContent = s;
+      }
+      function fallback() {
+        document.getElementById("famousContent").textContent = "床前明月光，疑是地上霜。";
+        document.getElementById("famousSource").textContent = "—— 静夜思 · 李白（唐代）";
+      }
+      fetch("/famous?mode=random&tier=1&limit=1")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.famous && d.famous.length) { render(d.famous[0]); }
+          else {
+            return fetch("/famous?mode=random&limit=1").then(function (r) { return r.json(); });
+          }
+        })
+        .then(function (d2) {
+          if (d2 && d2.famous && d2.famous.length) render(d2.famous[0]);
+        })
+        .catch(fallback);
+    })();
   </script>
 </body>
 </html>

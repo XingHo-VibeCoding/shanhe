@@ -69,6 +69,17 @@ except Exception as e:
 # 诗词正文数据库（由 fetch_content.py 生成，存原文/译文/注释五件套）
 DB_FILE = os.path.join(FRONTEND_DIR, "poems.db")
 
+# 千古名句库（数据来自古诗文网「名句」频道，9286 条，按公认度分级 tier 1/2/3）
+MINGJU_FILE = os.path.join(FRONTEND_DIR, "data", "mingju_pool.json")
+MINGJU_POOL = []
+try:
+    if os.path.exists(MINGJU_FILE):
+        with open(MINGJU_FILE, "r", encoding="utf-8") as f:
+            MINGJU_POOL = json.load(f)
+except Exception as e:
+    print(f"⚠️  加载名句库失败：{e}")
+    MINGJU_POOL = []
+
 
 def db_query(sql, params=()):
     """查本地 poems.db（只读）。库不存在时返回空列表。"""
@@ -258,37 +269,80 @@ def suggest():
     if not q:
         return jsonify({"ret_code": "0", "suggestions": []})
 
-    if not TITLE_INDEX:
-        return jsonify({"ret_code": "0", "suggestions": [],
-                        "remark": "标题索引尚未生成，请先运行 fetch_index.py"})
-
-    prefix_hits = []
-    contain_hits = []
-    seen_titles = set()
-
-    for item in TITLE_INDEX:
-        title = item.get("title", "")
-        if not title or title in seen_titles:
-            continue
-        # 前缀匹配（优先级最高）
-        if title.startswith(q):
-            prefix_hits.append(item)
-            seen_titles.add(title)
-        # 包含匹配（次优先级，且不重复）
-        elif q in title:
-            contain_hits.append(item)
-            seen_titles.add(title)
-
-    # 前缀优先，包含补充，去重后最多 20 条
-    suggestions = (prefix_hits + contain_hits)[:20]
-
+    # 直接查本地库：标题「包含」关键词，去重同名后按知名度降序（搜"水"联想出《水调歌头》等名篇）
+    rows = db_query(
+        "SELECT title, poet, dynasty, MAX(popularity) AS popularity FROM poems "
+        "WHERE title LIKE ? GROUP BY title ORDER BY popularity DESC LIMIT 20",
+        (f"%{q}%",),
+    )
     return jsonify({
         "ret_code": "0",
         "suggestions": [
-            {"title": s.get("title"), "poet": s.get("poet"), "dynasty": s.get("dynasty")}
-            for s in suggestions
+            {"title": r.get("title"), "poet": r.get("poet"), "dynasty": r.get("dynasty")}
+            for r in rows
         ],
     })
+
+
+@app.route("/famous")
+def famous():
+    """
+    千古名句接口（数据来自古诗文网「名句」频道精选，9286 条）。
+
+    参数：
+      mode=random  随机一条（默认），可用 tier=1/2/3 只看某公认度，limit=条数
+      title=XXX    查某首诗相关的名句（用于详情页「千古名句」标注）
+
+    返回：
+      { "ret_code": "0", "famous": [ {content, author, source, dynasty, tier}, ... ] }
+    """
+    mode = request.args.get("mode", "random").strip()
+    title = request.args.get("title", "").strip()
+
+    if not MINGJU_POOL:
+        return jsonify({"ret_code": "0", "famous": [], "remark": "名句库未加载"})
+
+    # 模式 1：按诗名查相关名句
+    if title:
+        hits = []
+        for item in MINGJU_POOL:
+            src = item.get("source", "") or ""
+            if src and (title in src or src.startswith(title) or src == title):
+                hits.append(item)
+        # 按 tier 升序（顶流在前），去重 content
+        hits.sort(key=lambda x: x.get("tier", 9))
+        seen = set()
+        dedup = []
+        for h in hits:
+            if h.get("content") in seen:
+                continue
+            seen.add(h.get("content"))
+            dedup.append(h)
+        return jsonify({"ret_code": "0", "famous": _pick_famous(dedup[:20])})
+
+    # 模式 2：随机名句
+    import random
+    tier = request.args.get("tier", "").strip()
+    limit = int(request.args.get("limit", "1"))
+    pool = MINGJU_POOL
+    if tier in ("1", "2", "3"):
+        pool = [x for x in pool if str(x.get("tier")) == tier]
+    picks = random.sample(pool, min(limit, len(pool))) if pool else []
+    return jsonify({"ret_code": "0", "famous": _pick_famous(picks)})
+
+
+def _pick_famous(items):
+    """把名句条目整理成前端可用的精简结构。"""
+    out = []
+    for it in items:
+        out.append({
+            "content": it.get("content", ""),
+            "author": it.get("author", ""),
+            "source": it.get("source", ""),
+            "dynasty": it.get("dynasty", ""),
+            "tier": it.get("tier", 2),
+        })
+    return out
 
 
 @app.route("/search")
@@ -345,13 +399,13 @@ def search_smart(keyword, page):
         total = poet_total[0]["c"] if poet_total else len(poet_rows)
         return jsonify(_poems_from_db(poet_rows, total, page, poet=keyword))
 
-    # 2. 本地库按诗名查（精确匹配标题，同名里名篇在前）
+    # 2. 本地库按诗名查（标题「包含」关键词，按知名度降序 → 搜"水"出《水调歌头》等名篇在前）
     title_rows = db_query(
-        "SELECT * FROM poems WHERE title = ? ORDER BY popularity DESC, title LIMIT ? OFFSET ?",
-        (keyword, page_size, offset),
+        "SELECT * FROM poems WHERE title LIKE ? ORDER BY popularity DESC, title LIMIT ? OFFSET ?",
+        (f"%{keyword}%", page_size, offset),
     )
     if title_rows:
-        title_total = db_query("SELECT COUNT(*) AS c FROM poems WHERE title = ?", (keyword,))
+        title_total = db_query("SELECT COUNT(*) AS c FROM poems WHERE title LIKE ?", (f"%{keyword}%",))
         total = title_total[0]["c"] if title_total else len(title_rows)
         return jsonify(_poems_from_db(title_rows, total, page))
 
@@ -480,8 +534,43 @@ def search_by_poet_with_info(poet_info, page):
 
 
 def search_by_title(title, page):
-    """按诗词名查（走古诗文大全 API）"""
-    return jsonify(apihz_search(title, page))
+    """按诗词名查：本地库精确匹配优先（名篇在前），查不到再走古诗文大全 API。
+    并附带作者简介（本地 poet_info 表）"""
+    page_size = 20
+    offset = (int(page) - 1) * page_size if str(page).isdigit() else 0
+
+    # 1. 本地库精确匹配标题（同名作品按知名度降序 → 孟浩然的春晓排在无名氏前面）
+    rows = db_query(
+        "SELECT * FROM poems WHERE title = ? ORDER BY popularity DESC, title LIMIT ? OFFSET ?",
+        (title, page_size, offset),
+    )
+    if rows:
+        total_row = db_query("SELECT COUNT(*) AS c FROM poems WHERE title = ?", (title,))
+        total = total_row[0]["c"] if total_row else len(rows)
+        result = _poems_from_db(rows, total, page)
+        # 给每位作者附上简介（前端按每首诗的 biography 字段渲染）
+        for p in result.get("poemInfo", []):
+            poet = (p.get("poet") or "").strip()
+            if not poet:
+                continue
+            info = db_query(
+                "SELECT name, dynasty, intro FROM poet_info WHERE name = ?", (poet,)
+            )
+            if info and info[0].get("intro"):
+                p["biography"] = info[0]["intro"]
+        return jsonify(result)
+
+    # 2. 本地没有 → apihz 兜底
+    result = apihz_search(title, page)
+    poem_info = result.get("poemInfo") or []
+    for p in poem_info:
+        poet = (p.get("poet") or "").strip()
+        if not poet:
+            continue
+        info = db_query("SELECT name, dynasty, intro FROM poet_info WHERE name = ?", (poet,))
+        if info and info[0].get("intro"):
+            p["biography"] = info[0]["intro"]
+    return jsonify(result)
 
 
 if __name__ == "__main__":

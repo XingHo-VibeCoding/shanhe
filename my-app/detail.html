@@ -41,11 +41,59 @@
     letter-spacing: 3px;
     opacity: 0.85;
   }
+  .topbar nav { margin-left: auto; display: flex; gap: 14px; }
+  .topbar nav a {
+    color: #f5f0e6;
+    opacity: .85;
+    font-size: 13px;
+    text-decoration: none;
+  }
+  .topbar nav a:hover { opacity: 1; }
 
   .container {
     max-width: 720px;
     margin: 0 auto;
     padding: 26px 16px 80px;
+  }
+
+  html { scroll-behavior: smooth; }
+  .card, .poet-card { scroll-margin-top: 70px; }
+
+  /* ===== 右侧竖排导航（点击跳转，滚动高亮） ===== */
+  .side-nav {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    background: rgba(250,247,238,.94);
+    border: 1px solid #e0d6c2;
+    border-right: none;
+    border-radius: 6px 0 0 6px;
+    overflow: hidden;
+  }
+  .side-nav a {
+    display: block;
+    writing-mode: vertical-rl;
+    letter-spacing: 5px;
+    font-size: 12px;
+    color: #8a7a5f;
+    text-decoration: none;
+    padding: 10px 6px;
+    border-bottom: 1px solid #e8dfcc;
+    transition: color .2s, background .2s;
+  }
+  .side-nav a:last-child { border-bottom: none; }
+  .side-nav a:hover { color: #a3402f; }
+  .side-nav a.active {
+    color: #a3402f;
+    background: #f3ecdb;
+  }
+  @media (max-width: 720px) {
+    .container { padding-right: 40px; }
+    .side-nav a { font-size: 11px; padding: 8px 4px; letter-spacing: 3px; }
   }
 
   /* ===== 标题区 ===== */
@@ -76,32 +124,34 @@
     margin: 0 3px;
   }
 
-  /* ===== 内容卡片 ===== */
+  /* ===== 内容卡片（牌匾标题 + 分隔线，参考古诗文网样式） ===== */
   .card {
-    background: #fdfbf5;
-    border: 1px solid #d8cdb8;
-    border-radius: 6px;
-    padding: 20px 22px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(58,50,38,.05);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #e0d6c2;
+    border-radius: 0;
+    padding: 20px 4px 24px;
+    margin-bottom: 0;
+    box-shadow: none;
   }
   .card h2 {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
-    font-size: 16px;
     font-weight: 500;
-    color: #a3402f;
-    margin-bottom: 12px;
-    letter-spacing: 3px;
+    margin-bottom: 16px;
+    letter-spacing: 0;
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 0;
   }
-  .card h2::before {
-    content: "";
-    width: 3px;
-    height: 16px;
-    background: #a3402f;
-    border-radius: 1px;
+  .card h2 .hz {
+    display: inline-block;
+    font-size: 16px;
+    color: #4a4238;
+    border: 1px solid #6b5d43;
+    padding: 3px 6px;
+    margin: 0 4px;
+    line-height: 1.2;
   }
   .content {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
@@ -112,40 +162,116 @@
     white-space: pre-wrap;
   }
   .trans, .anno, .bg, .appr {
-    font-size: 14px;
+    font-size: 15px;
     color: #5a4f3f;
     white-space: pre-wrap;
     line-height: 1.9;
+    text-align: justify;
+    text-indent: 2em;
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
   }
 
-  /* ===== 可折叠卡片（Day 11：展开/收起 + 反馈） ===== */
-  .fold-head { cursor: pointer; }
-  .fold-head:hover { opacity: .8; }
-  /* 余力加练：键盘焦点状态——Tab 聚焦时朱红描边，一眼看清"焦点在哪" */
-  .fold-head:focus-visible {
-    outline: 2px solid #a3402f;
-    outline-offset: 4px;
-    border-radius: 2px;
-    opacity: 1;
-  }
-  .fold-right {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .fold-state {
-    font-size: 12px;
-    font-weight: 400;
-    letter-spacing: 1px;
-    color: #8a7a5f;
-  }
-  .chev { width: 12px; height: 12px; flex: none; transition: transform .25s ease; }
-  .fold-card.open .chev { transform: rotate(180deg); }
-  .fold {
-    max-height: 0;
+  /* ===== 长文折叠（底部右侧「更多 ›」） ===== */
+  .clamped {
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    transition: max-height .3s ease;
+  }
+  .more-btn {
+    display: block;
+    margin: 10px 0 0 auto;
+    padding: 4px 2px;
+    border: none;
+    background: none;
+    color: #8a7a5f;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+  .more-btn:hover { color: #a3402f; }
+  .more-btn:focus-visible { outline: 2px solid #a3402f; outline-offset: 2px; border-radius: 2px; }
+
+  /* ===== 作者卡片（简介 + 画像） ===== */
+  .poet-card {
+    display: flex;
+    gap: 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #e0d6c2;
+    border-radius: 0;
+    padding: 20px 4px 24px;
+    margin-top: 0;
+    align-items: flex-start;
+    box-shadow: none;
+  }
+  .poet-portrait {
+    flex: none;
+    width: 72px;
+    height: 72px;
+    border: 1px solid #d8cdb8;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f0e9d8;
+  }
+  .poet-portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .poet-body { flex: 1; min-width: 0; }
+  .poet-head {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 14px;
+    color: #4a4238;
+    margin-bottom: 6px;
+    display: flex;
+    gap: 0;
+  }
+  .poet-head .hz {
+    display: inline-block;
+    border: 1px solid #6b5d43;
+    padding: 2px 4px;
+    margin-right: 5px;
+    line-height: 1.2;
+  }
+  .poet-name {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 18px;
+    color: #3a3226;
+    font-weight: 500;
+  }
+  .poet-bio {
+    font-size: 13px;
+    color: #5a4f3f;
+    margin-top: 8px;
+    line-height: 1.9;
+    text-align: justify;
+  }
+
+  /* ===== 千古名句标注 ===== */
+  .famous-quote { background: #fdf8ee; }
+  .f-line {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 16px;
+    color: #4a4033;
+    line-height: 1.8;
+    padding: 7px 0;
+    text-align: center;
+  }
+  .f-line + .f-line { border-top: 1px dashed #e2d6bd; }
+  .f-star {
+    color: #a3402f;
+    font-size: 13px;
+    margin-left: 5px;
+    vertical-align: middle;
+  }
+  .f-src {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    font-size: 12px;
+    color: #8a7a5f;
+    margin-left: 6px;
   }
 
   /* ===== 状态占位 ===== */
@@ -173,10 +299,10 @@
   <div class="topbar">
     <a class="back" id="backLink" href="home.html">← 返回</a>
     <span class="t">诗词详情</span>
-    <nav style="margin-left:auto;display:flex;gap:14px;">
-      <a style="color:#f5f0e6;opacity:.85;font-size:13px;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'" href="home.html">首页</a>
-      <a style="color:#f5f0e6;opacity:.85;font-size:13px;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'" href="index.html">诗词查询</a>
-      <a style="color:#f5f0e6;opacity:.85;font-size:13px;text-decoration:none;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.85'" href="footprints.html">诗人足迹</a>
+    <nav>
+      <a href="home.html">首页</a>
+      <a href="index.html">诗词查询</a>
+      <a href="footprints.html">诗人足迹</a>
     </nav>
   </div>
 
@@ -185,16 +311,35 @@
   </main>
 
 <script>
-  // 后端地址：留空走同源相对路径（本地/线上部署都通）
+  // 后端地址：留空走同源相对路径
   const API_BASE = "";
 
-  // 从 URL 取诗名（如 detail.html?title=静夜思）
+  // 作者画像映射：只在「确有史料画像」的诗人名下登记（值 = 本地图片路径）。
+  // 查不到画像的诗人不登记，详情页就不显示画像、只显示文字简介。
+  const POET_PORTRAITS = {
+    "李白": "assets/poets/avatars/李白.jpg",
+    "白居易": "assets/poets/avatars/白居易.JPG",
+    "王维": "assets/poets/avatars/王维.jpg",
+    "苏轼": "assets/poets/avatars/苏轼.jpg",
+    "辛弃疾": "assets/poets/avatars/辛弃疾.JPG",
+    "李清照": "assets/poets/avatars/李清照.jpg",
+    "陶渊明": "assets/poets/avatars/陶渊明.jpg",
+    "陆游": "assets/poets/avatars/陆游.jpg",
+    "王安石": "assets/poets/avatars/王安石.jpg",
+    "李商隐": "assets/poets/avatars/李商隐.jpg",
+    "杜牧": "assets/poets/avatars/杜牧.jpg",
+    "王昌龄": "assets/poets/avatars/王昌龄.jpg",
+    "欧阳修": "assets/poets/avatars/欧阳修.jpg",
+    "黄庭坚": "assets/poets/avatars/黄庭坚.png",
+    "柳宗元": "assets/poets/avatars/柳宗元.jpg",
+  };
+
   function getParam(name) {
     return new URLSearchParams(location.search).get(name) || "";
   }
   const title = getParam("title");
 
-  // Day 13：从哪来回哪去（?from=footprints → 足迹页；缺省 → 首页）
+  // 从哪来回哪去
   (function initBack() {
     const from = getParam("from");
     const back = document.getElementById("backLink");
@@ -214,59 +359,110 @@
       .replace(/>/g, "&gt;");
   }
 
-  // ===== Day 11：可折叠卡片（展开/收起，动效 + 文字双反馈） =====
-  function foldCard(title, cls, text) {
+  // ===== 牌匾标题：每个字一个方框，参考古诗文网样式 =====
+  function plaqueTitle(t) {
+    return t.split("").map(ch => '<span class="hz">' + ch + '</span>').join("");
+  }
+
+  // ===== 长文折叠：超过 100 字默认只显示 6 行，点「更多 ›」展开 =====
+  let segSeq = 0;
+  function longContent(cls, text, allowClamp) {
+    if (!allowClamp || text.length <= 100) {
+      return '<div class="' + cls + '">' + text + '</div>';
+    }
+    const id = "seg" + (++segSeq);
     return (
-      '<div class="card fold-card">' +
-        '<h2 class="fold-head" tabindex="0" role="button" aria-expanded="false" ' +
-             'onclick="toggleCard(this)" onkeydown="toggleKey(event, this)">' +
-          '<span>' + title + '</span>' +
-          '<span class="fold-right">' +
-            '<span class="fold-state">已收起</span>' +
-            '<svg class="chev" viewBox="0 0 12 12" aria-hidden="true">' +
-              '<path d="M2 4 L6 8 L10 4" fill="none" stroke="#a3402f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '</svg>' +
-          '</span>' +
-        '</h2>' +
-        '<div class="fold"><div class="' + cls + '">' + text + '</div></div>' +
+      '<div class="' + cls + ' clamped" id="' + id + '">' + text + '</div>' +
+      '<button class="more-btn" data-target="' + id + '" onclick="toggleClamp(this)">更多 ›</button>'
+    );
+  }
+
+  function toggleClamp(btn) {
+    const el = document.getElementById(btn.getAttribute("data-target"));
+    if (!el) return;
+    const expanded = el.classList.contains("expanded");
+    el.classList.toggle("clamped", expanded);
+    el.classList.toggle("expanded", !expanded);
+    btn.textContent = expanded ? "更多 ›" : "收起";
+  }
+
+  // ===== 卡片：牌匾标题 + 内容（有内容才显示，超长折叠） =====
+  function plaqueCard(title, cls, text, allowClamp, id) {
+    if (!text) return "";
+    return (
+      '<div class="card"' + (id ? ' id="' + id + '"' : '') + '>' +
+        '<h2>' + plaqueTitle(title) + '</h2>' +
+        longContent(cls, text, allowClamp) +
       '</div>'
     );
   }
 
-  function toggleCard(head) {
-    const card = head.closest(".fold-card");
-    const fold = card.querySelector(".fold");
-    const stateEl = head.querySelector(".fold-state");
-    const opening = !card.classList.contains("open");
-    card.classList.toggle("open", opening);
-    fold.style.maxHeight = opening ? fold.scrollHeight + "px" : "0px";
-    stateEl.textContent = opening ? "已展开" : "已收起";
-    head.setAttribute("aria-expanded", opening);   // 无障碍：告诉屏幕阅读器当前状态
-  }
-
-  // 余力加练：键盘操作——Enter 或 空格 均可展开/收起
-  function toggleKey(e, head) {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();   // 空格默认会滚动页面，拦掉
-      toggleCard(head);
-    }
+  // ===== 右侧竖排导航：列出本页所有卡片，点击跳转、滚动高亮 =====
+  function buildSideNav() {
+    const old = document.getElementById("sideNav");
+    if (old) old.remove();
+    const cards = document.querySelectorAll("#main .card[id], #main .poet-card[id]");
+    if (!cards.length) return;
+    const nav = document.createElement("nav");
+    nav.className = "side-nav";
+    nav.id = "sideNav";
+    const links = [];
+    cards.forEach(card => {
+      const head = card.querySelector("h2") || card.querySelector(".poet-head");
+      const label = (head ? head.textContent : "").replace(/\s/g, "");
+      if (!label || !card.id) return;
+      const a = document.createElement("a");
+      a.href = "#" + card.id;
+      a.textContent = label;
+      a.dataset.target = card.id;
+      nav.appendChild(a);
+      links.push(a);
+    });
+    document.body.appendChild(nav);
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (en.isIntersecting) {
+          links.forEach(l => l.classList.toggle("active", l.dataset.target === en.target.id));
+        }
+      });
+    }, { rootMargin: "-35% 0px -55% 0px" });
+    cards.forEach(c => obs.observe(c));
   }
 
   function renderPoem(p) {
     const tags = (p.tag ? String(p.tag).split(",") : [])
       .filter(t => t.trim())
       .map(t => '<span class="tag">' + escapeHtml(t.trim()) + '</span>').join("");
+    const poetName = p.poet || "佚名";
+    const dynasty = p.dynasty || "未知";
+    const bio = p.biography || "";
+    const portrait = POET_PORTRAITS[poetName] || "";
+
+    let poetCard = "";
+    if (bio) {
+      poetCard =
+        '<div class="poet-card" id="sec-zuozhe">' +
+          (portrait ? '<div class="poet-portrait"><img src="' + portrait + '" alt="' + escapeHtml(poetName) + '画像" loading="lazy"></div>' : '') +
+          '<div class="poet-body">' +
+            '<div class="poet-head">' + plaqueTitle("关于作者") + '</div>' +
+            '<div class="poet-name">' + escapeHtml(poetName) + ' · ' + escapeHtml(dynasty) + '</div>' +
+            '<div class="poet-bio">' + escapeHtml(bio) + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
     return (
       '<div class="poem-head">' +
         '<h1>' + escapeHtml(p.title || "无题") + '</h1>' +
-        '<div class="meta">' + escapeHtml(p.poet || "佚名") + ' · ' + escapeHtml(p.dynasty || "未知") + '</div>' +
+        '<div class="meta">' + escapeHtml(poetName) + ' · ' + escapeHtml(dynasty) + '</div>' +
         (tags ? '<div class="tags">' + tags + '</div>' : '') +
       '</div>' +
-      '<div class="card"><h2>原文</h2><div class="content">' + escapeHtml(p.content || "（暂无原文）") + '</div></div>' +
-      foldCard("译文", "trans", escapeHtml(p.translation || "（暂无译文）")) +
-      foldCard("注释", "anno", escapeHtml(p.annotation || "（暂无注释）")) +
-      (p.background ? foldCard("创作背景", "bg", escapeHtml(p.background)) : '') +
-      (p.appreciation ? foldCard("赏析", "appr", escapeHtml(p.appreciation)) : '')
+      '<div class="card" id="sec-yuanwen"><h2>' + plaqueTitle("原文") + '</h2><div class="content">' + escapeHtml(p.content || "（暂无原文）") + '</div></div>' +
+      plaqueCard("译文", "trans", escapeHtml(p.translation || ""), true, "sec-yiwen") +
+      plaqueCard("注释", "anno", escapeHtml(p.annotation || ""), true, "sec-zhushi") +
+      plaqueCard("背景", "bg", escapeHtml(p.background || ""), true, "sec-beijing") +
+      plaqueCard("赏析", "appr", escapeHtml(p.appreciation || ""), true, "sec-shangxi") +
+      poetCard
     );
   }
 
@@ -288,18 +484,42 @@
         main.innerHTML = '<div class="state">没有找到「' + escapeHtml(title) + '」的详情，请换个诗名试试。</div>';
         return;
       }
-      // 同名诗里优先展示「有译文/注释」的那首（通常是名篇）；否则取第一条
+      // 同名诗里优先展示「有译文/注释」的那首；否则取第一条
       let pick = list[0];
       for (const p of list) {
         if (p.translation || p.annotation) { pick = p; break; }
       }
       main.innerHTML = renderPoem(pick);
+      buildSideNav();
+      loadFamous(pick.title);
     } catch (e) {
       main.innerHTML = '<div class="state error">无法连接后端服务，请确认已启动 server.py。<br>（' + escapeHtml(e.message) + '）</div>';
     }
   }
 
   load();
+
+  // ===== 千古名句：异步拉取该诗相关名句，插入到原文卡片下方 =====
+  async function loadFamous(t) {
+    try {
+      const r = await fetch(API_BASE + "/famous?title=" + encodeURIComponent(t));
+      const d = await r.json();
+      const fs = (d.famous || []).slice(0, 5);
+      if (!fs.length) return;
+      const yw = document.getElementById("sec-yuanwen");
+      if (!yw) return;
+      const div = document.createElement("div");
+      div.className = "card famous-quote";
+      div.innerHTML = '<h2>' + plaqueTitle("千古名句") + '</h2>' +
+        fs.map(function (f) {
+          const star = f.tier === 1 ? '<span class="f-star">★</span>' : "";
+          return '<div class="f-line">' + escapeHtml(f.content) + star +
+            '<span class="f-src">—— ' + escapeHtml(f.source || "") +
+            (f.author ? " · " + escapeHtml(f.author) : "") + "</span></div>";
+        }).join("");
+      yw.insertAdjacentElement("afterend", div);
+    } catch (e) {}
+  }
 </script>
 </body>
 </html>
