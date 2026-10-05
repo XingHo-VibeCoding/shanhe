@@ -33,7 +33,7 @@ exports.main = async (event, context) => {
       .limit(limit);
 
     if (error) {
-      return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: String(error.message || error) }) };
+      return { statusCode: 500, headers, body: JSON.stringify({ ok: false, data: null, error: String(error.message || error) }) };
     }
 
     // 4) 拍平外键嵌套字段，输出契约约定的字段
@@ -49,9 +49,9 @@ exports.main = async (event, context) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ ok: true, data: list }),
+      body: JSON.stringify({ ok: true, data: list, error: null }),
     };
   } catch (err) {
-    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: String(err && err.message) }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, data: null, error: String(err && err.message) }) };
   }
 };

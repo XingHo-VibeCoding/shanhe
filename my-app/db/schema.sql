@@ -38,7 +38,8 @@ CREATE TABLE poems (
 CREATE TABLE favorites (
   id          SERIAL PRIMARY KEY,
   poem_id     INTEGER NOT NULL REFERENCES poems(id),
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT favorites_poem_id_unique UNIQUE (poem_id)
 );
 
 -- 收藏按诗查询 / 按时间倒序读取，建索引提速
@@ -68,5 +69,11 @@ COMMENT ON COLUMN poems.appreciation IS '赏析，TEXT';
 COMMENT ON COLUMN poems.popularity IS '知名度，BIGINT 数值很大（名篇上亿）故用 8 字节整数';
 
 COMMENT ON COLUMN favorites.id IS '收藏记录唯一标识，主键，SERIAL 自增';
-COMMENT ON COLUMN favorites.poem_id IS '被收藏的诗词 ID，外键关联 poems.id';
+COMMENT ON COLUMN favorites.poem_id IS '被收藏的诗词 ID，外键关联 poems.id，UNIQUE 保证同一首诗只收藏一次';
 COMMENT ON COLUMN favorites.created_at IS '收藏时间，TIMESTAMPTZ 带时区，默认当前时间';
+
+-- ---------- 权限（PostgREST 角色写权限） ----------
+-- 云函数 rdb() 走 anon（匿名）角色，默认只有 SELECT，写入需显式授权。
+-- 否则 POST 会报 permission denied for table favorites。
+GRANT INSERT ON favorites TO anon;
+GRANT USAGE, SELECT ON SEQUENCE favorites_id_seq TO anon;

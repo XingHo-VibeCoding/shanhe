@@ -201,14 +201,15 @@
 
 **请求参数（Query）**：无
 
-**响应 JSON 形状**
+**响应 JSON 形状**（第 3 周云函数接口统一 `{ ok, data, error }` 三字段：成功 `ok:true` + `data` 有值 + `error:null`；失败 `ok:false` + `data:null` + `error` 有值）
 
 ```json
 {
   "ok": true,
   "data": [
     { "id": 1, "poem_id": 1001, "title": "静夜思", "poet": "李白", "dynasty": "唐代", "created_at": "2026-10-04T01:00:00+08:00" }
-  ]
+  ],
+  "error": null
 }
 ```
 
@@ -218,23 +219,40 @@
 
 ---
 
-### 3.8 添加收藏 ⏳ 占位
+### 3.8 添加收藏 ✅ 已实现（★写入接口，防重复提交）
 
 **`POST /api/favorites`**
+
+添加一条收藏记录。同一首诗只收藏一次，重复提交会被拒。
 
 **请求体（JSON）**
 
 ```json
-{ "poem_id": 1001 }
+{ "poem_id": 6 }
 ```
 
-**响应 JSON 形状**
+**响应 JSON 形状**（三字段统一）
 
 ```json
-{ "ret_code": "0", "id": 1 }
+{
+  "ok": true,
+  "data": { "id": 7, "poem_id": 6, "created_at": "2026-10-05T08:19:28.06+08:00" },
+  "error": null
+}
 ```
 
-**错误返回**：400（缺 `poem_id`）、404（诗词不存在）、500。
+**公网地址**：`POST https://shijishanhe-d5gmc8a0k01b1e88d.service.tcloudbase.com/api/favorites`
+
+**错误返回**（错误提示均为中文）：
+
+| 状态码 | 场景 | error |
+|--------|------|-------|
+| 400 | 缺 `poem_id` / 非正整数 | 缺少必填字段 poem_id（诗词 ID） |
+| 404 | 诗词不存在 | 该诗词不存在 |
+| 409 | 重复收藏 | 已收藏过这首诗 |
+| 500 | 服务器错误 | … |
+
+**防重复机制（两层）**：① 应用层先查后插，给中文提示；② 数据库 `UNIQUE(poem_id)` 约束兜底，防并发漏判。
 
 ---
 
@@ -266,14 +284,15 @@
 |------|------|------|
 | `limit` | 否 | 返回条数，默认 10，上限 50 |
 
-**响应 JSON 形状**
+**响应 JSON 形状**（三字段统一，同上）
 
 ```json
 {
   "ok": true,
   "data": [
     { "id": 1, "title": "静夜思", "poet": "李白", "dynasty": "唐代", "content": "床前看月光…", "popularity": 100000000 }
-  ]
+  ],
+  "error": null
 }
 ```
 
