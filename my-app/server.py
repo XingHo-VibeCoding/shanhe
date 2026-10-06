@@ -15,11 +15,14 @@ import os
 import json
 import re
 import html
-import sqlite3
 import requests
 import urllib3
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+
+# 数据访问层：所有「查数据库」的 SQL 都封装在 db_access.py 里，
+# server.py 只负责接请求、调这些函数、拼返回，不再直接写 SQL。
+import db_access
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -79,23 +82,6 @@ try:
 except Exception as e:
     print(f"⚠️  加载名句库失败：{e}")
     MINGJU_POOL = []
-
-
-def db_query(sql, params=()):
-    """查本地 poems.db（只读）。库不存在时返回空列表。"""
-    if not os.path.exists(DB_FILE):
-        return []
-    try:
-        conn = sqlite3.connect(DB_FILE)
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-        cur.execute(sql, params)
-        rows = [dict(r) for r in cur.fetchall()]
-        conn.close()
-        return rows
-    except Exception as e:
-        print(f"⚠️  查询数据库失败：{e}")
-        return []
 
 
 # ===== 古诗文大全（apihz）数据源工具 =====
@@ -225,29 +211,51 @@ def recommend():
     返回格式与 /search 的本地库结果一致，前端可复用渲染逻辑。
     """
     limit = 8
-    rows = db_query(
-        "SELECT * FROM poems WHERE content != '' AND translation != '' "
-        "ORDER BY popularity DESC, title LIMIT ?",
-        (limit,),
-    )
-    if len(rows) < limit:
-        seen = {(r.get("title"), r.get("poet")) for r in rows}
-        extra = db_query(
-            "SELECT * FROM poems WHERE content != '' "
-            "ORDER BY popularity DESC, title LIMIT 50"
-        )
-        for r in extra:
-            key = (r.get("title"), r.get("poet"))
-            if key in seen:
-                continue
-            rows.append(r)
-            seen.add(key)
-            if len(rows) >= limit:
-                break
+    rows = db_access.get_recommend_pool(limit)
 
     result = _poems_from_db(rows, len(rows), 1)
     result["match_type"] = "recommend"
     return jsonify(result)
+
+
+@app.route("/daily")
+def daily():
+    """
+    每日荐诗：首页「今日荐诗」卡片的数据源。
+    用当天日期做种子，从「最出名的 300 首（有译文）」里确定性挑一首——
+    同一天固定同一首，跨天自动换下一首；不会每次刷新乱跳。
+
+    返回：{ ret_code, poem: {title, poet, dynasty, preview} }
+      preview = 原文前 4 行（长诗截断加省略号），供卡片展示；点击进详情看全文。
+    """
+    import datetime
+
+    POOL_SIZE = 300  # 候选池大小：最出名的 300 首名篇
+
+    # 优先取「有译文」的名篇（五件套完整，详情页体验更好）
+    rows = db_access.get_daily_pool(POOL_SIZE)
+    if not rows:
+        return jsonify({"ret_code": "0", "poem": None, "remark": "暂无诗词数据"})
+
+    # 当天日期做种子：跨天自然递增，同一天结果稳定
+    seed = datetime.date.today().toordinal()
+    pick = rows[seed % len(rows)]
+
+    content = (pick.get("content") or "").strip()
+    lines = [ln.strip() for ln in content.split("\n") if ln.strip()]
+    preview = "\n".join(lines[:4])
+    if len(lines) > 4:
+        preview += "\n……"
+
+    return jsonify({
+        "ret_code": "0",
+        "poem": {
+            "title": pick.get("title", ""),
+            "poet": pick.get("poet", ""),
+            "dynasty": pick.get("dynasty", ""),
+            "preview": preview,
+        },
+    })
 
 
 @app.route("/suggest")
@@ -269,12 +277,21 @@ def suggest():
     if not q:
         return jsonify({"ret_code": "0", "suggestions": []})
 
+    # 「作者，篇名」组合联想：如「苏轼，蝶」→ 只联想苏轼名下标题含「蝶」的篇名
+    combo = parse_poet_title_combo(q)
+    if combo:
+        poet_part, title_part = combo
+        rows = db_access.suggest_poet_titles(poet_part, title_part)
+        return jsonify({
+            "ret_code": "0",
+            "suggestions": [
+                {"title": r.get("title"), "poet": r.get("poet"), "dynasty": r.get("dynasty")}
+                for r in rows
+            ],
+        })
+
     # 直接查本地库：标题「包含」关键词，去重同名后按知名度降序（搜"水"联想出《水调歌头》等名篇）
-    rows = db_query(
-        "SELECT title, poet, dynasty, MAX(popularity) AS popularity FROM poems "
-        "WHERE title LIKE ? GROUP BY title ORDER BY popularity DESC LIMIT 20",
-        (f"%{q}%",),
-    )
+    rows = db_access.suggest_titles(q)
     return jsonify({
         "ret_code": "0",
         "suggestions": [
@@ -377,10 +394,27 @@ def search():
     return jsonify({"ret_code": "-1", "remark": "请输入诗人名或诗词名"}), 400
 
 
+def parse_poet_title_combo(keyword):
+    """把「作者，篇名」组合格式拆开（中英文逗号都支持）。
+
+    返回 (作者, 篇名)；不是该格式返回 None。
+    例：「苏轼，蝶恋花」→ ("苏轼", "蝶恋花")。
+    """
+    for sep in ("，", ","):
+        if sep in keyword:
+            a, _, b = keyword.partition(sep)
+            a, b = a.strip(), b.strip()
+            if a and b:
+                return a, b
+            return None  # 有逗号但缺一半，不当组合处理
+    return None
+
+
 def search_smart(keyword, page):
     """智能搜索：先查本地库（零额度），查不到再调 API，最后按诗名兜底。
 
     顺序（越靠前越省额度）：
+      0. 「作者，篇名」组合（如「苏轼，蝶恋花」）→ 只搜该作者名下匹配的作品
       1. 本地 poems.db 里按「诗人名」查 → 命中直接返回
       2. 本地 poems.db 里按「诗名」查 → 命中直接返回
       3. 本地标题索引「同名作品」→ 命中返回标题列表
@@ -389,24 +423,29 @@ def search_smart(keyword, page):
     page_size = 20
     offset = (int(page) - 1) * page_size if str(page).isdigit() else 0
 
+    # 0. 「作者，篇名」组合搜索：不拆开的话整串什么都匹配不上，
+    #    最后落到 API 兜底会混进「别人作品里恰好带这几个字」的结果（如李清照词序提到《蝶恋花》）。
+    combo = parse_poet_title_combo(keyword)
+    if combo:
+        poet_part, title_part = combo
+        if db_access.poet_exists(poet_part):
+            rows = db_access.get_poems_by_poet_and_title(poet_part, title_part, page_size, offset)
+            total = db_access.count_poems_by_poet_and_title(poet_part, title_part)
+            total = total if total else len(rows)
+            return jsonify(_poems_from_db(rows, total, page, poet=poet_part))
+
     # 1. 本地库按诗人名查（按知名度降序：名篇在前）
-    poet_rows = db_query(
-        "SELECT * FROM poems WHERE poet = ? ORDER BY popularity DESC, title LIMIT ? OFFSET ?",
-        (keyword, page_size, offset),
-    )
+    poet_rows = db_access.get_poems_by_poet(keyword, page_size, offset)
     if poet_rows:
-        poet_total = db_query("SELECT COUNT(*) AS c FROM poems WHERE poet = ?", (keyword,))
-        total = poet_total[0]["c"] if poet_total else len(poet_rows)
+        total = db_access.count_poems_by_poet(keyword)
+        total = total if total else len(poet_rows)
         return jsonify(_poems_from_db(poet_rows, total, page, poet=keyword))
 
     # 2. 本地库按诗名查（标题「包含」关键词，按知名度降序 → 搜"水"出《水调歌头》等名篇在前）
-    title_rows = db_query(
-        "SELECT * FROM poems WHERE title LIKE ? ORDER BY popularity DESC, title LIMIT ? OFFSET ?",
-        (f"%{keyword}%", page_size, offset),
-    )
+    title_rows = db_access.get_poems_by_title_like(keyword, page_size, offset)
     if title_rows:
-        title_total = db_query("SELECT COUNT(*) AS c FROM poems WHERE title LIKE ?", (f"%{keyword}%",))
-        total = title_total[0]["c"] if title_total else len(title_rows)
+        total = db_access.count_poems_by_title_like(keyword)
+        total = total if total else len(title_rows)
         return jsonify(_poems_from_db(title_rows, total, page))
 
     # 3. 本地标题索引「按作者精确匹配」——搜人名直接列出 TA 的作品（零额度）
@@ -456,14 +495,12 @@ def _poems_from_db(rows, total, page, poet=None):
         "poemInfo": poem_info,
     }
     if poet:
-        info = db_query(
-            "SELECT name, dynasty, intro FROM poet_info WHERE name = ?", (poet,)
-        )
+        info = db_access.get_poet_info(poet)
         if info:
             result["poetInfo"] = {
-                "poet": info[0]["name"],
-                "dynasty": info[0]["dynasty"] or "",
-                "biography": info[0]["intro"],
+                "poet": info["name"],
+                "dynasty": info["dynasty"] or "",
+                "biography": info["intro"],
             }
     return result
 
@@ -540,24 +577,19 @@ def search_by_title(title, page):
     offset = (int(page) - 1) * page_size if str(page).isdigit() else 0
 
     # 1. 本地库精确匹配标题（同名作品按知名度降序 → 孟浩然的春晓排在无名氏前面）
-    rows = db_query(
-        "SELECT * FROM poems WHERE title = ? ORDER BY popularity DESC, title LIMIT ? OFFSET ?",
-        (title, page_size, offset),
-    )
+    rows = db_access.get_poems_by_title_exact(title, page_size, offset)
     if rows:
-        total_row = db_query("SELECT COUNT(*) AS c FROM poems WHERE title = ?", (title,))
-        total = total_row[0]["c"] if total_row else len(rows)
+        total = db_access.count_poems_by_title_exact(title)
+        total = total if total else len(rows)
         result = _poems_from_db(rows, total, page)
         # 给每位作者附上简介（前端按每首诗的 biography 字段渲染）
         for p in result.get("poemInfo", []):
             poet = (p.get("poet") or "").strip()
             if not poet:
                 continue
-            info = db_query(
-                "SELECT name, dynasty, intro FROM poet_info WHERE name = ?", (poet,)
-            )
-            if info and info[0].get("intro"):
-                p["biography"] = info[0]["intro"]
+            info = db_access.get_poet_info(poet)
+            if info and info.get("intro"):
+                p["biography"] = info["intro"]
         return jsonify(result)
 
     # 2. 本地没有 → apihz 兜底
@@ -567,9 +599,9 @@ def search_by_title(title, page):
         poet = (p.get("poet") or "").strip()
         if not poet:
             continue
-        info = db_query("SELECT name, dynasty, intro FROM poet_info WHERE name = ?", (poet,))
-        if info and info[0].get("intro"):
-            p["biography"] = info[0]["intro"]
+        info = db_access.get_poet_info(poet)
+        if info and info.get("intro"):
+            p["biography"] = info["intro"]
     return jsonify(result)
 
 
