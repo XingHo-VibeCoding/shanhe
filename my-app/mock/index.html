@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>诗迹山河 · 公网 Mock 版</title>
+<title>诗迹山河 · 公网版</title>
 <style>
   :root {
     --paper: #f3ebd9;      /* 宣纸米白 */
@@ -90,9 +90,34 @@
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 17px; line-height: 2; letter-spacing: 1px;
     white-space: pre-line;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .card .yi { margin-top: 12px; font-size: 14px; line-height: 1.9; color: var(--ink-soft); }
   .card .yi b { color: var(--zhusha); font-weight: 600; margin-right: 6px; }
+  .card .hot-tag {
+    float: right; font-size: 12px; color: var(--zhusha);
+    border: 1px solid var(--zhusha); border-radius: 12px;
+    padding: 1px 10px; letter-spacing: 1px; margin-top: 4px;
+  }
+
+  /* 加载 / 出错状态 */
+  .state {
+    text-align: center; padding: 36px 20px;
+    color: var(--ink-soft); font-size: 14px; letter-spacing: 2px;
+    border: 1px dashed var(--border); border-radius: 6px;
+  }
+  .state .err { color: #a3402f; margin-top: 8px; font-size: 12px; word-break: break-all; }
+  .state button {
+    margin-top: 14px; cursor: pointer;
+    background: var(--zhusha); color: var(--paper-light);
+    border: none; border-radius: 18px;
+    padding: 8px 26px; font-size: 14px; letter-spacing: 2px;
+    font-family: inherit;
+  }
+  .state button:focus-visible { outline: 2px solid var(--zhusha); outline-offset: 3px; }
 
   /* 后端探活 */
   .health {
@@ -149,60 +174,128 @@
       <div class="seal">诗迹<br>山河</div>
       <h1>诗迹山河</h1>
       <p class="sub">一诗一景 · 山河为卷</p>
-      <span class="mock-tag">公网 Mock 版（数据为演示假数据）</span>
+      <span class="mock-tag" id="dataTag">公网版 · 云数据库实时数据（加载中…）</span>
     </header>
 
-    <div class="cards">
-      <div class="card">
-        <h3>静夜思</h3>
-        <div class="meta">李白 · 唐</div>
-        <div class="verse">床前明月光，
-疑是地上霜。
-举头望明月，
-低头思故乡。</div>
-        <div class="yi"><b>译文</b>明亮的月光洒在床前，仿佛地上结了一层白霜；抬头望见那一轮明月，低下头便思念起远方的故乡。</div>
-      </div>
-
-      <div class="card">
-        <h3>春晓</h3>
-        <div class="meta">孟浩然 · 唐</div>
-        <div class="verse">春眠不觉晓，
-处处闻啼鸟。
-夜来风雨声，
-花落知多少。</div>
-        <div class="yi"><b>译文</b>春日贪睡，不知不觉天已亮；醒来处处是鸟儿的啼鸣。昨夜风声雨声，不知花儿又落了多少。</div>
-      </div>
-
-      <div class="card">
-        <h3>江雪</h3>
-        <div class="meta">柳宗元 · 唐</div>
-        <div class="verse">千山鸟飞绝，
-万径人踪灭。
-孤舟蓑笠翁，
-独钓寒江雪。</div>
-        <div class="yi"><b>译文</b>千山万岭鸟已飞尽，条条小路上也不见人影。只有一叶孤舟上披蓑戴笠的老翁，独自在漫天风雪的寒江上垂钓。</div>
-      </div>
+    <div class="cards" id="cards">
+      <div class="state">正在从云数据库加载热门诗词…</div>
     </div>
 
     <div class="health">
-      <h2>后端探活 · /api/health</h2>
-      <div class="row">
-        <span class="dot"></span>
-        <span class="addr">https://shijishanhe-d5gmc8a0k01b1e88d.service.tcloudbase.com/api/health</span>
+      <h2>检查台 · 云函数状态</h2>
+      <div class="row" id="chk-health">
+        <span class="dot" style="background:#c9bda3;"></span>
+        <span class="addr">GET /api/health — 探活中…</span>
       </div>
-      <a class="btn" href="https://shijishanhe-d5gmc8a0k01b1e88d.service.tcloudbase.com/api/health" target="_blank" rel="noopener">新窗口验证后端</a>
-      <pre>{
-  "status": "ok",
-  "service": "shiji-shanhe-api",
-  "time": "2026-10-03T12:56:14.126Z"
-}</pre>
-      <div class="note">说明：这是 Day 15 已部署的真实后端探活接口，点上方按钮会在新标签页打开并返回 JSON（time 为服务器实时时间，每次不同）。下方卡片里的诗词为 mock 假数据，真实业务接口将在 Day 16–20 接入。</div>
+      <div class="row" id="chk-hot">
+        <span class="dot" style="background:#c9bda3;"></span>
+        <span class="addr">GET /api/hot — 探活中…</span>
+      </div>
+      <div class="row" id="chk-fav">
+        <span class="dot" style="background:#c9bda3;"></span>
+        <span class="addr">GET /api/favorites — 探活中…</span>
+      </div>
+      <pre id="healthRaw">探活中…</pre>
+      <div class="note">检查台逐个探测后端三个云函数（走公网网关地址）。绿色 = 接口正常返回；红色 = 请求失败（跨域被拦或接口异常，具体原因看 F12 Console）。上方诗词卡片来自 /api/hot（CloudBase PostgreSQL poems 表，按人气排序）。</div>
     </div>
 
     <footer>
-      诗迹山河 · 前端 Mock 版<br>
-      Day 15 部署验证 · 真实接口后续接入
+      诗迹山河 · 公网版<br>
+      Day 20 · 前端已接入云数据库真实数据
     </footer>
   </div>
+
+<script>
+  /* ================= 配置 ================= */
+  // 云函数网关公网地址（页面与接口不同源 → 依赖后端返回 CORS 头放行）
+  var API_BASE = 'https://shijishanhe-d5gmc8a0k01b1e88d.service.tcloudbase.com';
+
+  /* ================= 工具 ================= */
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  // 人气值格式化：100000000 → 1亿
+  function fmtPop(n) {
+    if (n >= 100000000) return (n / 100000000).toFixed(n % 100000000 ? 1 : 0) + '亿';
+    if (n >= 10000) return Math.round(n / 10000) + '万';
+    return String(n);
+  }
+  function setChk(id, ok, text) {
+    var row = document.getElementById(id);
+    row.querySelector('.dot').style.background = ok ? '#7a9a5a' : '#c05a4a';
+    row.querySelector('.dot').style.boxShadow =
+      ok ? '0 0 0 4px rgba(122,154,90,.18)' : '0 0 0 4px rgba(192,90,74,.18)';
+    row.querySelector('.addr').textContent = text;
+  }
+
+  /* ================= 热门诗词卡片 ================= */
+  function cardHtml(p, i) {
+    return (
+      '<div class="card">' +
+        '<span class="hot-tag">人气 ' + fmtPop(p.popularity) + '</span>' +
+        '<h3>' + esc(p.title) + '</h3>' +
+        '<div class="meta">' + esc(p.poet) + ' · ' + esc(p.dynasty) + '</div>' +
+        '<div class="verse">' + esc(p.content) + '</div>' +
+      '</div>'
+    );
+  }
+  function renderHotError(msg) {
+    document.getElementById('dataTag').textContent = '公网版 · 云数据加载失败';
+    document.getElementById('cards').innerHTML =
+      '<div class="state">云数据库暂时连不上' +
+        '<div class="err">' + esc(msg) + '</div>' +
+        '<button onclick="location.reload()">重试</button>' +
+      '</div>';
+  }
+
+  function loadHot() {
+    return fetch(API_BASE + '/api/hot?limit=5')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.ok) throw new Error(j.error || '接口返回失败');
+        var list = j.data || [];
+        document.getElementById('dataTag').textContent =
+          '公网版 · 云数据库实时数据（/api/hot · 前 ' + list.length + ' 首）';
+        document.getElementById('cards').innerHTML = list.map(cardHtml).join('');
+      });
+  }
+
+  /* ================= 检查台 ================= */
+  function probeHealth() {
+    return fetch(API_BASE + '/api/health')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        setChk('chk-health', j.ok === true,
+          'GET /api/health — ' + (j.ok ? '正常 · service=' + j.service : '返回异常'));
+        document.getElementById('healthRaw').textContent = JSON.stringify(j, null, 2);
+      });
+  }
+  function probeHot() {
+    return fetch(API_BASE + '/api/hot?limit=1')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var first = j.ok && j.data && j.data[0];
+        setChk('chk-hot', j.ok === true,
+          'GET /api/hot — ' + (j.ok ? '正常 · 榜首《' + first.title + '》' : '返回异常'));
+      });
+  }
+  function probeFav() {
+    return fetch(API_BASE + '/api/favorites')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        setChk('chk-fav', j.ok === true,
+          'GET /api/favorites — ' + (j.ok ? '正常 · 已收藏 ' + (j.data || []).length + ' 首' : '返回异常'));
+      });
+  }
+  function probeFail(name, err) {
+    setChk(name, false, name.replace('chk-', 'GET /api/') + ' — 失败：' + (err.message || err));
+  }
+
+  /* ================= 启动 ================= */
+  loadHot().catch(renderHotError);
+  probeHealth().catch(function (e) { probeFail('chk-health', e); });
+  probeHot().catch(function (e) { probeFail('chk-hot', e); });
+  probeFav().catch(function (e) { probeFail('chk-fav', e); });
+</script>
 </body>
 </html>
