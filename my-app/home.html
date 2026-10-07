@@ -477,7 +477,7 @@
 
     <div class="date-bar" id="dateBar">……</div>
 
-    <section class="daily" onclick="location.href='detail.html?title=静夜思&from=home'">
+    <section class="daily" id="dailyCard">
       <!-- 红梅枝 -->
       <svg class="plum" viewBox="0 0 120 120" aria-hidden="true">
         <g stroke="#9a8466" stroke-width="2.2" fill="none" stroke-linecap="round">
@@ -502,9 +502,9 @@
         </g>
       </svg>
       <span class="daily-badge">今日荐诗</span>
-      <div class="d-title">静夜思</div>
-      <div class="d-lines">床前明月光，疑是地上霜。<br>举头望明月，低头思故乡。</div>
-      <div class="d-author">李白 · 唐代</div>
+      <div class="d-title" id="dailyTitle">正在取诗…</div>
+      <div class="d-lines" id="dailyLines"></div>
+      <div class="d-author" id="dailyAuthor"></div>
     </section>
 
     <section class="daily famous-card" id="famousCard">
@@ -741,6 +741,35 @@
         })
         .then(function (d2) {
           if (d2 && d2.famous && d2.famous.length) render(d2.famous[0]);
+        })
+        .catch(fallback);
+    })();
+
+    // ===== 6.5 每日荐诗：调用 /daily，每天自动换一首（同一天稳定） =====
+    (function loadDaily() {
+      function esc(s) {
+        return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+      function bindDaily(title) {
+        document.getElementById("dailyCard").onclick = function () {
+          location.href = "detail.html?title=" + encodeURIComponent(title) + "&from=home";
+        };
+      }
+      function fallback() {
+        document.getElementById("dailyTitle").textContent = "静夜思";
+        document.getElementById("dailyLines").innerHTML = "床前明月光，疑是地上霜。<br>举头望明月，低头思故乡。";
+        document.getElementById("dailyAuthor").textContent = "李白 · 唐代";
+        bindDaily("静夜思");
+      }
+      fetch("/daily")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var p = d && d.poem;
+          if (!p || !p.title) { fallback(); return; }
+          document.getElementById("dailyTitle").textContent = p.title;
+          document.getElementById("dailyLines").innerHTML = esc(p.preview || "").split("\n").join("<br>");
+          document.getElementById("dailyAuthor").textContent = (p.poet || "佚名") + " · " + (p.dynasty || "");
+          bindDaily(p.title);
         })
         .catch(fallback);
     })();

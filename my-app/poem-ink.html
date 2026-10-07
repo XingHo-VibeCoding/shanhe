@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>蝶恋花 · 春景 · 水墨蒸馏页</title>
+<style>
+  :root{
+    --bg:#f3eee2; --panel:#fffdf7; --paper:#f6f1e4; --ink:#23211c; --sub:#6b6658;
+    --line:#e6dcc5; --accent:#2f6b52; --accent-soft:#e7efe7; --gold:#a9741f;
+    --seal:#b03a2e; --warn:#b5462f; --warn-soft:#f6e8e4;
+    --shadow:0 1px 2px rgba(30,28,20,.04),0 8px 28px rgba(30,28,20,.06);
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.72;font-size:16px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+  header{padding:72px 0 40px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+  .seal{position:absolute;right:22px;top:50px;width:72px;height:72px;border-radius:8px;
+    background:var(--seal);display:flex;align-items:center;justify-content:center;color:#f6ede0;
+    font-size:26px;font-weight:700;letter-spacing:2px;writing-mode:vertical-rl;opacity:.92;
+    font-family:"STKaiti","KaiTi","PingFang SC",serif;box-shadow:0 2px 6px rgba(120,40,30,.25)}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:20px}
+  .kicker svg{width:15px;height:15px}
+  h1{font-size:42px;line-height:1.14;margin:0 0 14px;font-weight:700;letter-spacing:-.01em}
+  h1 .en{display:block;font-size:19px;color:var(--sub);font-weight:500;margin-top:10px;letter-spacing:0}
+  .meta{display:flex;flex-wrap:wrap;gap:18px;margin-top:26px;color:var(--sub);font-size:14px}
+  .meta span{display:inline-flex;align-items:center;gap:7px}
+  .meta svg{width:15px;height:15px;stroke:var(--sub)}
+  .lede{margin-top:30px;font-size:18px;line-height:1.75;color:#423d31}
+  .lede strong{color:var(--accent)}
+
+  .cover-card{padding:36px 28px;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);margin:30px 0 20px}
+  .cover-art{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--paper)}
+  .cover-art img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}
+  .cover-overlay{padding:22px 18px 20px;border-top:1px dashed var(--line);background:rgba(255,253,247,.75)}
+  .cover-title{font-family:"STKaiti","KaiTi","PingFang SC",serif;font-size:38px;line-height:1.2;letter-spacing:.08em;margin:0 0 8px;color:var(--ink)}
+  .cover-sub{margin:0;color:var(--sub);font-size:15px}
+  .cover-hook{margin:12px 0 0;display:inline-block;padding:6px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:600;letter-spacing:.04em}
+
+  .fulltext{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:28px;margin:20px 0 0;box-shadow:var(--shadow);text-align:center}
+  .fulltext h3{margin:0 0 4px;font-size:13px;letter-spacing:.14em;color:var(--gold);font-weight:700}
+  .fulltext p{font-family:"STKaiti","KaiTi","PingFang SC",serif;font-size:21px;line-height:2;
+    letter-spacing:.1em;margin:10px 0 0;color:var(--ink)}
+  .fulltext .stan{margin-top:14px}
+
+  nav.toc{position:sticky;top:0;z-index:5;background:rgba(243,238,226,.9);
+    backdrop-filter:saturate(1.3) blur(8px);border-bottom:1px solid var(--line)}
+  .toc-inner{max-width:var(--maxw);margin:0 auto;padding:12px 24px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .toc button{border:0;background:transparent;color:var(--sub);font:inherit;font-size:13.5px;
+    padding:7px 13px;border-radius:999px;cursor:pointer;transition:.18s;white-space:nowrap}
+  .toc button:hover{background:var(--accent-soft);color:var(--accent)}
+  .toc button.active{background:var(--accent);color:#fff}
+
+  section{padding:52px 0;border-bottom:1px solid var(--line)}
+  .sec-num{font-size:13px;letter-spacing:.12em;color:var(--gold);font-weight:600;text-transform:uppercase}
+  h2{font-size:28px;line-height:1.25;margin:10px 0;font-weight:700;letter-spacing:-.005em}
+  .sec-intro{color:var(--sub);font-size:16px;margin:0 0 8px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:26px 28px;margin:24px 0;box-shadow:var(--shadow)}
+
+  .verse{font-family:"STKaiti","KaiTi","Kai","PingFang SC","Noto Serif SC",serif;
+    font-size:31px;line-height:1.45;text-align:center;margin:0 0 6px;letter-spacing:.14em;color:var(--ink);position:relative;}
+  .verse .pin{display:block;font-size:12.5px;color:var(--gold);letter-spacing:.3em;margin-top:10px;font-family:inherit}
+  .verse::after{content:"";display:block;width:44px;height:2px;background:var(--line);margin:16px auto 0}
+
+  .ink-painting{border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    margin:22px 0 20px;line-height:0;position:relative;background:#f6f1e4;}
+  .ink-painting img{width:100%;height:auto;display:block}
+  .ink-painting figcaption{line-height:1.6;font-size:13px;color:var(--sub);text-align:center;padding:11px 16px 13px;
+    background:rgba(255,253,247,.6);border-top:1px dashed var(--line);letter-spacing:.04em;}
+
+  .field{margin:0 0 0}
+  .field + .field{margin-top:14px}
+  .field .lbl{font-size:12.5px;font-weight:700;letter-spacing:.06em;color:var(--accent);text-transform:uppercase}
+  .field p{margin:5px 0 0}
+  .field .lbl.gold{color:var(--gold)}
+
+  .gloss{font-size:15px;color:#423d31}
+  .gloss b{color:var(--accent);font-weight:600}
+
+  table{width:100%;border-collapse:collapse;margin:16px 0 0;font-size:14.5px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--sub);font-weight:600;font-size:12.5px;letter-spacing:.04em}
+  td b{color:var(--accent)}
+
+  .takeaway{background:linear-gradient(180deg,#fffdf7,#f3f2e6);border:1px solid #e5dcc2}
+  ol.big{counter-reset:t;list-style:none;padding:0;margin:8px 0 0}
+  ol.big li{position:relative;padding:16px 8px 16px 56px;border-bottom:1px dashed var(--line);font-size:16.5px}
+  ol.big li:last-child{border-bottom:0}
+  ol.big li::before{counter-increment:t;content:counter(t);position:absolute;left:8px;top:14px;
+    width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
+  ol.big li b{color:var(--accent)}
+
+  footer{padding:40px 0 64px;color:var(--sub);font-size:13.5px;text-align:center}
+  footer .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid var(--line);
+    border-radius:999px;background:var(--panel);margin-bottom:14px}
+  footer .badge svg{width:15px;height:15px;stroke:var(--accent)}
+
+  @media(max-width:560px){
+    h1{font-size:31px} h2{font-size:23px} header{padding:48px 0 32px}
+    .card{padding:20px} .seal{display:none} .verse{font-size:26px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 页头 ============ -->
+<header>
+  <div class="seal">春景</div>
+  <div class="wrap">
+    <div class="kicker">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>诗词水墨蒸馏 · 一句一画</span>
+    </div>
+    <h1>蝶恋花 · 春景<span class="en">苏轼 · 词 · 北宋（婉约）</span></h1>
+    <div class="meta">
+      <span>上下两阕 · 6 幅水墨 · 每个意群一画</span>
+      <span>约 6 分钟</span>
+      <span>诗中有画 · 画中有诗</span>
+    </div>
+    <p class="lede">暮春时节，花褪残红，青杏初结——苏轼在这首婉约小词里写尽了<strong>「多情却被无情恼」</strong>的微妙心事。一分惜春，一分旷达，三分说不清道不明的怅惘。</p>
+  </div>
+</header>
+
+<!-- ============ 目录 ============ -->
+<nav class="toc">
+  <div class="toc-inner" id="toc">
+    <button data-target="s1" class="active">其一 · 春归</button>
+    <button data-target="s2">其二 · 人家</button>
+    <button data-target="s3">其三 · 宽解</button>
+    <button data-target="s4">其四 · 一墙</button>
+    <button data-target="s5">其五 · 偶闻</button>
+    <button data-target="s6">其六 · 怅惘</button>
+    <button data-target="s7">意象速查</button>
+    <button data-target="s8">带走一句</button>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ============ 封面卡 ============ -->
+  <section style="padding-top:30px">
+    <div class="cover-card">
+      <figure class="cover-art">
+        <img src="ink-paintings/cover.png" alt="蝶恋花·春景 封面水墨图">
+      </figure>
+      <div class="cover-overlay">
+        <h2 class="cover-title">蝶恋花 · 春景</h2>
+        <p class="cover-sub">苏轼 · 词 · 北宋</p>
+        <span class="cover-hook">6 幅水墨，一句一画 · 暮春的怅惘与宽解</span>
+      </div>
+    </div>
+
+    <div class="fulltext">
+      <h3>全 词</h3>
+      <p class="stan">花褪残红青杏小。燕子飞时，绿水人家绕。<br>枝上柳绵吹又少，天涯何处无芳草。</p>
+      <p class="stan">墙里秋千墙外道。墙外行人，墙里佳人笑。<br>笑渐不闻声渐悄，多情却被无情恼。</p>
+    </div>
+  </section>
+
+  <!-- ============ 其一 ============ -->
+  <section id="s1">
+    <div class="sec-num">上阕 · 其一</div>
+    <h2>春归 · 花褪残红青杏小</h2>
+    <p class="sec-intro">词从枝头一瞥开始：花退了，杏来了，春天正在悄悄交班。</p>
+
+    <div class="card">
+      <div class="verse">花褪残红青杏小<span class="pin">huā tuì cán hóng qīng xìng xiǎo</span></div>
+      <figure class="ink-painting">
+        <img src="ink-paintings/v1.png" alt="花褪残红青杏小 水墨画">
+        <figcaption>残红褪尽 · 青杏初结 · 春事阑珊</figcaption>
+      </figure>
+      <div class="field"><span class="lbl">水墨画寓意</span><p>画面一枝斜出，红花已谢得只剩零星，青涩的小杏悄悄探头。花退杏进，正是暮春最微妙的时刻——繁华落尽，果实初生。苏轼不写伤春的哀嚎，只冷静记录这场交接，淡然里藏着一丝惋惜。</p></div>
+      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>褪</b>：凋谢、褪色；<b>残红</b>：落花；<b>青杏</b>：初结的小杏，色青未熟。句意——花儿凋残，红色褪去，枝头只剩小小的青杏。</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 其二 ============ -->
+  <section id="s2">
+    <div class="sec-num">上阕 · 其二</div>
+    <h2>人家 · 燕子飞时，绿水人家绕</h2>
+    <p class="sec-intro">视线从枝头拉远，一幅安稳圆足的江南暮春图。</p>
+
+    <div class="card">
+      <div class="verse">燕子飞时，绿水人家绕<span class="pin">yàn zǐ fēi shí, lǜ shuǐ rén jiā rào</span></div>
+      <figure class="ink-painting">
+        <img src="ink-paintings/v2.png" alt="燕子飞时绿水人家绕 水墨画">
+        <figcaption>燕剪春风 · 绿水绕村 · 烟火安然</figcaption>
+      </figure>
+      <div class="field"><span class="lbl">水墨画寓意</span><p>燕子掠过天空，一湾绿水环绕着村舍人家。动静相衬——燕子是流动的生气，人家是安顿的烟火。这幅江南暮春图安宁圆足，恰为下文的怅惘埋下反衬的底色。</p></div>
+      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>绕</b>：环绕、围绕。句意——燕子飞舞的时节，一湾绿水环绕着几户人家。</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 其三 ============ -->
+  <section id="s3">
+    <div class="sec-num">上阕 · 其三</div>
+    <h2>宽解 · 枝上柳绵吹又少，天涯何处无芳草</h2>
+    <p class="sec-intro">上句惜春，下句忽而宕开——这是全词最著名的转折。</p>
+
+    <div class="card">
+      <div class="verse">枝上柳绵吹又少，天涯何处无芳草<span class="pin">zhī shàng liǔ mián chuī yòu shǎo, tiān yá hé chù wú fāng cǎo</span></div>
+      <figure class="ink-painting">
+        <img src="ink-paintings/v3.png" alt="柳绵芳草 水墨画">
+        <figcaption>柳绵渐稀 · 芳草连天 · 一收一放</figcaption>
+      </figure>
+      <div class="field"><span class="lbl">水墨画寓意</span><p>柳絮被风吹得越来越少，春天真的要走了；可抬眼望，天涯尽头哪一处没有青青芳草？上句收，惜眼前之春；下句放，见天地之阔。一收一放之间，是苏轼式的自我宽解——失去的固然可惜，生机却处处都在。</p></div>
+      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>柳绵</b>：柳絮；<b>天涯</b>：天边，极远之处；<b>芳草</b>：香草，常喻美好的事物与希望。句意——枝上柳絮愈吹愈少，但天边何处没有芳草呢。</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 其四 ============ -->
+  <section id="s4">
+    <div class="sec-num">下阕 · 其四</div>
+    <h2>一墙 · 墙里秋千墙外道</h2>
+    <p class="sec-intro">镜头一转，从旷野收进人间：一道墙，隔出两个世界。</p>
+
+    <div class="card">
+      <div class="verse">墙里秋千墙外道<span class="pin">qiáng lǐ qiū qiān qiáng wài dào</span></div>
+      <figure class="ink-painting">
+        <img src="ink-paintings/v4.png" alt="墙里秋千墙外道 水墨画">
+        <figcaption>一墙之隔 · 秋千掩映 · 小径寂寂</figcaption>
+      </figure>
+      <div class="field"><span class="lbl">水墨画寓意</span><p>一道白墙，墙里是深宅庭院、秋千闲荡的青春，墙外是行人必经的道路。墙是实际的建筑，更是人与人间「遇与不遇」的隐喻——只一墙之隔，却两不相见。画面简净，墙内墙外各自成境。</p></div>
+      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>秋千</b>：悬索荡板的游戏器械，古时多置庭院，为女子春日嬉戏之具。句意——围墙里有人荡着秋千，围墙外是行人走的道路。</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 其五 ============ -->
+  <section id="s5">
+    <div class="sec-num">下阕 · 其五</div>
+    <h2>偶闻 · 墙外行人，墙里佳人笑</h2>
+    <p class="sec-intro">一场毫无预谋的相遇：笑声那样近，人却那样远。</p>
+
+    <div class="card">
+      <div class="verse">墙外行人，墙里佳人笑<span class="pin">qiáng wài xíng rén, qiáng lǐ jiā rén xiào</span></div>
+      <figure class="ink-painting">
+        <img src="ink-paintings/v5.png" alt="墙外行人墙里佳人笑 水墨画">
+        <figcaption>行人赶路 · 笑语出墙 · 一墙之隔</figcaption>
+      </figure>
+      <div class="field"><span class="lbl">水墨画寓意</span><p>墙里，佳人荡着秋千，笑声清脆；墙外，行人拄杖赶路，未曾抬头。墙太高，挡住了视线——他看不见她，她也不知道墙外有人经过。可笑声不认得墙，径自越了过去。一个无情地笑，一个多情地恼，这场相遇与错过，全在这道墙的两边。</p></div>
+      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>行人</b>：过路之人，亦暗指漂泊在外的苏轼自己；<b>佳人</b>：美好的女子。句意——墙外的行人驻足倾听，墙里是佳人的欢笑。</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 其六 ============ -->
+  <section id="s6">
+    <div class="sec-num">下阕 · 其六</div>
+    <h2>怅惘 · 笑渐不闻声渐悄，多情却被无情恼</h2>
+    <p class="sec-intro">全词收束于此：不解释，不排解，把那点怅惘留在空白里。</p>
+
+    <div class="card">
+      <div class="verse">笑渐不闻声渐悄，多情却被无情恼<span class="pin">xiào jiàn bù wén shēng jiàn qiǎo, duō qíng què bèi wú qíng nǎo</span></div>
+      <figure class="ink-painting">
+        <img src="ink-paintings/v6.png" alt="多情却被无情恼 水墨画">
+        <figcaption>笑声渐杳 · 万籁归寂 · 怅然自失</figcaption>
+      </figure>
+      <div class="field"><span class="lbl">水墨画寓意</span><p>笑声渐渐远去、低下去，终于听不见了；墙外行人兀自立在寂静里，大块留白压出满纸空落。多情的是他，浑然不觉的是墙里人——这一恼，恼得无理又真实。画面愈静，心事愈深。</p></div>
+      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>多情</b>：指墙外行人（自指）；<b>无情</b>：指墙内佳人（不知有人徘徊）；<b>恼</b>：撩拨、引起烦恼。句意——笑声渐远渐悄，我这片多情，却被无情的人儿惹得满心烦恼。</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 意象速查 ============ -->
+  <section id="s7">
+    <div class="sec-num">意象速查</div>
+    <h2>词中的意象与象征</h2>
+    <p class="sec-intro">这首词的每个意象都带着「将尽」与「将生」的双重意味。</p>
+    <table>
+      <thead><tr><th>意象</th><th>出处</th><th>象征</th></tr></thead>
+      <tbody>
+        <tr><td><b>残红 / 青杏</b></td><td>花褪残红青杏小</td><td>春光将尽、生机暗换</td></tr>
+        <tr><td><b>燕子</b></td><td>燕子飞时</td><td>时序流转、人间生气</td></tr>
+        <tr><td><b>绿水人家</b></td><td>绿水人家绕</td><td>安宁圆足的生活图景</td></tr>
+        <tr><td><b>柳绵</b></td><td>枝上柳绵吹又少</td><td>留不住的春光</td></tr>
+        <tr><td><b>芳草</b></td><td>天涯何处无芳草</td><td>处处可寻的希望与慰藉</td></tr>
+        <tr><td><b>墙</b></td><td>墙里秋千墙外道</td><td>人我之间的阻隔</td></tr>
+        <tr><td><b>佳人笑</b></td><td>墙里佳人笑</td><td>可望而不可即的美好</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 带走一句 ============ -->
+  <section id="s8" style="border-bottom:0">
+    <div class="sec-num">Takeaway</div>
+    <h2>如果只带走一句</h2>
+    <div class="card takeaway">
+      <ol class="big">
+        <li><b>「天涯何处无芳草」</b>——失意时的自我宽解：一段春光结束了，但天地辽阔，生机处处。这也是苏轼一生贬谪路上的人生底色。</li>
+        <li><b>以景写情，婉而多讽</b>——全词不着一个「愁」字，愁绪却从残红、柳绵、渐悄的笑声里一层层渗出来，愈淡愈深。</li>
+        <li><b>「多情却被无情恼」</b>——人生许多烦恼，正来自「有情」遇见「不觉」；读懂这一句，便多一分释然。</li>
+      </ol>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ footer（来源声明） ============ -->
+<footer>
+  <div class="wrap">
+    <div class="badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+      <span>诗词水墨蒸馏 · 一句一画</span>
+    </div>
+    <div>原文录自公版《蝶恋花 · 春景》· 苏轼 · 7 幅水墨（含封面）为 AI 按「南宗渲淡 / 披麻皴 / 米点皴 / 计白当黑」风格生成的当代水墨意象，非历史画作复制</div>
+    <div style="margin-top:10px;font-size:12.5px">本页为文化解读，不构成任何专业或投资建议</div>
+  </div>
+</footer>
+
+<script>
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('#toc button'));
+  buttons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var el = document.getElementById(btn.getAttribute('data-target'));
+      if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
+    });
+  });
+  var sections = buttons.map(function(b){ return document.getElementById(b.getAttribute('data-target')); });
+  function onScroll(){
+    var pos = window.scrollY + 140, idx = 0;
+    for(var i=0;i<sections.length;i++){ if(sections[i] && sections[i].offsetTop <= pos){ idx = i; } }
+    buttons.forEach(function(b,i){ b.classList.toggle('active', i===idx); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+</script>
+</body>
+</html>

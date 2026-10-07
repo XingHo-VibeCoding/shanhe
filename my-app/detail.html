@@ -274,6 +274,86 @@
     margin-left: 6px;
   }
 
+  /* ===== 水墨画卷（诗词详情页内嵌 · 一句一画） ===== */
+  .ink-note {
+    text-align: center;
+    font-size: 12px;
+    color: #8a7a5f;
+    letter-spacing: 1px;
+    margin: -6px 0 14px;
+  }
+  .ink-strip {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 2px 14px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ink-strip::-webkit-scrollbar { height: 6px; }
+  .ink-strip::-webkit-scrollbar-thumb { background: #d8cdb8; border-radius: 3px; }
+  .ink-item {
+    flex: 0 0 auto;
+    width: 132px;
+    scroll-snap-align: start;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .ink-fig {
+    width: 132px;
+    aspect-ratio: 2 / 3;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #d8cdb8;
+    background: #f0e9d8;
+    box-shadow: 0 2px 8px rgba(58,50,38,.06);
+  }
+  .ink-fig img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .5s cubic-bezier(.16,1,.3,1);
+  }
+  .ink-item:hover .ink-fig img { transform: scale(1.07); }
+  .ink-cap {
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 13px;
+    color: #5a4f3f;
+    text-align: center;
+    margin-top: 8px;
+    letter-spacing: 1px;
+    line-height: 1.5;
+  }
+  .ink-item .ink-tag {
+    display: inline-block;
+    font-size: 11px;
+    color: #fdfbf5;
+    background: #a3402f;
+    border-radius: 3px;
+    padding: 0 5px;
+    margin-right: 5px;
+    vertical-align: 1px;
+  }
+  .ink-item:first-child .ink-cap { color: #a3402f; }
+  .ink-cta {
+    display: block;
+    text-align: center;
+    margin-top: 6px;
+    padding: 11px 20px;
+    border: 1px solid #a3402f;
+    border-radius: 6px;
+    color: #a3402f;
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    letter-spacing: 3px;
+    font-size: 15px;
+    text-decoration: none;
+    transition: background .2s, color .2s;
+  }
+  .ink-cta:hover { background: #a3402f; color: #fdfbf5; }
+  .ink-cta:focus-visible { outline: 2px solid #a3402f; outline-offset: 3px; border-radius: 6px; }
+
   /* ===== 状态占位 ===== */
   .state {
     text-align: center;
@@ -438,6 +518,12 @@
     const bio = p.biography || "";
     const portrait = POET_PORTRAITS[poetName] || "";
 
+    // 水墨画卷：仅《蝶恋花·春景》（苏轼）在原文后展示「一句一画」画廊
+    const isChunjing = p.title && p.title.indexOf("蝶恋花") !== -1
+      && p.title.indexOf("春景") !== -1
+      && p.poet && p.poet.indexOf("苏轼") !== -1;
+    const inkGallery = isChunjing ? inkGalleryHtml() : "";
+
     let poetCard = "";
     if (bio) {
       poetCard =
@@ -458,12 +544,40 @@
         (tags ? '<div class="tags">' + tags + '</div>' : '') +
       '</div>' +
       '<div class="card" id="sec-yuanwen"><h2>' + plaqueTitle("原文") + '</h2><div class="content">' + escapeHtml(p.content || "（暂无原文）") + '</div></div>' +
+      inkGallery +
       plaqueCard("译文", "trans", escapeHtml(p.translation || ""), true, "sec-yiwen") +
       plaqueCard("注释", "anno", escapeHtml(p.annotation || ""), true, "sec-zhushi") +
       plaqueCard("背景", "bg", escapeHtml(p.background || ""), true, "sec-beijing") +
       plaqueCard("赏析", "appr", escapeHtml(p.appreciation || ""), true, "sec-shangxi") +
       poetCard
     );
+  }
+
+  // ===== 水墨画卷：一句一画（点击进入沉浸式全屏画廊） =====
+  function inkGalleryHtml() {
+    const items = [
+      { i: 0, img: "ink-paintings/display/cover.jpg", line: "蝶恋花 · 春景", mark: true },
+      { i: 1, img: "ink-paintings/display/v1.jpg",    line: "花褪残红青杏小" },
+      { i: 2, img: "ink-paintings/display/v2.jpg",    line: "燕子飞时，绿水人家绕" },
+      { i: 3, img: "ink-paintings/display/v3.jpg",    line: "枝上柳绵吹又少，天涯何处无芳草" },
+      { i: 4, img: "ink-paintings/display/v4.jpg",    line: "墙里秋千墙外道" },
+      { i: 5, img: "ink-paintings/display/v5.jpg",    line: "墙外行人，墙里佳人笑" },
+      { i: 6, img: "ink-paintings/display/v6.jpg",    line: "笑渐不闻声渐悄，多情却被无情恼" }
+    ];
+    const strip = items.map(function (it) {
+      const cap = it.mark
+        ? '<span class="ink-tag">卷</span>' + escapeHtml(it.line)
+        : escapeHtml(it.line);
+      return '<a class="ink-item" href="poem-immersive.html#' + it.i + '">' +
+        '<div class="ink-fig"><img src="' + it.img + '" alt="' + escapeHtml(it.line) + '" loading="lazy"></div>' +
+        '<div class="ink-cap">' + cap + '</div></a>';
+    }).join("");
+    return '<div class="card" id="sec-shuimo">' +
+      '<h2>' + plaqueTitle("水墨画卷") + '</h2>' +
+      '<div class="ink-note">一句一画 · 滑动浏览 · 点击任意一幅进入沉浸画廊</div>' +
+      '<div class="ink-strip">' + strip + '</div>' +
+      '<a class="ink-cta" href="poem-immersive.html">▶ 沉浸式观看全卷</a>' +
+    '</div>';
   }
 
   async function load() {

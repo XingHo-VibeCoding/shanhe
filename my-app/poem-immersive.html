@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>蝶恋花 · 春景 · 沉浸水墨画廊</title>
+<style>
+  :root{
+    --ink:#1c1813;         /* 墨 */
+    --paper:#f4eddd;       /* 宣纸 */
+    --paper-deep:#ece3cd;
+    --gold:#a9741f;        /* 香槟金 */
+    --seal:#b03a2e;        /* 朱砂 */
+    --bg-0:#0b0906;
+    --bg-1:#15110c;
+    --bg-2:#201a12;
+    --muted:#9c8f78;
+    --ease-out:cubic-bezier(.16,1,.3,1);
+    --ease-in:cubic-bezier(.7,0,.84,0);
+    --ease-inout:cubic-bezier(.65,0,.35,1);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(120% 90% at 50% 42%, var(--bg-2) 0%, var(--bg-1) 46%, var(--bg-0) 100%);
+    color:var(--paper);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+
+  /* ===== 舞台 ===== */
+  .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:0 5vw;}
+
+  /* 背景氛围层（cover+blur 铺满） */
+  .bg-layer{position:absolute;inset:-4%;opacity:0;transition:opacity .9s var(--ease-out);pointer-events:none;}
+  .bg-layer.on{opacity:1}
+  .bg-layer .bg-img{position:absolute;inset:0;
+    background-size:cover;background-position:center;
+    filter:blur(18px) saturate(.85) brightness(.4);
+    transform:scale(1.08);
+  }
+
+  .showcase{position:relative;display:flex;align-items:center;gap:clamp(20px,4vw,64px);max-width:96vw;}
+
+  /* ===== 挂轴画作 ===== */
+  .painting-wrap{position:relative;flex:0 0 auto;
+    height:min(74vh,72vw);aspect-ratio:2/3;
+  }
+  .slide{position:absolute;inset:0;opacity:0;pointer-events:none;
+    transition:opacity .42s var(--ease-in);}
+  .slide.on{opacity:1;pointer-events:auto;
+    transition:opacity .92s var(--ease-out) .16s;}
+  .scroll{position:absolute;inset:0;display:flex;flex-direction:column;
+    background:linear-gradient(180deg,#efe6d2 0%,#f7f0e0 3%,#f4eddd 50%,#f6efe0 97%,#e9dfc8 100%);
+    box-shadow:0 30px 80px rgba(0,0,0,.62),0 4px 18px rgba(0,0,0,.5);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .rod{height:14px;flex:0 0 auto;position:relative;
+    background:linear-gradient(180deg,#2a2119 0%,#4a3c2c 35%,#6a5740 50%,#40341f 70%,#241c13 100%);
+    box-shadow:0 3px 8px rgba(0,0,0,.6);
+  }
+  .rod.top::after{content:"";position:absolute;left:50%;top:-9px;transform:translateX(-50%);
+    width:2px;height:9px;background:#5a4a33;}
+  .rod.top::before{content:"";position:absolute;left:50%;top:-7px;width:7px;height:7px;
+    border-radius:50%;background:radial-gradient(circle at 35% 30%,#8a7657,#4a3c28);}
+  .art{position:relative;flex:1 1 auto;overflow:hidden;margin:0 8px;
+    background:var(--paper);}
+  .art img{width:100%;height:100%;object-fit:cover;display:block;}
+  .slide.on .art img{animation:kbm 16s var(--ease-inout) infinite alternate;}
+  .art::after{content:"";position:absolute;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 0 1px rgba(28,24,19,.06), inset 0 0 60px rgba(28,24,19,.10);}
+  @keyframes kbm{from{transform:scale(1.0) translateY(0)}to{transform:scale(1.07) translateY(-1.2%)}}
+
+  /* ===== 诗句（竖排水墨题款） ===== */
+  .poem{flex:0 0 auto;display:flex;align-items:center;gap:26px;
+    max-height:min(74vh,72vw);}
+  .poem-chars{
+    writing-mode:vertical-rl;
+    font-family:"STKaiti","KaiTi","楷体","Noto Serif SC",serif;
+    font-size:clamp(26px,4.4vh,44px);
+    letter-spacing:.28em;
+    line-height:1.12;
+    color:var(--paper);
+    text-shadow:
+      0 0 2px rgba(244,237,221,.35),
+      0 0 10px rgba(244,237,221,.16),
+      0 0 26px rgba(244,237,221,.10);
+    margin:0;
+  }
+  /* 入场动画结束后一次性应用毛笔飞白滤镜（避免动画期间逐帧重栅格化） */
+  .poem-chars.inked{filter:url(#ink-rough);}
+  .poem-chars .ch{
+    display:inline-block;
+    opacity:0;
+    transform:translateX(14px);
+    animation:charIn .7s var(--ease-out) forwards;
+    animation-delay:calc(var(--i,0)*.05s + .18s);
+  }
+  .poem-chars .ch.punct{font-size:.5em;opacity:.5;transform:translateX(10px);}
+  @keyframes charIn{
+    to{opacity:1;transform:translateX(0);}
+  }
+
+  .poem-meta{writing-mode:vertical-rl;
+    font-family:"STKaiti","KaiTi","楷体",serif;
+    font-size:clamp(13px,1.7vh,16px);
+    letter-spacing:.3em;
+    color:var(--muted);
+    display:flex;align-items:center;gap:14px;}
+  .poem-meta .seal{
+    writing-mode:horizontal-tb;width:34px;height:34px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--seal);color:#f6ede0;
+    font-size:15px;font-weight:700;border-radius:4px;
+    transform:rotate(-3deg);
+    box-shadow:0 0 18px rgba(176,58,46,.4);
+    opacity:0;animation:fadeSeal .8s var(--ease-out) .5s forwards;
+  }
+  .poem-meta .who{opacity:0;animation:charIn .8s var(--ease-out) .55s forwards;}
+  @keyframes fadeSeal{to{opacity:1}}
+
+  /* ===== 暗角 ===== */
+  .vignette{position:fixed;inset:0;pointer-events:none;z-index:6;
+    background:radial-gradient(130% 100% at 50% 50%,transparent 58%,rgba(0,0,0,.55) 100%);}
+
+  /* ===== 控制栏 ===== */
+  .controls{position:fixed;left:50%;bottom:clamp(16px,3.5vh,34px);transform:translateX(-50%);
+    z-index:10;display:flex;align-items:center;gap:18px;}
+  .ctl-btn{width:44px;height:44px;border-radius:50%;border:1px solid rgba(244,237,221,.18);
+    background:rgba(20,16,11,.5);color:var(--paper);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;transition:background .2s,border-color .2s,transform .15s var(--ease-out);
+    backdrop-filter:blur(4px);}
+  .ctl-btn:hover{background:rgba(40,32,22,.7);border-color:rgba(244,237,221,.4)}
+  .ctl-btn:active{transform:scale(.92)}
+  .ctl-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round}
+
+  .dots{display:flex;align-items:center;gap:10px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:rgba(244,237,221,.22);
+    border:0;padding:0;cursor:pointer;transition:all .35s var(--ease-out);position:relative;}
+  .dot.on{background:var(--paper);box-shadow:0 0 12px rgba(244,237,221,.5);
+    width:22px;border-radius:4px;}
+  .dot:hover{background:rgba(244,237,221,.55)}
+
+  /* 播放进度 */
+  .progress{position:fixed;left:0;bottom:0;height:2px;width:100%;z-index:11;
+    background:rgba(244,237,221,.08);}
+  .progress .bar{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a5a2a,var(--gold));}
+  .progress .bar.run{transition:width var(--dur,5500ms) linear;width:100%}
+
+  /* 提示 */
+  .hint{position:fixed;right:clamp(16px,3vw,34px);top:clamp(16px,3vh,30px);z-index:9;
+    font-family:"STKaiti","KaiTi","楷体",serif;font-size:12.5px;letter-spacing:.3em;
+    color:var(--muted);writing-mode:vertical-rl;opacity:.7;}
+  .hint .title{color:var(--paper);font-size:15px;letter-spacing:.4em;margin-bottom:10px;}
+
+  /* ===== 减弱动态 ===== */
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms!important;animation-iteration-count:1!important;
+      transition-duration:.01ms!important;}
+    .art img{animation:none}
+    .poem-chars .ch{opacity:1;transform:none;filter:none}
+    .poem-meta .seal,.poem-meta .who{opacity:1}
+  }
+
+  /* ===== 移动端 ===== */
+  @media (max-width:700px){
+    .showcase{flex-direction:column;gap:18px;}
+    .painting-wrap{height:52vh;aspect-ratio:auto;width:min(78vw,52vh);}
+    .poem{flex-direction:column;gap:14px;max-height:none;}
+    .poem-chars{writing-mode:horizontal-tb;font-size:clamp(20px,6vw,30px);
+      letter-spacing:.12em;line-height:1.5;text-align:center;}
+    .poem-chars .ch{transform:translateY(14px)}
+    @keyframes charIn{to{opacity:1;transform:translateY(0)}}
+    .poem-meta{writing-mode:horizontal-tb;flex-direction:row;gap:12px;}
+    .hint{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- 水墨毛笔飞白滤镜（作用于诗句文字，产生笔画毛边） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="ink-rough" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.028 0.05" numOctaves="3" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<div class="stage" id="stage">
+  <div id="bgLayers"></div>
+  <div class="showcase">
+    <div class="painting-wrap" id="paintings"></div>
+    <div class="poem" id="poem">
+      <div class="poem-chars" id="chars"></div>
+      <div class="poem-meta" id="meta"></div>
+    </div>
+  </div>
+</div>
+
+<div class="vignette"></div>
+<div class="progress"><span class="bar" id="bar"></span></div>
+
+<div class="hint"><span class="title">蝶恋花 · 春景</span><span>轻点画面 · 换一句</span></div>
+
+<div class="controls">
+  <button class="ctl-btn" id="prev" aria-label="上一句">
+    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <div class="dots" id="dots"></div>
+  <button class="ctl-btn" id="play" aria-label="播放/暂停">
+    <svg id="icoPlay" viewBox="0 0 24 24"><path d="M5 5l14 7-14 7z"/></svg>
+    <svg id="icoPause" viewBox="0 0 24 24" style="display:none"><path d="M8 5v14M16 5v14"/></svg>
+  </button>
+  <button class="ctl-btn" id="next" aria-label="下一句">
+    <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</div>
+
+<script>
+(function(){
+  var DATA = [
+    { img:"ink-paintings/cover.png", chars:"蝶恋花 春景",        who:"苏轼", seal:"春景", dur:5200 },
+    { img:"ink-paintings/v1.png",    chars:"花褪残红青杏小",      who:"其一", seal:"春",  dur:5600 },
+    { img:"ink-paintings/v2.png",    chars:"燕子飞时绿水人家绕",  who:"其二", seal:"燕",  dur:5600 },
+    { img:"ink-paintings/v3.png",    chars:"枝上柳绵吹又少，天涯何处无芳草", who:"其三", seal:"远", dur:6800 },
+    { img:"ink-paintings/v4.png",    chars:"墙里秋千墙外道",      who:"其四", seal:"墙",  dur:5600 },
+    { img:"ink-paintings/v5.png",    chars:"墙外行人，墙里佳人笑", who:"其五", seal:"笑",  dur:6000 },
+    { img:"ink-paintings/v6.png",    chars:"笑渐不闻声渐悄，多情却被无情恼", who:"其六", seal:"恼", dur:6800 }
+  ];
+
+  var paintings = document.getElementById("paintings");
+  var bgLayers   = document.getElementById("bgLayers");
+  var charsEl    = document.getElementById("chars");
+  var metaEl     = document.getElementById("meta");
+  var dotsEl     = document.getElementById("dots");
+  var bar        = document.getElementById("bar");
+  var icoPlay    = document.getElementById("icoPlay");
+  var icoPause   = document.getElementById("icoPause");
+
+  /* 预加载（显示级小图） */
+  DATA.forEach(function(d){ var i=new Image(); i.src='ink-paintings/display/'+d.img.split('/').pop().replace('.png','.jpg'); });
+
+  /* 构建 slides + 背景层 + 圆点 */
+  DATA.forEach(function(d,i){
+    var s=document.createElement("div"); s.className="slide";
+    s.innerHTML='<div class="scroll"><div class="rod top"></div><div class="art"><img src="ink-paintings/display/'+d.img.split('/').pop().replace('.png','.jpg')+'" alt=""></div><div class="rod"></div></div>';
+    paintings.appendChild(s);
+
+    var b=document.createElement("div"); b.className="bg-layer";
+    b.innerHTML='<div class="bg-img" style="background-image:url(ink-paintings/thumbs/'+d.img.split('/').pop().replace('.png','.jpg')+')"></div>';
+    bgLayers.appendChild(b);
+
+    var dot=document.createElement("button"); dot.className="dot";
+    dot.setAttribute("aria-label", d.chars); dot.dataset.i=i;
+    dotsEl.appendChild(dot);
+  });
+
+  var slides  = Array.prototype.slice.call(paintings.children);
+  var bgs     = Array.prototype.slice.call(bgLayers.children);
+  var dots    = Array.prototype.slice.call(dotsEl.children);
+
+  var cur=0, timer=null, inkTimer=null, playing=true, busy=false;
+
+  function renderChars(s){
+    var html="";
+    for(var j=0;j<s.length;j++){
+      var c=s[j];
+      var punct=/[，。、！？；：]/.test(c);
+      html+='<span class="ch'+(punct?' punct':'')+'" style="--i:'+j+'">'+c+'</span>';
+    }
+    return html;
+  }
+
+  function showPoem(i){
+    var d=DATA[i];
+    charsEl.classList.remove("inked");
+    charsEl.innerHTML=renderChars(d.chars);
+    metaEl.innerHTML='<span class="seal">'+d.seal+'</span><span class="who">'+d.who+'</span>';
+    clearTimeout(inkTimer);
+    /* 逐字入场结束后，一次性套上毛笔飞白滤镜（静态栅格化一次） */
+    inkTimer=setTimeout(function(){ charsEl.classList.add("inked"); }, 1800);
+  }
+
+  function goTo(i, user){
+    i=(i+DATA.length)%DATA.length;
+    if(i===cur){ return; }
+    /* 旧图先退 */
+    slides[cur].classList.remove("on");
+    bgs[cur].classList.remove("on");
+    dots[cur].classList.remove("on");
+    cur=i;
+    /* 新图再浮现（delay 由 CSS 控制，柔和衔接） */
+    slides[cur].classList.add("on");
+    bgs[cur].classList.add("on");
+    dots[cur].classList.add("on");
+    showPoem(cur);
+    restartProgress();
+  }
+
+  function next(){ goTo(cur+1); }
+  function prev(){ goTo(cur-1); }
+
+  /* 自动播放进度 */
+  function restartProgress(){
+    if(bar){ bar.classList.remove("run"); void bar.offsetWidth; }
+    if(!playing) return;
+    var d=DATA[cur];
+    bar.style.setProperty("--dur", d.dur+"ms");
+    bar.classList.add("run");
+    clearTimeout(timer);
+    timer=setTimeout(function(){ if(playing) next(); }, d.dur);
+  }
+
+  function togglePlay(){
+    playing=!playing;
+    icoPlay.style.display = playing?"":"none";
+    icoPause.style.display = playing?"none":"";
+    if(playing){ restartProgress(); }
+    else{ bar.classList.remove("run"); clearTimeout(timer); }
+  }
+
+  /* 事件 */
+  document.getElementById("next").addEventListener("click", next);
+  document.getElementById("prev").addEventListener("click", prev);
+  document.getElementById("play").addEventListener("click", togglePlay);
+
+  dots.forEach(function(dt){
+    dt.addEventListener("click", function(){ goTo(parseInt(dt.dataset.i,10)); });
+  });
+
+  /* 点击画面 = 下一句（视频感） */
+  var stage=document.getElementById("stage");
+  stage.addEventListener("click", function(e){
+    if(e.target.closest(".poem")) return;  /* 诗句区不触发切换 */
+    next();
+  });
+
+  /* 键盘 */
+  document.addEventListener("keydown", function(e){
+    if(e.key==="ArrowRight") next();
+    else if(e.key==="ArrowLeft") prev();
+    else if(e.key===" "){ e.preventDefault(); togglePlay(); }
+  });
+
+  /* 初始（支持 #N 直达第 N+1 屏，便于分享深链） */
+  var hashStart=parseInt(location.hash.slice(1),10);
+  if(!isNaN(hashStart)&&hashStart>=0&&hashStart<DATA.length&&hashStart>0){
+    slides[0].classList.remove("on"); bgs[0].classList.remove("on"); dots[0].classList.remove("on");
+    cur=hashStart;
+    slides[cur].classList.add("on"); bgs[cur].classList.add("on"); dots[cur].classList.add("on");
+  }
+  showPoem(cur);
+  restartProgress();
+})();
+</script>
+</body>
+</html>
