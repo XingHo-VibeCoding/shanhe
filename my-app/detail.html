@@ -282,6 +282,29 @@
     letter-spacing: 1px;
     margin: -6px 0 14px;
   }
+  /* 诗配画：单幅水墨（暮江吟） */
+  .ink-single {
+    display: block;
+    max-width: 340px;
+    margin: 0 auto;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 3px 14px rgba(58, 50, 38, .12);
+  }
+  .ink-single img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .ink-single:focus-visible { outline: 2px solid #a3402f; outline-offset: 3px; }
+  .ink-single-cap {
+    text-align: center;
+    font-family: "STKaiti", "KaiTi", "楷体", serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: #5a4f3f;
+    margin-top: 12px;
+  }
   .ink-strip {
     display: flex;
     gap: 12px;
@@ -523,6 +546,10 @@
       && p.title.indexOf("春景") !== -1
       && p.poet && p.poet.indexOf("苏轼") !== -1;
     const inkGallery = isChunjing ? inkGalleryHtml() : "";
+    // 诗配画：仅《暮江吟》（白居易）展示单幅 AI 水墨配画
+    const isMujiangyin = p.title && p.title.indexOf("暮江吟") !== -1
+      && p.poet && p.poet.indexOf("白居易") !== -1;
+    const inkSingle = isMujiangyin ? inkSingleHtml() : "";
 
     let poetCard = "";
     if (bio) {
@@ -545,6 +572,7 @@
       '</div>' +
       '<div class="card" id="sec-yuanwen"><h2>' + plaqueTitle("原文") + '</h2><div class="content">' + escapeHtml(p.content || "（暂无原文）") + '</div></div>' +
       inkGallery +
+      inkSingle +
       plaqueCard("译文", "trans", escapeHtml(p.translation || ""), true, "sec-yiwen") +
       plaqueCard("注释", "anno", escapeHtml(p.annotation || ""), true, "sec-zhushi") +
       plaqueCard("背景", "bg", escapeHtml(p.background || ""), true, "sec-beijing") +
@@ -577,6 +605,18 @@
       '<div class="ink-note">一句一画 · 滑动浏览 · 点击任意一幅进入沉浸画廊</div>' +
       '<div class="ink-strip">' + strip + '</div>' +
       '<a class="ink-cta" href="poem-immersive.html">▶ 沉浸式观看全卷</a>' +
+    '</div>';
+  }
+
+  // ===== 诗配画：单幅 AI 水墨配画（《暮江吟》专用，点击看原图） =====
+  function inkSingleHtml() {
+    return '<div class="card" id="sec-shuimo">' +
+      '<h2>' + plaqueTitle("诗配画") + '</h2>' +
+      '<div class="ink-note">AI 水墨配画 · 点击图片查看原图</div>' +
+      '<a class="ink-single" href="ink-paintings/mujiangyin.jpg" target="_blank" rel="noopener">' +
+        '<img src="ink-paintings/mujiangyin.jpg" alt="暮江吟 · AI 水墨配画" loading="lazy">' +
+      '</a>' +
+      '<div class="ink-single-cap">一道残阳铺水中，半江瑟瑟半江红 ——〔唐〕白居易</div>' +
     '</div>';
   }
 
