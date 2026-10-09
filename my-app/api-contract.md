@@ -59,6 +59,7 @@
 | `poems` | 诗词表（核心数据） | `id`, `title`, `poet_id`(外键→poets.id), `dynasty`, `content`, `translation`, `annotation`, `background`, `appreciation`, `popularity` |
 | `poets` | 作者表 | `id`, `name`, `dynasty`, `intro` |
 | `favorites` | 收藏记录表（用户收藏行为） | `id`, `poem_id`(外键→poems.id), `created_at` |
+| `checkins` | 学习打卡表（Day 22：增删改查闭环载体） | `id`, `poem_id`(外键→poems.id), `status`(学习中/已完成，CHECK 约束), `note`, `created_at` |
 
 > 说明：
 > - 三表靠外键关联：`poems.poet_id → poets.id`（一对多：一位作者名下多首诗）、`favorites.poem_id → poems.id`（一条收藏对应一首诗）。
@@ -302,6 +303,81 @@
 
 ---
 
+### 3.11 打卡列表读取 ✅ 已上线（★Day 22）
+
+**`GET /api/checkins`**
+
+读取学习打卡记录（JOIN `poems`/`poets` 带出诗名、作者、朝代），按打卡时间倒序。
+
+**请求参数**：无
+
+**响应 JSON 形状**（三字段统一）
+
+```json
+{
+  "ok": true,
+  "data": [
+    { "id": 1, "poem_id": 9, "title": "黄鹤楼", "poet": "崔颢", "dynasty": "唐代",
+      "status": "学习中", "note": "这周背下来", "created_at": "2026-10-09T22:56:44+08:00" }
+  ],
+  "error": null
+}
+```
+
+**公网地址**：`GET https://shijishanhe-d5gmc8a0k01b1e88d.service.tcloudbase.com/api/checkins`
+
+---
+
+### 3.12 新增打卡 ✅ 已上线（★Day 22）
+
+**`POST /api/checkins`**
+
+**请求体（JSON）**：`{ "poem_id": 9, "status": "学习中", "note": "这周背下来" }`（status 默认「学习中」；note 可省略）
+
+**响应**：`{ "ok": true, "data": { "id": 1, "poem_id": 9, "status": "学习中", "note": "…", "created_at": "…" }, "error": null }`
+
+**错误返回**：400（缺 poem_id / status 非法）、404（诗词不存在）、500。
+
+---
+
+### 3.13 修改打卡 ✅ 已上线（★Day 22 核心知识点：UPDATE）
+
+**`PATCH /api/checkins?id=N`**（id 也可用路径 `/api/checkins/N` 或 body.id 传入）
+
+**请求体（JSON）**：`{ "status": "已完成", "note": "默写一遍通过" }`——status / note **至少提供其一**，只改给出的字段
+
+**响应**：`{ "ok": true, "data": { "before": {…改前}, "after": {…改后} }, "error": null }`——自带前后对比，方便验证
+
+**错误返回**：400（缺 id / 两个字段都没有 / status 非法）、404（记录不存在：`"打卡记录不存在（id=N）"`）、500。
+
+**验证方法（SELECT 前后对比）**：
+1. 改前：`tcb db execute --sql "SELECT id, status, note FROM checkins WHERE id = 1"`
+2. 发 PATCH 请求
+3. 改后：再跑同一条 SELECT——status/note 应与请求体一致
+
+---
+
+### 3.14 删除打卡 ✅ 已上线（★Day 22 核心知识点：DELETE）
+
+**`DELETE /api/checkins?id=N`**（id 也可用路径 `/api/checkins/N`）
+
+**响应**：`{ "ok": true, "data": { "deleted": {…被删记录全文} }, "error": null }`——返回删掉的内容，眼见为实
+
+**防御设计**（今日一问：删除为什么容易出事）：
+1. 先 SELECT 确认存在，不存在返回 **404**（`"打卡记录不存在（id=N），无需删除"`），绝不静默成功
+2. 删除 WHERE id 精确命中一条，不带任何批量语义
+3. 返回被删记录全文——万一删错，至少知道删的是什么
+4. 前端删除按钮加 `confirm()` 二次确认弹窗
+
+**验证方法（DELETE 后 GET 不再返回）**：
+1. `GET /api/checkins` 记下列表里有 id=N
+2. `DELETE /api/checkins?id=N` → 200
+3. 再 `GET /api/checkins` → id=N 已消失；重复 DELETE → 404
+
+**错误返回**：400（缺 id）、404（记录不存在）、500。
+
+---
+
 ## 4. 数据模型：单首诗词（poemInfo 元素）
 
 | 字段 | 类型 | 说明 |
@@ -320,9 +396,10 @@
 
 ---
 
-## 5. 第 3 周实施顺序（占位，后续执行）
+## 5. 第 3–4 周实施顺序
 
 - [x] 建表：`poems` / `poets` / `favorites`（CloudBase PostgreSQL，含种子数据，见 `db/schema.sql` + `db/seed.sql`）
-- [ ] 按 §3 逐个实现接口（先列表读取 → 详情 → 搜索 → 收藏读写）
-- [ ] 跨域配置（前端调后端接口的 CORS）
-- [ ] 前端从 mock 切换为真实接口
+- [x] 按契约实现接口：health ✅ / hot ✅ / favorites 读写 ✅（Day 17–18）
+- [x] 跨域配置（Day 20 验证：三接口 CORS 头放行，F12 实测）
+- [x] 前端从 mock 切换为真实接口（Day 20 上线公网检查台）
+- [x] Day 22：新增 `checkins` 表 + `/api/checkins` 增删改查四接口（§3.11–3.14）+ 前端打卡区块（删除二次确认）

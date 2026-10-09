@@ -5,6 +5,7 @@
 -- ============================================================
 
 -- ---------- 先删（逆序：先删引用表，再删被引用表） ----------
+DROP TABLE IF EXISTS checkins;
 DROP TABLE IF EXISTS favorites;
 DROP TABLE IF EXISTS poems;
 DROP TABLE IF EXISTS poets;
@@ -77,3 +78,30 @@ COMMENT ON COLUMN favorites.created_at IS '收藏时间，TIMESTAMPTZ 带时区�
 -- 否则 POST 会报 permission denied for table favorites。
 GRANT INSERT ON favorites TO anon;
 GRANT USAGE, SELECT ON SEQUENCE favorites_id_seq TO anon;
+
+-- ---------- 4. 学习打卡表 checkins（Day 22 新增：增删改查闭环） ----------
+-- 存「用户对某首诗的学习打卡」：状态（学习中/已完成）+ 备注。
+-- 与 favorites 的区别：favorites 是「收没收藏」（一条一首），
+-- checkins 是「学得怎么样」（状态可改、可删除重打）。
+CREATE TABLE checkins (
+  id          SERIAL PRIMARY KEY,
+  poem_id     INTEGER NOT NULL REFERENCES poems(id),
+  status      TEXT NOT NULL DEFAULT '学习中',
+  note        TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT status_valid CHECK (status IN ('学习中', '已完成'))
+);
+
+CREATE INDEX idx_checkins_poem_id ON checkins(poem_id);
+CREATE INDEX idx_checkins_created_at ON checkins(created_at);
+
+COMMENT ON TABLE checkins IS '学习打卡记录表：对某首诗的打卡状态与备注（Day 22 增删改查闭环的载体）';
+COMMENT ON COLUMN checkins.id IS '打卡记录唯一标识，主键，SERIAL 自增';
+COMMENT ON COLUMN checkins.poem_id IS '打卡的诗词 ID，外键关联 poems.id（一首诗可多次打卡，不加 UNIQUE）';
+COMMENT ON COLUMN checkins.status IS '完成状态：学习中 / 已完成（CHECK 约束限制取值，默认学习中）';
+COMMENT ON COLUMN checkins.note IS '备注，TEXT 可空，PATCH 接口的可改字段之一';
+COMMENT ON COLUMN checkins.created_at IS '打卡时间，TIMESTAMPTZ 带时区，默认当前时间';
+
+-- checkins 写权限（同 favorites：anon 角色默认只读）
+GRANT SELECT, INSERT, UPDATE, DELETE ON checkins TO anon;
+GRANT USAGE, SELECT ON SEQUENCE checkins_id_seq TO anon;

@@ -158,6 +158,48 @@
   }
   .health .note { font-size: 12px; color: #8a7a5f; margin-top: 10px; line-height: 1.8; }
 
+  /* 学习打卡（Day 22） */
+  .ck-form { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 16px; }
+  .ck-form select, .ck-form input {
+    flex: 1 1 160px; min-width: 0;
+    padding: 8px 10px; font-size: 14px; font-family: inherit;
+    border: 1px solid var(--border); border-radius: 4px;
+    background: #fffdf6; color: var(--ink);
+  }
+  .ck-form button {
+    cursor: pointer; white-space: nowrap;
+    background: var(--zhusha); color: var(--paper-light);
+    border: none; border-radius: 4px;
+    padding: 8px 18px; font-size: 14px; letter-spacing: 1px;
+    font-family: inherit;
+  }
+  .ck-form button:focus-visible { outline: 2px solid var(--zhusha); outline-offset: 3px; }
+  .ck-item {
+    background: #fffdf6; border: 1px solid var(--border);
+    border-left: 3px solid #7a9a5a;
+    padding: 12px 14px; margin-bottom: 10px;
+    font-size: 14px; line-height: 1.8;
+  }
+  .ck-item .ck-title { font-family: "STKaiti", "KaiTi", "楷体", serif; font-size: 16px; font-weight: 600; letter-spacing: 1px; }
+  .ck-item .ck-meta { color: var(--ink-soft); font-size: 12.5px; }
+  .ck-item .ck-note { color: var(--ink-soft); font-size: 13px; }
+  .ck-item .ck-note b { color: var(--zhusha); font-weight: 600; margin-right: 4px; }
+  .ck-badge {
+    display: inline-block; font-size: 12px; letter-spacing: 1px;
+    border-radius: 12px; padding: 1px 10px; margin-left: 8px; vertical-align: 1px;
+  }
+  .ck-badge.doing { color: #8a6a2f; border: 1px solid #c9a85c; }
+  .ck-badge.done  { color: #5a7a3a; border: 1px solid #7a9a5a; }
+  .ck-item .ck-acts { margin-top: 8px; display: flex; gap: 8px; }
+  .ck-item .ck-acts button {
+    cursor: pointer; font-size: 12.5px; letter-spacing: 1px;
+    padding: 4px 12px; border-radius: 4px; font-family: inherit;
+    background: transparent;
+  }
+  .ck-item .ck-acts .do { border: 1px solid #7a9a5a; color: #5a7a3a; }
+  .ck-item .ck-acts .del { border: 1px solid var(--zhusha); color: var(--zhusha); }
+  .ck-item .ck-acts button:focus-visible { outline: 2px solid var(--zhusha); outline-offset: 2px; }
+
   footer { text-align: center; color: #8a7a5f; font-size: 12px; letter-spacing: 2px; line-height: 1.9; }
 </style>
 </head>
@@ -195,8 +237,23 @@
         <span class="dot" style="background:#c9bda3;"></span>
         <span class="addr">GET /api/favorites — 探活中…</span>
       </div>
+      <div class="row" id="chk-ck">
+        <span class="dot" style="background:#c9bda3;"></span>
+        <span class="addr">GET /api/checkins — 探活中…</span>
+      </div>
       <pre id="healthRaw">探活中…</pre>
-      <div class="note">检查台逐个探测后端三个云函数（走公网网关地址）。绿色 = 接口正常返回；红色 = 请求失败（跨域被拦或接口异常，具体原因看 F12 Console）。上方诗词卡片来自 /api/hot（CloudBase PostgreSQL poems 表，按人气排序）。</div>
+      <div class="note">检查台逐个探测后端四个云函数（走公网网关地址）。绿色 = 接口正常返回；红色 = 请求失败（跨域被拦或接口异常，具体原因看 F12 Console）。上方诗词卡片来自 /api/hot（CloudBase PostgreSQL poems 表，按人气排序）；下方学习打卡区支持增（POST）删（DELETE·二次确认）改（PATCH）查（GET）四类操作。</div>
+    </div>
+
+    <div class="health">
+      <h2>学习打卡 · 增删改查（Day 22）</h2>
+      <div class="ck-form">
+        <select id="ckPoem" aria-label="选择要打卡的诗"></select>
+        <input id="ckNote" maxlength="60" placeholder="备注（可选，如：这周背下来）">
+        <button id="ckAdd" type="button">＋ 打卡</button>
+      </div>
+      <div id="ckList"><div class="state">正在加载打卡记录…</div></div>
+      <div class="note">「标记完成 / 退回学习中」走 PATCH（只改 status，一条记录精确命中）；「删除」走 DELETE——<b>弹出确认框二次确认后才会真删</b>，删错了找不回来，所以要多点一次。全部操作走公网接口 /api/checkins，改完立即重查刷新列表。</div>
     </div>
 
     <footer>
@@ -291,11 +348,109 @@
     setChk(name, false, name.replace('chk-', 'GET /api/') + ' — 失败：' + (err.message || err));
   }
 
+  /* ================= 学习打卡（Day 22：增删改查） ================= */
+  var hotPoems = []; // 供打卡表单下拉用
+
+  // 列表渲染：status 徽章 + PATCH/DELETE 按钮
+  function ckItemHtml(c) {
+    var badge = c.status === '已完成'
+      ? '<span class="ck-badge done">已完成</span>'
+      : '<span class="ck-badge doing">学习中</span>';
+    var nextAct = c.status === '已完成' ? '退回学习中' : '标记完成';
+    return (
+      '<div class="ck-item">' +
+        '<span class="ck-title">' + esc(c.title) + '</span>' + badge +
+        '<div class="ck-meta">' + esc(c.poet) + ' · ' + esc(c.dynasty) + ' · 记录 id=' + c.id + '</div>' +
+        (c.note ? '<div class="ck-note"><b>备注</b>' + esc(c.note) + '</div>' : '') +
+        '<div class="ck-acts">' +
+          '<button type="button" class="do" onclick="patchCk(' + c.id + ',\'' + esc(c.status) + '\')">' + nextAct + '</button>' +
+          '<button type="button" class="del" onclick="delCk(' + c.id + ',\'' + esc(c.title) + '\')">删除</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function loadCheckins() {
+    return fetch(API_BASE + '/api/checkins')
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var list = j.ok ? (j.data || []) : [];
+        setChk('chk-ck', j.ok === true,
+          'GET /api/checkins — ' + (j.ok ? '正常 · 打卡 ' + list.length + ' 条' : '返回异常'));
+        document.getElementById('ckList').innerHTML = list.length
+          ? list.map(ckItemHtml).join('')
+          : '<div class="state">还没有打卡记录——选一首诗，点「＋ 打卡」试试</div>';
+      });
+  }
+
+  // PATCH：只改 status，一键切换 学习中 ⇄ 已完成
+  function patchCk(id, cur) {
+    var next = cur === '已完成' ? '学习中' : '已完成';
+    fetch(API_BASE + '/api/checkins?id=' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: next })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.ok) { alert('修改失败：' + (j.error || '未知错误')); return; }
+        loadCheckins(); // 改完立即重查，眼见为实
+      })
+      .catch(function (e) { alert('修改失败：' + (e.message || e)); });
+  }
+
+  // DELETE：二次确认（confirm 弹窗）——删除不可恢复，必须多一次确认
+  function delCk(id, title) {
+    if (!confirm('确定删除《' + title + '》的打卡记录（id=' + id + '）吗？\n此操作不可恢复！')) return;
+    fetch(API_BASE + '/api/checkins?id=' + id, { method: 'DELETE' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.ok) { alert('删除失败：' + (j.error || '未知错误')); return; }
+        loadCheckins();
+      })
+      .catch(function (e) { alert('删除失败：' + (e.message || e)); });
+  }
+
+  // POST：新增打卡
+  function addCk() {
+    var sel = document.getElementById('ckPoem');
+    var poemId = Number(sel.value);
+    if (!poemId) { alert('请先选择一首诗'); return; }
+    var note = document.getElementById('ckNote').value.trim();
+    fetch(API_BASE + '/api/checkins', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ poem_id: poemId, note: note || undefined })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.ok) { alert('打卡失败：' + (j.error || '未知错误')); return; }
+        document.getElementById('ckNote').value = '';
+        loadCheckins();
+      })
+      .catch(function (e) { alert('打卡失败：' + (e.message || e)); });
+  }
+
+  // 打卡下拉框：用热门榜前 8 首填充
+  function fillCkPoemSelect() {
+    var sel = document.getElementById('ckPoem');
+    sel.innerHTML = hotPoems.slice(0, 8).map(function (p) {
+      return '<option value="' + p.id + '">' + esc(p.title) + '（' + esc(p.poet) + '）</option>';
+    }).join('');
+  }
+
   /* ================= 启动 ================= */
   loadHot().catch(renderHotError);
+  // 打卡下拉框：另取前 8 首（与卡片渲染互不影响）
+  fetch(API_BASE + '/api/hot?limit=8')
+    .then(function (r) { return r.json(); })
+    .then(function (j) { hotPoems = j.ok ? (j.data || []) : []; fillCkPoemSelect(); })
+    .catch(function () { /* 榜单失败时下拉框留空，打卡会提示先选诗 */ });
+  document.getElementById('ckAdd').addEventListener('click', addCk);
   probeHealth().catch(function (e) { probeFail('chk-health', e); });
   probeHot().catch(function (e) { probeFail('chk-hot', e); });
   probeFav().catch(function (e) { probeFail('chk-fav', e); });
+  loadCheckins().catch(function (e) { probeFail('chk-ck', e); });
 </script>
 </body>
 </html>
