@@ -54,7 +54,7 @@ async function handleGet(db, headers) {
 
   if (error) {
     console.error('[api-favorites] GET 查询失败:', error);
-    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, data: null, error: String(error.message || error) }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, data: null, error: '数据暂时不可用，请稍后再试' }) };
   }
 
   const list = (data || []).map((r) => ({
@@ -132,7 +132,7 @@ async function handlePost(event, db, headers) {
       return { statusCode: 409, headers, body: JSON.stringify({ ok: false, data: null, error: '已收藏过这首诗' }) };
     }
     console.error('[api-favorites] 插入失败:', insErr);
-    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, data: null, error: '写入失败：' + String(insErr.message || insErr) }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, data: null, error: '写入失败，请稍后再试' }) };
   }
 
   // 6) 查回刚插入的记录（poem_id 唯一，正好定位到新行）

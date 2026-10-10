@@ -462,6 +462,16 @@
       .replace(/>/g, "&gt;");
   }
 
+  // 把浏览器/接口的裸报错转成用户能懂的中文；技术原文只进 Console
+  function friendlyError(e) {
+    console.error("请求失败详情：", e);
+    var msg = (e && e.message) ? String(e.message) : String(e);
+    if (/failed to fetch|networkerror|load failed|timed? ?out/i.test(msg)) return "网络连接失败，请检查网络或稍后重试";
+    if (/40[13]/.test(msg)) return "服务暂时无法访问，请稍后重试";
+    if (/^5\d\d|bad gateway|service unavailable/i.test(msg)) return "服务器开小差了，请稍后重试";
+    return "出了点小问题，请稍后重试";
+  }
+
   // ===== 牌匾标题：每个字一个方框，参考古诗文网样式 =====
   function plaqueTitle(t) {
     return t.split("").map(ch => '<span class="hz">' + ch + '</span>').join("");
@@ -647,7 +657,7 @@
       buildSideNav();
       loadFamous(pick.title);
     } catch (e) {
-      main.innerHTML = '<div class="state error">无法连接后端服务，请确认已启动 server.py。<br>（' + escapeHtml(e.message) + '）</div>';
+      main.innerHTML = '<div class="state error">无法连接后端服务，请确认已启动 server.py。<br>（' + friendlyError(e) + '）</div>';
     }
   }
 

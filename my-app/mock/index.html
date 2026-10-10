@@ -271,6 +271,15 @@
   function esc(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
+  // 把浏览器/接口的裸报错转成用户能懂的中文；技术原文只进 Console
+  function friendlyError(e) {
+    console.error('请求失败详情：', e);
+    var msg = (e && e.message) ? String(e.message) : String(e);
+    if (/failed to fetch|networkerror|load failed|timed? ?out/i.test(msg)) return '网络连接失败，请检查网络或稍后重试';
+    if (/40[13]/.test(msg)) return '服务暂时无法访问，请稍后重试';
+    if (/^5\d\d|bad gateway|service unavailable/i.test(msg)) return '服务器开小差了，请稍后重试';
+    return '出了点小问题，请稍后重试';
+  }
   // 人气值格式化：100000000 → 1亿
   function fmtPop(n) {
     if (n >= 100000000) return (n / 100000000).toFixed(n % 100000000 ? 1 : 0) + '亿';
@@ -345,7 +354,7 @@
       });
   }
   function probeFail(name, err) {
-    setChk(name, false, name.replace('chk-', 'GET /api/') + ' — 失败：' + (err.message || err));
+    setChk(name, false, name.replace('chk-', 'GET /api/') + ' — 失败：' + friendlyError(err));
   }
 
   /* ================= 学习打卡（Day 22：增删改查） ================= */
@@ -393,10 +402,10 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        if (!j.ok) { alert('修改失败：' + (j.error || '未知错误')); return; }
+        if (!j.ok) { alert('修改失败：' + friendlyError({ message: j.error })); return; }
         loadCheckins(); // 改完立即重查，眼见为实
       })
-      .catch(function (e) { alert('修改失败：' + (e.message || e)); });
+      .catch(function (e) { alert('修改失败：' + friendlyError(e)); });
   }
 
   // DELETE：二次确认（confirm 弹窗）——删除不可恢复，必须多一次确认
@@ -405,10 +414,10 @@
     fetch(API_BASE + '/api/checkins?id=' + id, { method: 'DELETE' })
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        if (!j.ok) { alert('删除失败：' + (j.error || '未知错误')); return; }
+        if (!j.ok) { alert('删除失败：' + friendlyError({ message: j.error })); return; }
         loadCheckins();
       })
-      .catch(function (e) { alert('删除失败：' + (e.message || e)); });
+      .catch(function (e) { alert('删除失败：' + friendlyError(e)); });
   }
 
   // POST：新增打卡
@@ -424,11 +433,11 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        if (!j.ok) { alert('打卡失败：' + (j.error || '未知错误')); return; }
+        if (!j.ok) { alert('打卡失败：' + friendlyError({ message: j.error })); return; }
         document.getElementById('ckNote').value = '';
         loadCheckins();
       })
-      .catch(function (e) { alert('打卡失败：' + (e.message || e)); });
+      .catch(function (e) { alert('打卡失败：' + friendlyError(e)); });
   }
 
   // 打卡下拉框：用热门榜前 8 首填充
@@ -440,7 +449,7 @@
   }
 
   /* ================= 启动 ================= */
-  loadHot().catch(renderHotError);
+  loadHot().catch(function (e) { renderHotError(friendlyError(e)); });
   // 打卡下拉框：另取前 8 首（与卡片渲染互不影响）
   fetch(API_BASE + '/api/hot?limit=8')
     .then(function (r) { return r.json(); })

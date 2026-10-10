@@ -122,7 +122,7 @@ async function handleGet(db, headers) {
 
   if (error) {
     console.error('[api-checkins] GET 查询失败:', error);
-    return bad(headers, 500, String(error.message || error));
+    return bad(headers, 500, '数据暂时不可用，请稍后再试');
   }
 
   const list = (data || []).map((r) => ({
@@ -164,7 +164,7 @@ async function handlePost(body, db, headers) {
     .maybeSingle();
   if (insErr) {
     console.error('[api-checkins] 插入失败:', insErr);
-    return bad(headers, 500, '写入失败：' + String(insErr.message || insErr));
+    return bad(headers, 500, '写入失败，请稍后再试');
   }
 
   console.log('[api-checkins] POST 成功：id =', created && created.id);
@@ -209,7 +209,7 @@ async function handlePatch(id, body, db, headers) {
     .maybeSingle();
   if (updErr) {
     console.error('[api-checkins] 更新失败:', updErr);
-    return bad(headers, 500, '更新失败：' + String(updErr.message || updErr));
+    return bad(headers, 500, '更新失败，请稍后再试');
   }
 
   console.log('[api-checkins] PATCH 成功：id =', id, '字段 =', Object.keys(patch).join(','));
@@ -236,7 +236,7 @@ async function handleDelete(id, db, headers) {
   const { error: delErr } = await db.from('checkins').delete().eq('id', id);
   if (delErr) {
     console.error('[api-checkins] 删除失败:', delErr);
-    return bad(headers, 500, '删除失败：' + String(delErr.message || delErr));
+    return bad(headers, 500, '删除失败，请稍后再试');
   }
 
   console.log('[api-checkins] DELETE 成功：id =', id);

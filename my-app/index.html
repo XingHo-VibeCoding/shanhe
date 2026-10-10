@@ -382,6 +382,16 @@
 
     // 当前搜索状态
     let currentPoet = "";
+    /* 把浏览器/接口的裸报错转成用户能懂的中文；技术原文只进 Console */
+    function friendlyError(e) {
+      console.error("请求失败详情：", e);
+      var msg = (e && e.message) ? String(e.message) : String(e);
+      if (/failed to fetch|networkerror|load failed|timed? ?out/i.test(msg)) return "网络连接失败，请检查网络或稍后重试";
+      if (/40[13]/.test(msg)) return "服务暂时无法访问，请稍后重试";
+      if (/^5\d\d|bad gateway|service unavailable/i.test(msg)) return "服务器开小差了，请稍后重试";
+      return "出了点小问题，请稍后重试";
+    }
+
     let currentPage = 1;
     let totalPages = 1;
 
@@ -420,7 +430,7 @@
         renderResult(json);
       } catch (e) {
         result.innerHTML = '<div class="error">诗卷暂时打不开——后端服务可能没有启动，请稍后重试。'
-          + '<div class="err-detail">（技术信息：' + e.message + '）</div>'
+          + '<div class="err-detail">（' + friendlyError(e) + '）</div>'
           + '<button class="retry-btn" onclick="searchPoems(currentPage || 1)">重试</button></div>';
       }
     }
@@ -451,7 +461,7 @@
         renderRecommendations(json.poemInfo);
       } catch (e) {
         result.innerHTML = '<div class="error">推荐暂时取不到——后端服务可能没有启动。'
-          + '<div class="err-detail">（技术信息：' + e.message + '）</div>'
+          + '<div class="err-detail">（' + friendlyError(e) + '）</div>'
           + '<button class="retry-btn" onclick="loadRecommendations()">重试</button></div>';
       }
     }
@@ -612,7 +622,7 @@
         renderResult(json);
       } catch (e) {
         result.innerHTML = '<div class="error">诗卷暂时打不开——后端服务可能没有启动，请稍后重试。'
-          + '<div class="err-detail">（技术信息：' + e.message + '）</div>'
+          + '<div class="err-detail">（' + friendlyError(e) + '）</div>'
           + '<button class="retry-btn" onclick="searchPoemsByTitle(currentPoet)">重试</button></div>';
       }
     }
