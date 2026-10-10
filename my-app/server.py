@@ -197,7 +197,7 @@ def home():
 
 @app.route("/<path:filename>")
 def static_files(filename):
-    """提供其余前端静态文件（home.html / footprints.html / tour.html / assets / data 等）。
+    """提供其余前端静态文件（home.html / footprints.html / assets / data 等）。
     send_from_directory 自带路径穿越防护，不会读到目录外的文件。"""
     return send_from_directory(FRONTEND_DIR, filename)
 
