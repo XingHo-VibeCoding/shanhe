@@ -378,7 +378,10 @@
 
   <script>
     // 后端地址：留空走同源相对路径（本地/线上部署都通），密钥在后端，前端看不到
-    const API_BASE = "";
+    // 后端地址自适应：本站若部署在腾讯云静态托管（无 Flask），跨域调用发布在 workbuddy.host 的后端
+    const API_BASE = location.hostname.includes("tcloudbaseapp.com")
+      ? "https://shiji-shanhe.app.workbuddy.host"
+      : "";
 
     // 当前搜索状态
     let currentPoet = "";

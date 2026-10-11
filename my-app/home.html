@@ -549,6 +549,11 @@
   </div>
 
   <script>
+    // 后端地址自适应：本站若部署在腾讯云静态托管（无 Flask），跨域调用发布在 workbuddy.host 的后端
+    const API_BASE = location.hostname.includes("tcloudbaseapp.com")
+      ? "https://shiji-shanhe.app.workbuddy.host"
+      : "";
+
     // ===== 0. 首页搜索：跳到查询页并带入关键词 =====
     function goSearch(e) {
       e.preventDefault();
@@ -729,12 +734,12 @@
         document.getElementById("famousContent").textContent = "床前明月光，疑是地上霜。";
         document.getElementById("famousSource").textContent = "—— 静夜思 · 李白（唐代）";
       }
-      fetch("/famous?mode=random&tier=1&limit=1")
+      fetch(API_BASE + "/famous?mode=random&tier=1&limit=1")
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (d.famous && d.famous.length) { render(d.famous[0]); }
           else {
-            return fetch("/famous?mode=random&limit=1").then(function (r) { return r.json(); });
+            return fetch(API_BASE + "/famous?mode=random&limit=1").then(function (r) { return r.json(); });
           }
         })
         .then(function (d2) {
@@ -759,7 +764,7 @@
         document.getElementById("dailyAuthor").textContent = "李白 · 唐代";
         bindDaily("静夜思");
       }
-      fetch("/daily")
+      fetch(API_BASE + "/daily")
         .then(function (r) { return r.json(); })
         .then(function (d) {
           var p = d && d.poem;

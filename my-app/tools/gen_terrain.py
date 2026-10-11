@@ -37,9 +37,10 @@ BANDS = [
 ]
 EXAG = 6.0            # 垂直夸张倍数（与上一版浏览器内算法一致）
 Z_RANGE = (3, 4, 5, 6)
-LNG_MIN, LNG_MAX, LAT_MAX, LAT_MIN = 95.0, 125.0, 42.0, 15.0
-ALPHA_GAIN, ALPHA_CAP = 1.12, 0.68
+LNG_MIN, LNG_MAX, LAT_MAX, LAT_MIN = 75.0, 135.0, 53.0, 18.0   # 全中国 + 周边区域
+ALPHA_GAIN, ALPHA_CAP = 0.85, 0.52   # 整体调淡，让卫星影像透出来（去贴纸感）
 BF_MIN, BF_MAX = 0.30, 1.55
+FEATHER_DEG = 0.0     # 边缘羽化宽度（度）：0 = 不做过渡，可见范围精确等于 bbox，界外一律透明
 
 sess = requests.Session()
 
@@ -68,6 +69,22 @@ def band(e):
         if e < mx:
             return col, a
     return BANDS[-1][1], BANDS[-1][2]
+
+
+def smooth(t):
+    if t <= 0:
+        return 0.0
+    if t >= 1:
+        return 1.0
+    return t * t * (3 - 2 * t)   # smoothstep：边缘羽化的透明度过渡
+
+
+def edge_factor(lon, lat):
+    """像素到区域边界的最近距离（度）→ 羽化系数 0~1；FEATHER_DEG=0 时恒为 1"""
+    if FEATHER_DEG <= 0:
+        return 1.0
+    d = min(lon - LNG_MIN, LNG_MAX - lon, lat - LAT_MIN, LAT_MAX - lat)
+    return smooth(d / FEATHER_DEG)
 
 
 def fetch_raw(z, x, y):
@@ -129,6 +146,9 @@ def process(key):
             alpha = a * ALPHA_GAIN
             if alpha > ALPHA_CAP:
                 alpha = ALPHA_CAP
+            lon_px = (x + (ci + 0.5) / 256) / (2 ** z) * 360 - 180
+            lat_px = row_to_lat(y + (rj + 0.5) / 256, z)
+            alpha *= edge_factor(lon_px, lat_px)
             opx[ci, rj] = (
                 min(255, int(col[0] * bf + 0.5)),
                 min(255, int(col[1] * bf + 0.5)),

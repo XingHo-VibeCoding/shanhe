@@ -415,7 +415,10 @@
 
 <script>
   // 后端地址：留空走同源相对路径
-  const API_BASE = "";
+  // 后端地址自适应：本站若部署在腾讯云静态托管（无 Flask），跨域调用发布在 workbuddy.host 的后端
+  const API_BASE = location.hostname.includes("tcloudbaseapp.com")
+    ? "https://shiji-shanhe.app.workbuddy.host"
+    : "";
 
   // 作者画像映射：只在「确有史料画像」的诗人名下登记（值 = 本地图片路径）。
   // 查不到画像的诗人不登记，详情页就不显示画像、只显示文字简介。
