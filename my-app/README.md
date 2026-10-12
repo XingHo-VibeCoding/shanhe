@@ -75,6 +75,26 @@ python -m http.server 8000
 - 后端通过读取 `.env` 获取密钥，前端代码中不出现任何密钥。
 - 换机器或重新克隆代码后，需要重新创建 `.env` 并填入自己的 appKey。
 
+## 发布前检查（pre-release-check）
+
+每次**发布 / 部署 / 推送 GitHub 之前**，先跑一遍发布前体检脚本（Day 25 新增）：
+
+```bash
+C:/Users/23850/.workbuddy/binaries/python/envs/default/Scripts/python.exe my-app/tools/pre-release-check/check.py
+```
+
+它会自动检查五项并逐项报告 ✓/✗：
+
+1. **密钥泄露扫描**——代码/文档里不能出现真实密钥形态的字符串
+2. **.env 防护**——.env 必须被 .gitignore 覆盖且未被 git 跟踪
+3. **公网可达**——腾讯云单链接 5 个页面都能打开（HTTP 200）
+4. **API 健康**——4 个云函数接口返回 200 且 ok:true
+5. **资源引用完整**——页面引用的本地文件都真实存在
+
+全部 ✓ 才发布；任何一项 ✗ 都会给出「文件 + 行号」定位。带时间戳的报告存于 `.workbuddy/reports/pre-release/`。
+
+详细说明与换项目复用方法见 `my-app/tools/pre-release-check/SKILL.md`。
+
 ## 技术说明
 
 - 前端：HTML + CSS + JavaScript（纯静态，后续升级 Vue）。
