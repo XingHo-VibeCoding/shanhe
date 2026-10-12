@@ -394,6 +394,15 @@
       if (/^5\d\d|bad gateway|service unavailable/i.test(msg)) return "服务器开小差了，请稍后重试";
       return "出了点小问题，请稍后重试";
     }
+    /* 网络瞬断自动重试一次（Day 24）：首次失败后隔 800ms 再试，仍失败才抛给 friendlyError */
+    function fetchRetry(url, opts) {
+      return fetch(url, opts).catch(function (e) {
+        console.warn("首次请求失败，800ms 后自动重试：", url);
+        return new Promise(function (resolve, reject) {
+          setTimeout(function () { fetch(url, opts).then(resolve, reject); }, 800);
+        });
+      });
+    }
 
     let currentPage = 1;
     let totalPages = 1;
@@ -416,7 +425,7 @@
 
       try {
         const url = API_BASE + "/search?keyword=" + encodeURIComponent(keyword) + "&page=" + currentPage;
-        const resp = await fetch(url);
+        const resp = await fetchRetry(url);
         const json = await resp.json();
 
         if (json.ret_code !== "0") {
@@ -455,7 +464,7 @@
       totalPages = 1;
 
       try {
-        const resp = await fetch(API_BASE + "/recommend");
+        const resp = await fetchRetry(API_BASE + "/recommend");
         const json = await resp.json();
         if (json.ret_code !== "0" || !(json.poemInfo || []).length) {
           result.innerHTML = '<div class="empty">推荐暂不可用，输入诗人姓名或诗词名开始查询</div>';
@@ -616,7 +625,7 @@
 
       try {
         const url = API_BASE + "/search?title=" + encodeURIComponent(title) + "&page=1";
-        const resp = await fetch(url);
+        const resp = await fetchRetry(url);
         const json = await resp.json();
         if (json.ret_code !== "0") {
           result.innerHTML = '<div class="error">' + (json.remark || "查询失败") + '<br><button class="retry-btn" onclick="searchPoemsByTitle(currentPoet)">重试</button></div>';
@@ -657,7 +666,7 @@
     // 请求联想接口
     async function fetchSuggest(kw) {
       try {
-        const resp = await fetch(API_BASE + "/suggest?q=" + encodeURIComponent(kw));
+        const resp = await fetchRetry(API_BASE + "/suggest?q=" + encodeURIComponent(kw));
         const json = await resp.json();
         if (json.ret_code === "0" && json.suggestions && json.suggestions.length > 0) {
           suggestItems = json.suggestions;

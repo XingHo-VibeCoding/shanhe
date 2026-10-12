@@ -553,6 +553,15 @@
     const API_BASE = location.hostname.includes("tcloudbaseapp.com")
       ? "https://shiji-shanhe.app.workbuddy.host"
       : "";
+    /* 网络瞬断自动重试一次（Day 24）：首次失败后隔 800ms 再试，仍失败才走原有的错误提示 */
+    function fetchRetry(url, opts) {
+      return fetch(url, opts).catch(function (e) {
+        console.warn("首次请求失败，800ms 后自动重试：", url);
+        return new Promise(function (resolve, reject) {
+          setTimeout(function () { fetch(url, opts).then(resolve, reject); }, 800);
+        });
+      });
+    }
 
     // ===== 0. 首页搜索：跳到查询页并带入关键词 =====
     function goSearch(e) {
@@ -734,12 +743,12 @@
         document.getElementById("famousContent").textContent = "床前明月光，疑是地上霜。";
         document.getElementById("famousSource").textContent = "—— 静夜思 · 李白（唐代）";
       }
-      fetch(API_BASE + "/famous?mode=random&tier=1&limit=1")
+      fetchRetry(API_BASE + "/famous?mode=random&tier=1&limit=1")
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (d.famous && d.famous.length) { render(d.famous[0]); }
           else {
-            return fetch(API_BASE + "/famous?mode=random&limit=1").then(function (r) { return r.json(); });
+            return fetchRetry(API_BASE + "/famous?mode=random&limit=1").then(function (r) { return r.json(); });
           }
         })
         .then(function (d2) {
@@ -764,7 +773,7 @@
         document.getElementById("dailyAuthor").textContent = "李白 · 唐代";
         bindDaily("静夜思");
       }
-      fetch(API_BASE + "/daily")
+      fetchRetry(API_BASE + "/daily")
         .then(function (r) { return r.json(); })
         .then(function (d) {
           var p = d && d.poem;

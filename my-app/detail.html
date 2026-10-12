@@ -474,6 +474,15 @@
     if (/^5\d\d|bad gateway|service unavailable/i.test(msg)) return "服务器开小差了，请稍后重试";
     return "出了点小问题，请稍后重试";
   }
+  /* 网络瞬断自动重试一次（Day 24）：首次失败后隔 800ms 再试，仍失败才抛给 friendlyError */
+  function fetchRetry(url, opts) {
+    return fetch(url, opts).catch(function (e) {
+      console.warn("首次请求失败，800ms 后自动重试：", url);
+      return new Promise(function (resolve, reject) {
+        setTimeout(function () { fetch(url, opts).then(resolve, reject); }, 800);
+      });
+    });
+  }
 
   // ===== 牌匾标题：每个字一个方框，参考古诗文网样式 =====
   function plaqueTitle(t) {
@@ -640,7 +649,7 @@
       return;
     }
     try {
-      const resp = await fetch(API_BASE + "/search?title=" + encodeURIComponent(title) + "&page=1");
+      const resp = await fetchRetry(API_BASE + "/search?title=" + encodeURIComponent(title) + "&page=1");
       const json = await resp.json();
       if (json.ret_code !== "0") {
         main.innerHTML = '<div class="state error">' + escapeHtml(json.remark || "查询失败") + '</div>';
@@ -669,7 +678,7 @@
   // ===== 千古名句：异步拉取该诗相关名句，插入到原文卡片下方 =====
   async function loadFamous(t) {
     try {
-      const r = await fetch(API_BASE + "/famous?title=" + encodeURIComponent(t));
+      const r = await fetchRetry(API_BASE + "/famous?title=" + encodeURIComponent(t));
       const d = await r.json();
       const fs = (d.famous || []).slice(0, 5);
       if (!fs.length) return;
