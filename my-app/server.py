@@ -89,18 +89,30 @@ except Exception as e:
 _POET_DIRT = re.compile(r"[□▢▣�?？*＊]")
 
 
-def normalize_poet(name):
-    """作者名归一化：把数据源里残缺的作者名统一显示成「佚名」。
+# 数据源里「无作者」的写法（统一显示「佚名」）：不详 / 缺名（无名氏、无名氏《…》按前缀判断）
+_POET_ANON_WORDS = ("不详", "缺名")
 
-    覆盖三类脏数据（保留在库里，只是不给用户看）：
+
+def normalize_poet(name):
+    """作者名归一化：把数据源里「残缺 / 无作者」的名字统一显示成「佚名」。
+
+    覆盖（保留在库里，只是不给用户看）：
       1. 空名；
       2. 被截断的单字姓氏（如「李」实为「李纲」）——约 31 种、120 首；
-      3. 含占位符/替换符的名字（如「赵必□」「□韫」「�」）——约 45 处。
+      3. 含占位符/替换符的名字（如「赵必□」「□韫」「�」）；
+      4. 「无作者」的几种写法：不详（863 首）、缺名（39 首）、无名氏（3251 首）、
+         无名氏《张协状元》这类带篇名的。
     名字里带生僻字（如「于𣸣」）属正常，保留不动。
     """
     n = (name or "").strip()
     n = "".join(ch for ch in n if ch.isprintable() and ch not in "\u3000")  # 去控制符/全角空格
-    if len(n) <= 1 or _POET_DIRT.search(n):
+    if (
+        len(n) <= 1
+        or _POET_DIRT.search(n)
+        or n in _POET_ANON_WORDS
+        or n.startswith("无名")
+        or "佚名" in n
+    ):
         return "佚名"
     return n
 
@@ -226,7 +238,8 @@ def static_files(filename):
 def recommend():
     """
     推荐诗词接口：查询页无输入时展示的名篇推荐。
-    从本地 poems.db 按知名度（popularity）降序取 8 首，
+    排序规则：有名的诗人排前面 → 佚名靠后 → 有名的诗靠前，且每位诗人只出 1 首。
+    （「诗人名气」= 该诗人全部作品的 popularity 之和，见 db_access.poet_fame）
     优先返回带译文的（五件套更完整），不足时用其他名篇补齐。
     返回格式与 /search 的本地库结果一致，前端可复用渲染逻辑。
     """
@@ -446,7 +459,8 @@ def search_smart(keyword, page):
 
     顺序（越靠前越省额度）：
       0. 「作者，篇名」组合（如「苏轼，蝶恋花」）→ 只搜该作者名下匹配的作品
-      1. 本地 poems.db 里按「诗人名」查 → 命中直接返回
+      0.5 单字姓氏（如「王」）→ 该姓名家代表作在前 + 含该字的诗在后
+      1. 本地 poems.db 里按「诗人名」查（单字跳过）→ 命中直接返回
       2. 本地 poems.db 里按「诗名」查 → 命中直接返回
       3. 本地标题索引「同名作品」→ 命中返回标题列表
       4. 才调 API（先按诗人名，再按诗名）
@@ -465,12 +479,22 @@ def search_smart(keyword, page):
             total = total if total else len(rows)
             return jsonify(_poems_from_db(rows, total, page, poet=poet_part))
 
+    # 0.5 单字姓氏（「王」「李」这类）：先给该姓「有名诗人的代表作」，再给含该字的诗。
+    #     单字不可能是完整的诗人名，不能当成「找到了这个人」——库里那批被源数据截断成
+    #     单字的残名（作者本是王姓诗人，只剩「王」），正是这样把「佚名」顶到最前的。
+    if len(keyword) == 1 and db_access.is_surname_char(keyword):
+        rows = db_access.surname_showcase(keyword)
+        if rows:
+            return jsonify(_poems_from_db(rows, len(rows), page))
+
     # 1. 本地库按诗人名查（按知名度降序：名篇在前）
-    poet_rows = db_access.get_poems_by_poet(keyword, page_size, offset)
-    if poet_rows:
-        total = db_access.count_poems_by_poet(keyword)
-        total = total if total else len(poet_rows)
-        return jsonify(_poems_from_db(poet_rows, total, page, poet=keyword))
+    #    单字跳过本步：绝大多数单字是姓氏前缀而非完整人名（上面的姓氏聚合已处理）
+    if len(keyword) > 1:
+        poet_rows = db_access.get_poems_by_poet(keyword, page_size, offset)
+        if poet_rows:
+            total = db_access.count_poems_by_poet(keyword)
+            total = total if total else len(poet_rows)
+            return jsonify(_poems_from_db(poet_rows, total, page, poet=keyword))
 
     # 2. 本地库按诗名查（标题「包含」关键词，按知名度降序 → 搜"水"出《水调歌头》等名篇在前）
     title_rows = db_access.get_poems_by_title_like(keyword, page_size, offset)
