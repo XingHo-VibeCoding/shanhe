@@ -10,19 +10,19 @@
   /* ===== 传统色令牌 · 本页色系：青（缥碧/铜青 · 青绿山水） =====
      五页共享同一套令牌名，只有色值按页轮换；朱砂/金线全站固定 */
   :root {
-    --paper: #E4EBE7;        /* 纸底（沉青玉灰） */
-    --card: #F0F4F1;         /* 卡片纸 */
+    --paper: #EFEAD8;        /* 纸底（沉青玉灰） */
+    --card: #F7F3E6;         /* 卡片纸 */
     --ink: #26333A;          /* 螺子黛墨字（全站统一，加深） */
-    --ink-soft: #3D4C49;     /* 次级墨 */
-    --ink-faint: #6B7B77;    /* 弱化文字 */
-    --placeholder: #83928D;  /* 输入框占位 */
-    --line: #B7CAC2;         /* 边框 */
-    --line-soft: #C9D9D1;    /* 内框/虚线 */
-    --tint: #D8E4DE;         /* 徽章底（青染） */
-    --primary: #27605D;      /* 主色·深（按钮/链接，白字对比 6.5:1） */
-    --primary-deep: #1F4F4D; /* 主色·hover */
-    --primary-soft: #5E918D; /* 主色·浅（装饰，压暗） */
-    --hover: #A2BBB4;        /* hover 边框 */
+    --ink-soft: #4E4A3C;     /* 次级墨 */
+    --ink-faint: #7D7460;    /* 弱化文字 */
+    --placeholder: #948B74;  /* 输入框占位 */
+    --line: #CCC2A4;         /* 边框 */
+    --line-soft: #DBD2B8;    /* 内框/虚线 */
+    --tint: #E7DFC6;         /* 徽章底（青染） */
+    --primary: #7A5A2B;      /* 主色·深（按钮/链接，白字对比 6.5:1） */
+    --primary-deep: #63491F; /* 主色·hover */
+    --primary-soft: #B09255; /* 主色·浅（装饰，压暗） */
+    --hover: #C2B58E;        /* hover 边框 */
     --seal: #8C2F38;         /* 朱砂（全站点睛，固定） */
     --gold: #B3925B;         /* 金线（压暗，去浮亮） */
   }
@@ -37,8 +37,8 @@
   body {
     font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
     background:
-      radial-gradient(640px 420px at 86% 6%, rgba(74, 120, 116, .16), transparent 62%),
-      radial-gradient(520px 400px at 6% 88%, rgba(31, 79, 77, .12), transparent 60%),
+      radial-gradient(640px 420px at 86% 6%, rgba(176, 146, 85, .16), transparent 62%),
+      radial-gradient(520px 400px at 6% 88%, rgba(99, 73, 31, .12), transparent 60%),
       var(--paper);
     color: var(--ink);
     line-height: 1.8;
@@ -108,7 +108,7 @@
   /* ===== 顶部标题（潇湘图卷 + 青墨压暗 + 朱砂印章落款 + 金线边饰） ===== */
   .header {
     background:
-      linear-gradient(180deg, rgba(28, 44, 41, .18) 0%, rgba(28, 44, 41, .40) 100%),
+      linear-gradient(180deg, rgba(78, 74, 60, .18) 0%, rgba(78, 74, 60, .40) 100%),
       url("assets/xiaoxiang.jpg") center 42% / cover no-repeat #22322F;
     color: var(--paper);
     padding: 34px 20px 28px;
@@ -215,11 +215,11 @@
     padding: 26px 26px 24px;
     margin-bottom: 26px;
     position: relative;
-    box-shadow: 0 2px 10px rgba(44, 58, 62, .05);
+    box-shadow: 0 2px 10px rgba(38, 51, 58, .05);
     cursor: pointer;
     transition: border-color .2s, box-shadow .2s;
   }
-  .daily:hover { border-color: var(--hover); box-shadow: 0 2px 12px rgba(44, 58, 62, .10); }
+  .daily:hover { border-color: var(--hover); box-shadow: 0 2px 12px rgba(38, 51, 58, .10); }
   .daily::before {
     content: "";
     position: absolute;
@@ -292,7 +292,7 @@
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background: rgba(20, 30, 28, .94);
+    background: rgba(60, 54, 40, .94);
     display: none;
     align-items: center;
     justify-content: center;
@@ -359,7 +359,7 @@
     background: var(--primary);
     border-radius: 1px;
   }
-  .poem-card:hover { border-color: var(--hover); box-shadow: 0 2px 8px rgba(44, 58, 62, .08); }
+  .poem-card:hover { border-color: var(--hover); box-shadow: 0 2px 8px rgba(38, 51, 58, .08); }
   .pc-title {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 18px;
@@ -465,7 +465,7 @@
     z-index: 99;
     display: flex;
     gap: 6px;
-    background: rgba(44, 58, 62, .92);
+    background: rgba(38, 51, 58, .92);
     padding: 8px 10px;
     border-radius: 8px;
   }
@@ -513,7 +513,7 @@
       <button type="submit">搜索</button>
     </form>
 
-    <a href="footprints.html" style="display:block;text-align:center;margin:-4px auto 18px;max-width:420px;padding:8px 20px;border:1px solid #A2BBB4;border-radius:18px;color:#6B7B77;font-size:13px;letter-spacing:3px;text-decoration:none;transition:all .2s ease;" onmouseover="this.style.borderColor='#27605D';this.style.color='#27605D'" onmouseout="this.style.borderColor='#A2BBB4';this.style.color='#6B7B77'">诗人足迹 · 循东坡一生行迹 · 古地名配今地 →</a>
+    <a href="footprints.html" style="display:block;text-align:center;margin:-4px auto 18px;max-width:420px;padding:8px 20px;border:1px solid #C2B58E;border-radius:18px;color:#7D7460;font-size:13px;letter-spacing:3px;text-decoration:none;transition:all .2s ease;" onmouseover="this.style.borderColor='#7A5A2B';this.style.color='#7A5A2B'" onmouseout="this.style.borderColor='#C2B58E';this.style.color='#7D7460'">诗人足迹 · 循东坡一生行迹 · 古地名配今地 →</a>
 
     <div class="date-bar" id="dateBar">……</div>
 
