@@ -5,21 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>诗迹山河 · 诗词详情</title>
 <style>
+  :root {
+    --paper: #EFEAD8;        /* 纸底（沉米黄·缃） */
+    --card: #F7F3E6;         /* 卡片纸 */
+    --ink: #26333A;          /* 螺子黛墨字（全站统一锚） */
+    --ink-soft: #4E4A3C;     /* 次级墨 */
+    --ink-faint: #7D7460;    /* 弱化文字 */
+    --placeholder: #948B74;  /* 占位 */
+    --line: #CCC2A4;         /* 边框 */
+    --line-soft: #DBD2B8;    /* 内框/虚线 */
+    --tint: #E7DFC6;         /* 徽章底（缃染） */
+    --primary: #7A5A2B;      /* 主色·深（缃叶/秋香，白字对比 6.2:1） */
+    --primary-deep: #63491F; /* 主色·hover */
+    --primary-soft: #B09255; /* 主色·浅（压暗秋香，装饰） */
+    --hover: #C2B58E;        /* hover 边框 */
+    --seal: #8C2F38;         /* 朱砂（全站点睛，固定） */
+    --gold: #B3925B;         /* 金线（全站边饰，固定） */
+  }
+
+  /* 跨文档视图过渡：页面切换淡入淡出（Chrome/Edge 126+） */
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) { animation: vtOut .28s ease both; }
+  ::view-transition-new(root) { animation: vtIn .36s ease both; }
+  @keyframes vtOut { to { opacity: 0; } }
+  @keyframes vtIn { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-    background: #f5f0e6;
-    color: #3a3226;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    background:
+      radial-gradient(640px 420px at 88% 4%, rgba(176, 146, 85, .13), transparent 62%),
+      radial-gradient(520px 400px at 8% 92%, rgba(122, 90, 43, .10), transparent 60%),
+      var(--paper);
+    color: var(--ink);
     line-height: 1.8;
+    min-height: 100vh;
+    animation: pageIn .4s ease both;
+  }
+  @keyframes pageIn { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    body { animation: none; }
   }
 
   /* ===== 顶部返回条（暖墨） ===== */
   .topbar {
     background:
-      linear-gradient(rgba(42,34,22,.80), rgba(42,34,22,.80)),
+      linear-gradient(rgba(44, 40, 26, .82), rgba(44, 40, 26, .82)),
       url(assets/pic_xsxl.jpg) center 60% / cover no-repeat;
-    color: #f5f0e6;
+    color: var(--card);
     padding: 13px 18px;
     display: flex;
     align-items: center;
@@ -27,9 +64,10 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    border-bottom: 1px solid var(--gold);
   }
   .topbar .back {
-    color: #f5f0e6;
+    color: var(--card);
     font-size: 15px;
     text-decoration: none;
     cursor: pointer;
@@ -43,7 +81,7 @@
   }
   .topbar nav { margin-left: auto; display: flex; gap: 14px; }
   .topbar nav a {
-    color: #f5f0e6;
+    color: var(--card);
     opacity: .85;
     font-size: 13px;
     text-decoration: none;
@@ -68,8 +106,8 @@
     z-index: 20;
     display: flex;
     flex-direction: column;
-    background: rgba(250,247,238,.94);
-    border: 1px solid #e0d6c2;
+    background: rgba(247, 243, 230, .94);
+    border: 1px solid var(--line);
     border-right: none;
     border-radius: 6px 0 0 6px;
     overflow: hidden;
@@ -79,17 +117,17 @@
     writing-mode: vertical-rl;
     letter-spacing: 5px;
     font-size: 12px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
     text-decoration: none;
     padding: 10px 6px;
-    border-bottom: 1px solid #e8dfcc;
+    border-bottom: 1px solid var(--line-soft);
     transition: color .2s, background .2s;
   }
   .side-nav a:last-child { border-bottom: none; }
-  .side-nav a:hover { color: #a3402f; }
+  .side-nav a:hover { color: var(--primary); }
   .side-nav a.active {
-    color: #a3402f;
-    background: #f3ecdb;
+    color: var(--primary);
+    background: var(--tint);
   }
   @media (max-width: 720px) {
     .container { padding-right: 40px; }
@@ -109,7 +147,7 @@
   }
   .poem-head .meta {
     font-size: 13px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
     margin-top: 8px;
     letter-spacing: 2px;
   }
@@ -117,8 +155,8 @@
   .tag {
     display: inline-block;
     font-size: 12px;
-    background: #ece4d4;
-    color: #6b5d43;
+    background: var(--tint);
+    color: #6B5F3D;
     padding: 1px 10px;
     border-radius: 10px;
     margin: 0 3px;
@@ -128,7 +166,7 @@
   .card {
     background: transparent;
     border: none;
-    border-bottom: 1px solid #e0d6c2;
+    border-bottom: 1px solid var(--line);
     border-radius: 0;
     padding: 20px 4px 24px;
     margin-bottom: 0;
@@ -147,8 +185,8 @@
   .card h2 .hz {
     display: inline-block;
     font-size: 16px;
-    color: #4a4238;
-    border: 1px solid #6b5d43;
+    color: var(--ink-soft);
+    border: 1px solid var(--primary);
     padding: 3px 6px;
     margin: 0 4px;
     line-height: 1.2;
@@ -158,12 +196,12 @@
     font-size: 19px;
     line-height: 2.1;
     text-align: center;
-    color: #3a3226;
+    color: var(--ink);
     white-space: pre-wrap;
   }
   .trans, .anno, .bg, .appr {
     font-size: 15px;
-    color: #5a4f3f;
+    color: var(--ink-soft);
     white-space: pre-wrap;
     line-height: 1.9;
     text-align: justify;
@@ -184,13 +222,13 @@
     padding: 4px 2px;
     border: none;
     background: none;
-    color: #8a7a5f;
+    color: var(--ink-faint);
     font-size: 13px;
     letter-spacing: 1px;
     cursor: pointer;
   }
-  .more-btn:hover { color: #a3402f; }
-  .more-btn:focus-visible { outline: 2px solid #a3402f; outline-offset: 2px; border-radius: 2px; }
+  .more-btn:hover { color: var(--primary); }
+  .more-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
 
   /* ===== 作者卡片（简介 + 画像） ===== */
   .poet-card {
@@ -198,7 +236,7 @@
     gap: 18px;
     background: transparent;
     border: none;
-    border-bottom: 1px solid #e0d6c2;
+    border-bottom: 1px solid var(--line);
     border-radius: 0;
     padding: 20px 4px 24px;
     margin-top: 0;
@@ -209,10 +247,10 @@
     flex: none;
     width: 72px;
     height: 72px;
-    border: 1px solid #d8cdb8;
+    border: 1px solid var(--line);
     border-radius: 50%;
     overflow: hidden;
-    background: #f0e9d8;
+    background: var(--tint);
   }
   .poet-portrait img {
     width: 100%;
@@ -224,14 +262,14 @@
   .poet-head {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 14px;
-    color: #4a4238;
+    color: var(--ink-soft);
     margin-bottom: 6px;
     display: flex;
     gap: 0;
   }
   .poet-head .hz {
     display: inline-block;
-    border: 1px solid #6b5d43;
+    border: 1px solid var(--primary);
     padding: 2px 4px;
     margin-right: 5px;
     line-height: 1.2;
@@ -239,30 +277,30 @@
   .poet-name {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 18px;
-    color: #3a3226;
+    color: var(--ink);
     font-weight: 500;
   }
   .poet-bio {
     font-size: 13px;
-    color: #5a4f3f;
+    color: var(--ink-soft);
     margin-top: 8px;
     line-height: 1.9;
     text-align: justify;
   }
 
   /* ===== 千古名句标注 ===== */
-  .famous-quote { background: #fdf8ee; }
+  .famous-quote { background: #F3EDD8; }
   .f-line {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 16px;
-    color: #4a4033;
+    color: #4A4430;
     line-height: 1.8;
     padding: 7px 0;
     text-align: center;
   }
-  .f-line + .f-line { border-top: 1px dashed #e2d6bd; }
+  .f-line + .f-line { border-top: 1px dashed var(--line-soft); }
   .f-star {
-    color: #a3402f;
+    color: var(--seal);
     font-size: 13px;
     margin-left: 5px;
     vertical-align: middle;
@@ -270,7 +308,7 @@
   .f-src {
     font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
     font-size: 12px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
     margin-left: 6px;
   }
 
@@ -278,7 +316,7 @@
   .ink-note {
     text-align: center;
     font-size: 12px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
     letter-spacing: 1px;
     margin: -6px 0 14px;
   }
@@ -289,20 +327,20 @@
     margin: 0 auto;
     border-radius: 6px;
     overflow: hidden;
-    box-shadow: 0 3px 14px rgba(58, 50, 38, .12);
+    box-shadow: 0 3px 14px rgba(58, 50, 38, .14);
   }
   .ink-single img {
     display: block;
     width: 100%;
     height: auto;
   }
-  .ink-single:focus-visible { outline: 2px solid #a3402f; outline-offset: 3px; }
+  .ink-single:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   .ink-single-cap {
     text-align: center;
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 14px;
     letter-spacing: 2px;
-    color: #5a4f3f;
+    color: var(--ink-soft);
     margin-top: 12px;
   }
   .ink-strip {
@@ -314,7 +352,7 @@
     -webkit-overflow-scrolling: touch;
   }
   .ink-strip::-webkit-scrollbar { height: 6px; }
-  .ink-strip::-webkit-scrollbar-thumb { background: #d8cdb8; border-radius: 3px; }
+  .ink-strip::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   .ink-item {
     flex: 0 0 auto;
     width: 132px;
@@ -328,9 +366,9 @@
     aspect-ratio: 2 / 3;
     border-radius: 4px;
     overflow: hidden;
-    border: 1px solid #d8cdb8;
-    background: #f0e9d8;
-    box-shadow: 0 2px 8px rgba(58,50,38,.06);
+    border: 1px solid var(--line);
+    background: var(--tint);
+    box-shadow: 0 2px 8px rgba(58,50,38,.08);
   }
   .ink-fig img {
     width: 100%;
@@ -343,7 +381,7 @@
   .ink-cap {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 13px;
-    color: #5a4f3f;
+    color: var(--ink-soft);
     text-align: center;
     margin-top: 8px;
     letter-spacing: 1px;
@@ -352,45 +390,45 @@
   .ink-item .ink-tag {
     display: inline-block;
     font-size: 11px;
-    color: #fdfbf5;
-    background: #a3402f;
+    color: var(--card);
+    background: var(--seal);
     border-radius: 3px;
     padding: 0 5px;
     margin-right: 5px;
     vertical-align: 1px;
   }
-  .ink-item:first-child .ink-cap { color: #a3402f; }
+  .ink-item:first-child .ink-cap { color: var(--seal); }
   .ink-cta {
     display: block;
     text-align: center;
     margin-top: 6px;
     padding: 11px 20px;
-    border: 1px solid #a3402f;
+    border: 1px solid var(--primary);
     border-radius: 6px;
-    color: #a3402f;
+    color: var(--primary);
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     letter-spacing: 3px;
     font-size: 15px;
     text-decoration: none;
     transition: background .2s, color .2s;
   }
-  .ink-cta:hover { background: #a3402f; color: #fdfbf5; }
-  .ink-cta:focus-visible { outline: 2px solid #a3402f; outline-offset: 3px; border-radius: 6px; }
+  .ink-cta:hover { background: var(--primary); color: var(--card); }
+  .ink-cta:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 6px; }
 
   /* ===== 状态占位 ===== */
   .state {
     text-align: center;
     padding: 48px 20px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
     font-size: 15px;
     line-height: 1.7;
   }
-  .state.error { color: #a3402f; }
+  .state.error { color: var(--seal); }
   .spinner {
     width: 28px;
     height: 28px;
-    border: 3px solid #d8cdb8;
-    border-top-color: #a3402f;
+    border: 3px solid var(--line);
+    border-top-color: var(--primary);
     border-radius: 50%;
     margin: 0 auto 12px;
     animation: spin .8s linear infinite;

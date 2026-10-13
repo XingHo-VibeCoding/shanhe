@@ -7,12 +7,46 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  /* ===== 传统色令牌 · 本页色系：青（缥碧/铜青 · 青绿山水） =====
+     五页共享同一套令牌名，只有色值按页轮换；朱砂/金线全站固定 */
+  :root {
+    --paper: #E4EBE7;        /* 纸底（沉青玉灰） */
+    --card: #F0F4F1;         /* 卡片纸 */
+    --ink: #26333A;          /* 螺子黛墨字（全站统一，加深） */
+    --ink-soft: #3D4C49;     /* 次级墨 */
+    --ink-faint: #6B7B77;    /* 弱化文字 */
+    --placeholder: #83928D;  /* 输入框占位 */
+    --line: #B7CAC2;         /* 边框 */
+    --line-soft: #C9D9D1;    /* 内框/虚线 */
+    --tint: #D8E4DE;         /* 徽章底（青染） */
+    --primary: #27605D;      /* 主色·深（按钮/链接，白字对比 6.5:1） */
+    --primary-deep: #1F4F4D; /* 主色·hover */
+    --primary-soft: #5E918D; /* 主色·浅（装饰，压暗） */
+    --hover: #A2BBB4;        /* hover 边框 */
+    --seal: #8C2F38;         /* 朱砂（全站点睛，固定） */
+    --gold: #B3925B;         /* 金线（压暗，去浮亮） */
+  }
+
+  /* 跨文档视图过渡：页面切换淡入淡出（Chrome/Edge 126+） */
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) { animation: vtOut .28s ease both; }
+  ::view-transition-new(root) { animation: vtIn .36s ease both; }
+  @keyframes vtOut { to { opacity: 0; } }
+  @keyframes vtIn { from { opacity: 0; } }
+
   body {
-    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-    background: #f5f0e6;
-    color: #3a3226;
+    font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+    background:
+      radial-gradient(640px 420px at 86% 6%, rgba(74, 120, 116, .16), transparent 62%),
+      radial-gradient(520px 400px at 6% 88%, rgba(31, 79, 77, .12), transparent 60%),
+      var(--paper);
+    color: var(--ink);
     line-height: 1.8;
   }
+  @media (prefers-reduced-motion: no-preference) {
+    body { animation: pageIn .4s ease-out both; }
+  }
+  @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
 
   /* ===== 古风装饰：山水 · 日月 · 花鸟 ===== */
   .decor {
@@ -55,7 +89,7 @@
     pointer-events: none;
   }
 
-  /* 分隔饰：细线 + 朱红梅花 */
+  /* 分隔饰：细线 + 朱砂梅 */
   .divider {
     display: flex;
     align-items: center;
@@ -67,19 +101,27 @@
     content: "";
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, transparent, #d8cdb8, transparent);
+    background: linear-gradient(90deg, transparent, var(--line), transparent);
   }
   .divider svg { width: 22px; height: 22px; }
 
-  /* ===== 顶部标题（潇湘图卷 + 暖墨压暗 + 朱红印章落款） ===== */
+  /* ===== 顶部标题（潇湘图卷 + 青墨压暗 + 朱砂印章落款 + 金线边饰） ===== */
   .header {
     background:
-      linear-gradient(180deg, rgba(42,34,22,.18) 0%, rgba(42,34,22,.38) 100%),
-      url("assets/xiaoxiang.jpg") center 42% / cover no-repeat #3a3226;
-    color: #f5f0e6;
+      linear-gradient(180deg, rgba(28, 44, 41, .18) 0%, rgba(28, 44, 41, .40) 100%),
+      url("assets/xiaoxiang.jpg") center 42% / cover no-repeat #22322F;
+    color: var(--paper);
     padding: 34px 20px 28px;
     text-align: center;
     position: relative;
+  }
+  .header::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 4px;
+    background: repeating-linear-gradient(90deg, var(--gold) 0 14px, transparent 14px 24px);
+    opacity: .5;
   }
   .header h1 {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
@@ -101,8 +143,8 @@
     height: 34px;
     line-height: 34px;
     text-align: center;
-    background: #a3402f;
-    color: #f5f0e6;
+    background: var(--seal);
+    color: var(--paper);
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 16px;
     border-radius: 4px;
@@ -117,7 +159,7 @@
     z-index: 1;
   }
 
-  /* ===== 首页搜索框（古风：宣纸底 + 暖墨边 + 朱红搜索键） ===== */
+  /* ===== 首页搜索框（古风：宣纸底 + 青墨边 + 铜青搜索键） ===== */
   .search-bar {
     display: flex;
     gap: 10px;
@@ -129,30 +171,30 @@
     padding: 12px 16px;
     font-size: 15px;
     font-family: inherit;
-    color: #3a3226;
-    background: #fdfbf5;
-    border: 1px solid #d8cdb8;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
     border-radius: 6px;
     outline: none;
     transition: border-color .2s;
   }
-  .search-bar input::placeholder { color: #b5a88c; }
-  .search-bar input:focus { border-color: #a3402f; }
+  .search-bar input::placeholder { color: var(--placeholder); }
+  .search-bar input:focus { border-color: var(--primary); }
   .search-bar button {
     padding: 12px 22px;
     font-size: 15px;
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     letter-spacing: 2px;
-    color: #fdfbf5;
-    background: #a3402f;
+    color: var(--paper);
+    background: var(--primary);
     border: none;
     border-radius: 6px;
     cursor: pointer;
     transition: background .2s;
   }
-  .search-bar button:hover { background: #8f3526; transform: scale(1.05); }
+  .search-bar button:hover { background: var(--primary-deep); transform: scale(1.05); }
   .search-bar button:focus-visible {
-    outline: 2px solid #a3402f;
+    outline: 2px solid var(--primary);
     outline-offset: 3px;
   }
 
@@ -160,36 +202,36 @@
   .date-bar {
     text-align: center;
     font-size: 13px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
     letter-spacing: 1px;
     margin-bottom: 20px;
   }
 
-  /* ===== 今日荐诗（小卷轴） ===== */
+  /* ===== 今日荐诗（小卷轴，纸面带淡淡墨晕） ===== */
   .daily {
-    background: #fdfbf5;
-    border: 1px solid #d8cdb8;
+    background: linear-gradient(180deg, #F3F7F5 0%, var(--card) 42%);
+    border: 1px solid var(--line);
     border-radius: 6px;
     padding: 26px 26px 24px;
     margin-bottom: 26px;
     position: relative;
-    box-shadow: 0 2px 10px rgba(58,50,38,.05);
+    box-shadow: 0 2px 10px rgba(44, 58, 62, .05);
     cursor: pointer;
     transition: border-color .2s, box-shadow .2s;
   }
-  .daily:hover { border-color: #b9a887; box-shadow: 0 2px 12px rgba(58,50,38,.1); }
+  .daily:hover { border-color: var(--hover); box-shadow: 0 2px 12px rgba(44, 58, 62, .10); }
   .daily::before {
     content: "";
     position: absolute;
     top: 10px; left: 10px; right: 10px; bottom: 10px;
-    border: 1px solid #e2d6bd;
+    border: 1px solid var(--line-soft);
     border-radius: 3px;
     pointer-events: none;
   }
   .daily-badge {
     display: inline-block;
-    background: #a3402f;
-    color: #fdfbf5;
+    background: var(--seal);
+    color: var(--card);
     font-size: 12px;
     letter-spacing: 3px;
     padding: 3px 14px;
@@ -201,25 +243,25 @@
     font-size: 26px;
     font-weight: 500;
     text-align: center;
-    color: #3a3226;
+    color: var(--ink);
   }
   .daily .d-lines {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 19px;
     text-align: center;
-    color: #4a4033;
+    color: var(--ink-soft);
     line-height: 2.1;
     margin: 16px 0;
   }
   .daily .d-author {
     text-align: center;
     font-size: 13px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
   }
 
-  /* ===== 推荐名句（复用卷轴，墨色徽章区分，上方配古画可点击放大） ===== */
+  /* ===== 推荐名句（复用卷轴，青墨徽章区分，上方配古画可点击放大） ===== */
   .famous-card { cursor: default; }
-  .famous-card .daily-badge { background: #4a4033; }
+  .famous-card .daily-badge { background: #3A4A4E; }
   .famous-card .d-lines {
     font-size: 18px;
     line-height: 2;
@@ -232,7 +274,7 @@
     aspect-ratio: 16 / 9;
     object-fit: cover;
     border-radius: 4px;
-    border: 1px solid #d8cdb8;
+    border: 1px solid var(--line);
     cursor: zoom-in;
     transition: opacity .2s;
   }
@@ -240,7 +282,7 @@
   .famous-art figcaption {
     text-align: center;
     font-size: 12px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
     letter-spacing: 2px;
     margin-top: 8px;
   }
@@ -250,7 +292,7 @@
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background: rgba(26, 22, 15, .92);
+    background: rgba(20, 30, 28, .94);
     display: none;
     align-items: center;
     justify-content: center;
@@ -267,7 +309,7 @@
     box-shadow: 0 8px 40px rgba(0, 0, 0, .5);
   }
   .lightbox figcaption {
-    color: #f5f0e6;
+    color: var(--paper);
     font-size: 13px;
     letter-spacing: 2px;
     opacity: .85;
@@ -284,12 +326,12 @@
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 19px;
     font-weight: 500;
-    color: #3a3226;
+    color: var(--ink);
     letter-spacing: 3px;
   }
   .section-head .num {
     font-size: 12px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
   }
 
   /* ===== 诗词卡片列表 ===== */
@@ -299,8 +341,8 @@
     gap: 14px;
   }
   .poem-card {
-    background: #fdfbf5;
-    border: 1px solid #d8cdb8;
+    background: linear-gradient(180deg, #F3F7F5 0%, var(--card) 42%);
+    border: 1px solid var(--line);
     border-radius: 6px;
     padding: 16px 18px 16px 24px;
     cursor: pointer;
@@ -314,15 +356,15 @@
     top: 14px;
     bottom: 14px;
     width: 2px;
-    background: #a3402f;
+    background: var(--primary);
     border-radius: 1px;
   }
-  .poem-card:hover { border-color: #b9a887; box-shadow: 0 2px 8px rgba(58,50,38,.08); }
+  .poem-card:hover { border-color: var(--hover); box-shadow: 0 2px 8px rgba(44, 58, 62, .08); }
   .pc-title {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 18px;
     font-weight: 500;
-    color: #3a3226;
+    color: var(--ink);
     margin-top: 10px;
   }
   .pc-head {
@@ -335,8 +377,8 @@
     height: 42px;
     border-radius: 50%;
     object-fit: cover;
-    border: 1px solid #d8cdb8;
-    background: #ece4d4;
+    border: 1px solid var(--line);
+    background: var(--tint);
     flex-shrink: 0;
   }
   .pc-avatar-fb {
@@ -345,14 +387,14 @@
     justify-content: center;
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 20px;
-    color: #6b5d43;
+    color: var(--ink-soft);
   }
   .pc-who {
     display: flex;
     align-items: center;
     gap: 8px;
   }
-  .pc-author { font-size: 14px; color: #5a4f3f; font-weight: 500; }
+  .pc-author { font-size: 14px; color: var(--ink-soft); font-weight: 500; }
   .pc-tags {
     display: flex;
     align-items: center;
@@ -362,53 +404,53 @@
   }
   .dynasty-badge {
     font-size: 12px;
-    background: #ece4d4;
-    color: #6b5d43;
+    background: var(--tint);
+    color: #4A5A54;
     padding: 1px 8px;
     border-radius: 10px;
   }
   .topic-tag {
     font-size: 12px;
-    background: #f0e3d3;
-    color: #a3402f;
+    background: var(--tint);
+    color: var(--primary);
     padding: 1px 8px;
     border-radius: 10px;
   }
   .pc-line {
     font-family: "STKaiti", "KaiTi", "楷体", serif;
     font-size: 15px;
-    color: #6b5f4d;
+    color: var(--ink-soft);
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px dashed #d8cdb8;
+    border-top: 1px dashed var(--line);
   }
 
   /* ===== 四种状态占位 ===== */
   .state-box {
     text-align: center;
     padding: 48px 20px;
-    color: #8a7a5f;
+    color: var(--ink-faint);
     font-size: 15px;
     line-height: 1.7;
   }
-  .state-box.error { color: #a3402f; }
+  .state-box.error { color: var(--seal); }
   .state-box .state-icon { font-size: 34px; margin-bottom: 8px; }
   .state-box .btn {
     display: inline-block;
     margin-top: 14px;
     padding: 8px 22px;
     font-size: 14px;
-    border: 1px solid #a3402f;
+    border: 1px solid var(--seal);
     border-radius: 6px;
-    background: #fdfbf5;
-    color: #a3402f;
+    background: var(--card);
+    color: var(--seal);
     cursor: pointer;
   }
   .spinner {
     width: 28px;
     height: 28px;
-    border: 3px solid #d8cdb8;
-    border-top-color: #a3402f;
+    border: 3px solid var(--line);
+    border-top-color: var(--primary);
     border-radius: 50%;
     margin: 0 auto 12px;
     animation: spin .8s linear infinite;
@@ -423,7 +465,7 @@
     z-index: 99;
     display: flex;
     gap: 6px;
-    background: rgba(58,50,38,.92);
+    background: rgba(44, 58, 62, .92);
     padding: 8px 10px;
     border-radius: 8px;
   }
@@ -433,29 +475,29 @@
     border: none;
     border-radius: 6px;
     background: rgba(255,255,255,.15);
-    color: #f5f0e6;
+    color: var(--paper);
     cursor: pointer;
   }
-  .debug-switch button.active { background: #fdfbf5; color: #3a3226; }
+  .debug-switch button.active { background: var(--card); color: var(--ink); }
 </style>
 </head>
 <body>
   <div class="decor" aria-hidden="true">
     <!-- 飞鸟 -->
     <svg class="birds" viewBox="0 0 200 90">
-      <path d="M16 34 Q 28 18 40 34 Q 28 27 16 34 Z" fill="#3a3226" opacity="0.32"/>
-      <path d="M66 16 Q 74 7 82 16 Q 74 12 66 16 Z" fill="#3a3226" opacity="0.28"/>
-      <path d="M120 46 Q 134 30 148 46 Q 134 38 120 46 Z" fill="#3a3226" opacity="0.22"/>
+      <path d="M16 34 Q 28 18 40 34 Q 28 27 16 34 Z" fill="#26333A" opacity="0.32"/>
+      <path d="M66 16 Q 74 7 82 16 Q 74 12 66 16 Z" fill="#26333A" opacity="0.28"/>
+      <path d="M120 46 Q 134 30 148 46 Q 134 38 120 46 Z" fill="#26333A" opacity="0.22"/>
     </svg>
 
     <!-- 落日 · 远山 · 水波 -->
     <svg class="foot" viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice">
-      <circle cx="1050" cy="182" r="34" fill="#c98a5a" opacity="0.15"/>
-      <path d="M0 240 L160 150 L320 230 L480 120 L660 235 L840 160 L1020 240 L1200 130 L1360 220 L1440 170 L1440 320 L0 320 Z" fill="#3a3226" opacity="0.05"/>
-      <path d="M0 270 L200 200 L400 268 L600 180 L800 270 L1000 210 L1200 275 L1440 210 L1440 320 L0 320 Z" fill="#3a3226" opacity="0.08"/>
-      <path d="M0 300 L240 250 L480 305 L720 240 L960 305 L1200 255 L1440 300 L1440 320 L0 320 Z" fill="#3a3226" opacity="0.11"/>
-      <path d="M0 314 Q 70 306 140 314 T 280 314 T 420 314 T 560 314 T 700 314 T 840 314 T 980 314 T 1120 314 T 1260 314 T 1440 314" fill="none" stroke="#3a3226" stroke-width="1.4" opacity="0.09"/>
-      <path d="M0 320 Q 90 313 180 320 T 360 320 T 540 320 T 720 320 T 900 320 T 1080 320 T 1260 320 T 1440 320" fill="none" stroke="#3a3226" stroke-width="1" opacity="0.06"/>
+      <circle cx="1050" cy="182" r="34" fill="#B3925B" opacity="0.14"/>
+      <path d="M0 240 L160 150 L320 230 L480 120 L660 235 L840 160 L1020 240 L1200 130 L1360 220 L1440 170 L1440 320 L0 320 Z" fill="#26333A" opacity="0.05"/>
+      <path d="M0 270 L200 200 L400 268 L600 180 L800 270 L1000 210 L1200 275 L1440 210 L1440 320 L0 320 Z" fill="#26333A" opacity="0.08"/>
+      <path d="M0 300 L240 250 L480 305 L720 240 L960 305 L1200 255 L1440 300 L1440 320 L0 320 Z" fill="#26333A" opacity="0.11"/>
+      <path d="M0 314 Q 70 306 140 314 T 280 314 T 420 314 T 560 314 T 700 314 T 840 314 T 980 314 T 1120 314 T 1260 314 T 1440 314" fill="none" stroke="#26333A" stroke-width="1.4" opacity="0.09"/>
+      <path d="M0 320 Q 90 313 180 320 T 360 320 T 540 320 T 720 320 T 900 320 T 1080 320 T 1260 320 T 1440 320" fill="none" stroke="#26333A" stroke-width="1" opacity="0.06"/>
     </svg>
   </div>
 
@@ -471,29 +513,29 @@
       <button type="submit">搜索</button>
     </form>
 
-    <a href="footprints.html" style="display:block;text-align:center;margin:-4px auto 18px;max-width:420px;padding:8px 20px;border:1px solid #c9bda3;border-radius:18px;color:#8a7a5f;font-size:13px;letter-spacing:3px;text-decoration:none;transition:all .2s ease;" onmouseover="this.style.borderColor='#a3402f';this.style.color='#a3402f'" onmouseout="this.style.borderColor='#c9bda3';this.style.color='#8a7a5f'">诗人足迹 · 循东坡一生行迹 · 古地名配今地 →</a>
+    <a href="footprints.html" style="display:block;text-align:center;margin:-4px auto 18px;max-width:420px;padding:8px 20px;border:1px solid #A2BBB4;border-radius:18px;color:#6B7B77;font-size:13px;letter-spacing:3px;text-decoration:none;transition:all .2s ease;" onmouseover="this.style.borderColor='#27605D';this.style.color='#27605D'" onmouseout="this.style.borderColor='#A2BBB4';this.style.color='#6B7B77'">诗人足迹 · 循东坡一生行迹 · 古地名配今地 →</a>
 
     <div class="date-bar" id="dateBar">……</div>
 
     <section class="daily" id="dailyCard">
-      <!-- 红梅枝 -->
+      <!-- 朱砂红梅枝 -->
       <svg class="plum" viewBox="0 0 120 120" aria-hidden="true">
-        <g stroke="#9a8466" stroke-width="2.2" fill="none" stroke-linecap="round">
+        <g stroke="#77897F" stroke-width="2.2" fill="none" stroke-linecap="round">
           <path d="M10 110 Q 34 82 62 66"/>
           <path d="M32 96 Q 44 78 52 64"/>
           <path d="M46 84 Q 56 72 60 58"/>
         </g>
-        <g fill="#a3402f">
+        <g fill="#8C2F38">
           <circle cx="62" cy="66" r="4.2"/>
           <circle cx="52" cy="63" r="3.2"/>
           <circle cx="60" cy="56" r="3"/>
         </g>
-        <g fill="#3a3226">
+        <g fill="#26333A">
           <circle cx="62" cy="66" r="1.5"/>
           <circle cx="52" cy="63" r="1.1"/>
           <circle cx="60" cy="56" r="1"/>
         </g>
-        <g fill="#a3402f" opacity="0.7">
+        <g fill="#8C2F38" opacity="0.7">
           <circle cx="35" cy="93" r="2"/>
           <circle cx="47" cy="81" r="1.8"/>
           <circle cx="55" cy="71" r="1.6"/>
@@ -517,14 +559,14 @@
 
     <div class="divider" aria-hidden="true">
       <svg viewBox="0 0 30 30">
-        <g fill="#a3402f" opacity="0.85">
+        <g fill="#8C2F38" opacity="0.85">
           <circle cx="15" cy="8" r="3.4"/>
           <circle cx="8.4" cy="13" r="3.4"/>
           <circle cx="21.6" cy="13" r="3.4"/>
           <circle cx="10.5" cy="20.5" r="3.4"/>
           <circle cx="19.5" cy="20.5" r="3.4"/>
         </g>
-        <circle cx="15" cy="15" r="2" fill="#3a3226"/>
+        <circle cx="15" cy="15" r="2" fill="#26333A"/>
       </svg>
     </div>
 
@@ -689,7 +731,7 @@
       if (currentState === "empty") {
         stateBox.className = "state-box";
         stateBox.innerHTML =
-          '<div style="width:36px;height:36px;border:2px dashed #c9bda4;border-radius:50%;margin:0 auto 10px;"></div>' +
+          '<div style="width:36px;height:36px;border:2px dashed #B9CCC6;border-radius:50%;margin:0 auto 10px;"></div>' +
           '这里还空着<br>还没有推荐诗词，去发现吧<br>' +
           '<button class="btn" onclick="setState(\'normal\')">去发现诗词</button>';
         return;
@@ -697,7 +739,7 @@
       if (currentState === "error") {
         stateBox.className = "state-box error";
         stateBox.innerHTML =
-          '<div style="width:36px;height:36px;line-height:32px;border:2px solid #a3402f;border-radius:50%;margin:0 auto 10px;font-size:22px;font-weight:500;color:#a3402f;">!</div>' +
+          '<div style="width:36px;height:36px;line-height:32px;border:2px solid #8C2F38;border-radius:50%;margin:0 auto 10px;font-size:22px;font-weight:500;color:#8C2F38;">!</div>' +
           '诗卷打不开了<br>网络好像出了点问题，稍后再试<br>' +
           '<button class="btn" onclick="setState(\'normal\')">重试</button>';
         return;

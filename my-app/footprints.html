@@ -6,25 +6,39 @@
 <title>诗人足迹 · 苏轼｜诗迹山河</title>
 <style>
   :root {
-    /* 卫星实景版 · 深空玻璃 + 鎏金令牌体系 */
-    --paper: #10131c;                       /* 页面底（卫星色系的深夜空） */
-    --card: rgba(18, 22, 33, .88);          /* 玻璃卡底 */
-    --glass: rgba(14, 17, 26, .78);         /* 浮层玻璃 */
-    --line: rgba(232, 200, 120, .22);       /* 鎏金细线 */
-    --ink: #f2ead8;                         /* 宣纸白（主文字） */
-    --ink-soft: #b7ab8d;                    /* 沙金灰（次级文字） */
-    --gold: #e6c577;                        /* 鎏金强调 */
-    --zhusha: #c65a44;                      /* 朱红（衬卫星暗底提亮） */
-    --dai: #3d5a66;
-    --he: #7a4a2f;
+    /* 山河大地版 · 宣纸玻璃 + 岱赭令牌体系（面板外壳；地图/标记/路线色不动） */
+    --paper: #F6F1E9;                       /* 页面底（微褐宣纸） */
+    --card: rgba(250, 246, 238, .94);       /* 纸玻璃卡底 */
+    --glass: rgba(247, 242, 233, .86);      /* 浮层纸玻璃 */
+    --line: rgba(110, 79, 51, .30);         /* 岱赭细线 */
+    --ink: #26333A;                         /* 螺子黛墨字（全站统一锚） */
+    --ink-soft: #6E6250;                    /* 大地灰（次级文字） */
+    --gold: #B3925B;                        /* 哑金强调 */
+    --zhusha: #8C2F38;                      /* 朱砂（全站点睛，固定） */
+    --dai: #6E4F33;                         /* 岱赭（本页主色，白字对比 7.2:1） */
+    --he: #A98467;                          /* 黄螺浅（装饰） */
+  }
+  /* 跨文档视图过渡：页面切换淡入淡出（Chrome/Edge 126+） */
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) { animation: vtOut .28s ease both; }
+  ::view-transition-new(root) { animation: vtIn .36s ease both; }
+  @keyframes vtOut { to { opacity: 0; } }
+  @keyframes vtIn { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; }
   body {
-    font-family: "Microsoft YaHei", sans-serif;
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
     color: var(--ink);
     overflow: hidden;
     background: var(--paper);
+    animation: pageIn .4s ease both;
+  }
+  @keyframes pageIn { from { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    body { animation: none; }
   }
   /* ============ 地图容器（必须固定高度） ============ */
   #map { position: fixed; inset: 0; height: 100vh; z-index: 1; }
@@ -35,7 +49,7 @@
     display: flex; align-items: center; gap: 14px;
     padding: 9px 18px;
     background: var(--glass);
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--gold);
     backdrop-filter: blur(10px);
   }
   .topbar .pname {
@@ -49,11 +63,11 @@
   }
   .topbar .navs { display: flex; gap: 8px; white-space: nowrap; }
   .topbar .navs a {
-    font-size: 12px; color: var(--gold); text-decoration: none;
-    border: 1px solid rgba(230, 197, 119, .45); border-radius: 999px;
+    font-size: 12px; color: var(--dai); text-decoration: none;
+    border: 1px solid rgba(110, 79, 51, .45); border-radius: 999px;
     padding: 2px 12px;
   }
-  .topbar .navs a:hover { background: rgba(230, 197, 119, .14); }
+  .topbar .navs a:hover { background: rgba(110, 79, 51, .12); }
 
   /* ============ 图例 ============ */
   .legend {
@@ -71,17 +85,17 @@
   /* ============ 地势分层设色图例 ============ */
   .terrain-legend { top: 178px; padding: 9px 12px; }
   .tl-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px; }
-  .tl-title { font-size: 12px; letter-spacing: 1px; color: var(--gold); }
+  .tl-title { font-size: 12px; letter-spacing: 1px; color: var(--dai); }
   .tl-toggle {
     font-size: 11px; color: var(--ink-soft); background: none;
     border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; cursor: pointer;
   }
-  .tl-toggle:hover { color: var(--gold); border-color: var(--gold); }
+  .tl-toggle:hover { color: var(--dai); border-color: var(--dai); }
   .tl-row { font-size: 11px; line-height: 1.85; color: var(--ink-soft); white-space: nowrap; }
   .tl-row i {
     display: inline-block; width: 11px; height: 11px;
     border-radius: 2px; margin-right: 6px; vertical-align: -1px;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,.35);
+    box-shadow: inset 0 0 0 1px rgba(58, 50, 38, .35);
   }
   .tl-status {
     font-size: 10.5px; color: var(--ink-soft); line-height: 1.6;
@@ -97,7 +111,7 @@
     background: var(--glass);
     border: 1px solid var(--line); border-radius: 10px;
     padding: 14px 16px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
+    box-shadow: 0 8px 28px rgba(58, 50, 38, .28);
     backdrop-filter: blur(10px);
   }
   .sc-head { display: flex; align-items: baseline; gap: 8px; }
@@ -111,7 +125,7 @@
     border-radius: 999px; color: #fff; margin: 3px 0 7px;
   }
   .sc-modern { font-size: 12px; color: var(--ink-soft); margin-bottom: 8px; }
-  .sc-event { font-size: 12.5px; line-height: 1.85; color: #ded4bc; margin-bottom: 10px; }
+  .sc-event { font-size: 12.5px; line-height: 1.85; color: #4E4638; margin-bottom: 10px; }
   .sc-verse {
     font-family: "STKaiti", "KaiTi", serif;
     font-size: 14.5px; line-height: 1.9; letter-spacing: .5px;
@@ -127,13 +141,13 @@
   .sc-poems a:hover { text-decoration: underline; }
   .sc-detail {
     display: block; width: 100%; margin-top: 10px;
-    background: transparent; border: 1px solid rgba(230, 197, 119, .55); border-radius: 8px;
-    color: var(--gold); font-size: 12.5px; letter-spacing: 1px;
+    background: transparent; border: 1px solid rgba(110, 79, 51, .55); border-radius: 8px;
+    color: var(--dai); font-size: 12.5px; letter-spacing: 1px;
     padding: 7px 0; cursor: pointer;
   }
-  .sc-detail:hover { background: rgba(230, 197, 119, .13); }
+  .sc-detail:hover { background: rgba(110, 79, 51, .12); }
   .sc-hint { font-size: 13px; color: var(--ink-soft); line-height: 2; text-align: center; padding: 12px 0; }
-  .sc-hint b { color: var(--gold); font-family: "STKaiti", "KaiTi", serif; font-size: 16px; }
+  .sc-hint b { color: var(--dai); font-family: "STKaiti", "KaiTi", serif; font-size: 16px; }
 
   /* ============ 底部播放器 ============ */
   .player {
@@ -141,7 +155,7 @@
     display: flex; align-items: center; gap: 13px;
     padding: 10px 18px;
     background: var(--glass);
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--gold);
     backdrop-filter: blur(10px);
   }
   .pl-btn {
@@ -151,10 +165,10 @@
     display: flex; align-items: center; justify-content: center;
   }
   .pl-btn:hover { opacity: .88; }
-  .pl-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .pl-btn:focus-visible { outline: 2px solid var(--dai); outline-offset: 2px; }
   .pl-year {
     font-family: "STKaiti", "KaiTi", serif;
-    font-size: 20px; color: var(--gold);
+    font-size: 20px; color: var(--dai);
     width: 58px; text-align: center; flex: none;
   }
   .pl-track {
@@ -172,7 +186,7 @@
   .pl-dot {
     position: absolute; left: 0; top: 9px;
     width: 13px; height: 13px; border-radius: 50%;
-    background: #1a1f2b; border: 3px solid var(--gold);
+    background: var(--paper); border: 3px solid var(--dai);
     transform: translate(-50%, -50%);
   }
   .pl-years { font-size: 11px; color: var(--ink-soft); flex: none; }
@@ -181,13 +195,13 @@
     border: 1px solid var(--line); border-radius: 999px;
     padding: 3px 12px; background: none; flex: none;
   }
-  .pl-ctrl:hover { color: var(--gold); border-color: var(--gold); }
+  .pl-ctrl:hover { color: var(--dai); border-color: var(--dai); }
 
   /* ============ 站点详情弹窗（视频同款交互） ============ */
   .modal-mask {
     position: fixed; inset: 0; z-index: 30;
     display: flex; align-items: center; justify-content: center;
-    background: rgba(4, 6, 12, .58);
+    background: rgba(30, 24, 14, .42);
     visibility: hidden; opacity: 0;
     transition: opacity .18s ease, visibility .18s ease;
   }
@@ -198,7 +212,7 @@
     max-height: calc(100vh - 110px); overflow-y: auto;
     background: var(--card); border: 1px solid var(--line); border-radius: 12px;
     padding: 24px 26px 20px;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
+    box-shadow: 0 18px 50px rgba(58, 50, 38, .35);
     transform: translateY(12px); transition: transform .18s ease;
   }
   .modal-mask.show .modal-card { transform: translateY(0); }
@@ -227,7 +241,7 @@
     border-top: 1px dashed var(--line); margin: 14px 0 10px; padding-top: 12px;
   }
   .m-poem {
-    background: rgba(216, 205, 184, .14);
+    background: rgba(169, 132, 103, .14);
     border: 1px solid var(--line); border-radius: 8px;
     padding: 10px 14px; margin-bottom: 10px;
   }
