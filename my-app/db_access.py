@@ -96,12 +96,32 @@ def suggest_poet_titles(poet, title_part):
 
 
 def suggest_titles(keyword):
-    """标题「包含」关键词联想，去重同名后按知名度降序，最多 20 条。"""
+    """标题联想：前缀优先（如「临」→《临江仙》在前），再包含；去重同名按知名度降序，最多 20 条。"""
     return db_query(
         "SELECT title, poet, dynasty, MAX(popularity) AS popularity FROM poems "
-        "WHERE title LIKE ? GROUP BY title ORDER BY popularity DESC LIMIT 20",
-        (f"%{keyword}%",),
+        "WHERE title LIKE ? "
+        "GROUP BY title "
+        "ORDER BY CASE WHEN title LIKE ? THEN 0 ELSE 1 END, popularity DESC LIMIT 20",
+        (f"%{keyword}%", f"{keyword}%"),
     )
+
+
+def suggest_poets(keyword, limit=6):
+    """诗人名联想：前缀优先（如「李」→ 李白/李清照/李贺），按总人气排序更符合名气直觉；包含型最多 3 条。
+    过滤单字残名（如数据源截断的「李」）与带占位符的脏名（如「赵必□」），这类不是真实诗人。"""
+    _DIRT = "AND poet NOT LIKE '%□%' AND poet NOT LIKE '%�%' AND poet NOT LIKE '%?%'"
+    prefix = db_query(
+        "SELECT poet, dynasty, COUNT(*) AS cnt, SUM(popularity) AS pop FROM poems "
+        f"WHERE poet LIKE ? AND length(poet) > 1 {_DIRT} GROUP BY poet, dynasty ORDER BY pop DESC LIMIT ?",
+        (f"{keyword}%", limit),
+    )
+    contains = db_query(
+        "SELECT poet, dynasty, COUNT(*) AS cnt, SUM(popularity) AS pop FROM poems "
+        f"WHERE poet LIKE ? AND poet NOT LIKE ? AND length(poet) > 1 {_DIRT} "
+        "GROUP BY poet, dynasty ORDER BY pop DESC LIMIT 3",
+        (f"%{keyword}%", f"{keyword}%"),
+    )
+    return prefix + contains
 
 
 # ===== 搜索（/search） =====

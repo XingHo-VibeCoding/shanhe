@@ -171,6 +171,12 @@
     .suggest-item.hover { background: var(--tint); }
     .suggest-item .si-title { font-size: 15px; color: var(--ink); }
     .suggest-item .si-meta { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+    .si-badge {
+      display: inline-block; margin-left: 6px; vertical-align: 1px;
+      font-size: 11px; letter-spacing: 1px; line-height: 1;
+      color: var(--primary); border: 1px solid var(--primary-soft);
+      background: var(--tint); border-radius: 8px; padding: 2px 7px;
+    }
     .hint {
       font-size: 12px;
       color: var(--ink-faint);
@@ -296,6 +302,68 @@
     }
     .empty-chips button:hover { border-color: var(--primary); color: var(--primary); }
     .empty-chips button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    /* 结果区顶部「相关诗人」延伸条 */
+    .poet-extend {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+      margin: 0 0 18px; padding: 12px 16px;
+      background: var(--tint);
+      border: 1px solid var(--line); border-radius: 8px;
+    }
+    .poet-extend .pe-label { font-size: 12px; letter-spacing: 2px; color: var(--ink-faint); margin-right: 4px; }
+    .poet-extend button {
+      padding: 6px 14px; font-size: 13px; font-family: inherit;
+      color: var(--primary); background: transparent;
+      border: 1px solid var(--primary-soft); border-radius: 14px;
+      cursor: pointer; transition: border-color .2s, background .2s;
+    }
+    .poet-extend button:hover { background: var(--card); border-color: var(--primary); }
+    .poet-extend button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .poet-extend .pc-cnt { margin-left: 6px; font-size: 11px; color: var(--ink-faint); }
+
+    /* ===== 关键词标红：诗名/作者/诗句命中处用朱砂 ===== */
+    .kw-hl { background: none; color: var(--seal); font-weight: 700; padding: 0; font-style: normal; }
+
+    /* ===== 搜索历史条（搜索栏下方，样式与相关诗人条同源）===== */
+    .history-strip {
+      display: none; flex-wrap: wrap; align-items: center; gap: 8px;
+      margin: -2px 0 14px;
+    }
+    .hist-label { font-size: 12px; letter-spacing: 2px; color: var(--ink-faint); }
+    .hist-chip {
+      display: inline-flex; align-items: center;
+      background: var(--tint); border: 1px solid var(--line-soft);
+      border-radius: 14px; padding: 3px 4px 3px 10px;
+    }
+    .hist-word { font-size: 13px; color: var(--ink-soft); cursor: pointer; }
+    .hist-word:hover { color: var(--primary); }
+    .hist-x {
+      border: none; background: none; color: var(--ink-faint);
+      font-size: 14px; line-height: 1; padding: 2px 5px; cursor: pointer; border-radius: 50%;
+    }
+    .hist-x:hover { color: var(--seal); }
+    .hist-x:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+    .hist-clear {
+      border: none; background: none; font-size: 12px; color: var(--ink-faint);
+      text-decoration: underline; cursor: pointer; padding: 2px 4px;
+    }
+    .hist-clear:hover { color: var(--seal); }
+
+    /* ===== 手机端独立搜索页：整屏搜索面板（输入 + 联想 + 历史）===== */
+    .search-back { display: none; }
+    @media (max-width: 768px) {
+      .search-panel.search-open {
+        position: fixed; inset: 0; z-index: 200;
+        background: var(--paper);
+        padding: 10px 14px 24px;
+        overflow-y: auto;
+      }
+      .search-panel.search-open .search-back {
+        display: inline-flex; align-items: center; gap: 5px;
+        border: none; background: none; color: var(--ink-soft);
+        font-size: 14px; font-family: inherit; padding: 6px 2px 12px; cursor: pointer;
+      }
+      .search-panel.search-open .search-back:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    }
     .count {
       font-size: 13px;
       color: var(--ink-faint);
@@ -403,10 +471,17 @@
   </div>
 
   <div class="container">
-    <div class="search-box">
-      <input id="searchInput" type="text" placeholder="输入诗人姓名或诗词名，如：李白、杜甫、静夜思" autocomplete="off" oninput="onInputChange()" oncompositionend="onInputChange()" onkeydown="onInputKeydown(event)">
-      <button onclick="searchPoems(1)">查询</button>
-      <div class="suggest-list" id="suggestList"></div>
+    <div class="search-panel" id="searchPanel">
+      <button class="search-back" id="searchBack" onclick="closeSearchMode()" aria-label="返回结果">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        返回
+      </button>
+      <div class="search-box">
+        <input id="searchInput" type="text" placeholder="输入诗人姓名或诗词名，如：李白、杜甫、静夜思" autocomplete="off" onfocus="openSearchMode()" oninput="onInputChange()" oncompositionend="onInputChange()" onkeydown="onInputKeydown(event)">
+        <button id="searchBtn" onclick="searchPoems(1)">查询</button>
+        <div class="suggest-list" id="suggestList"></div>
+      </div>
+      <div class="history-strip" id="historyStrip"></div>
     </div>
     <div class="hint">提示：输入诗人姓名可列出 TA 的全部作品；输入诗词名（支持联想，如输入「临江仙」自动列出相关篇名）可查找具体诗词。</div>
 
@@ -460,6 +535,9 @@
 
       currentPoet = keyword;
       currentPage = page || 1;
+      hideSuggest();  // 发起搜索即收起联想下拉，避免盖住结果区
+      closeSearchMode();  // 手机端整屏搜索页随之收起，露出结果区
+      if (currentPage === 1) saveHistory(keyword);  // 仅首次搜索记入历史，翻页不记
 
       try {
         const url = API_BASE + "/search?keyword=" + encodeURIComponent(keyword) + "&page=" + currentPage;
@@ -474,10 +552,12 @@
         // 若是「同名作品列表」类型（本地索引命中，非正文），走列表渲染
         if (json.match_type === "titles") {
           renderTitleList(json);
+          showPoetExtend(keyword);
           return;
         }
 
         renderResult(json);
+        showPoetExtend(keyword);
       } catch (e) {
         result.innerHTML = '<div class="error">诗卷暂时打不开——后端服务可能没有启动，请稍后重试。'
           + '<div class="err-detail">（' + friendlyError(e) + '）</div>'
@@ -489,6 +569,32 @@
     function fillSearch(kw) {
       document.getElementById("searchInput").value = kw;
       searchPoems(1);
+    }
+
+    // ========== 结果区「相关诗人」延伸条 ==========
+    // 搜「李」等宽泛词时，在结果顶部给出同名/近名诗人入口，点击即列出 TA 的全部作品
+    window._poetEx = [];  // 延伸条诗人名缓存（供按钮 onclick 按下标取用，避免引号转义问题）
+    async function showPoetExtend(keyword) {
+      const result = document.getElementById("result");
+      try {
+        const resp = await fetchRetry(API_BASE + "/suggest?q=" + encodeURIComponent(keyword));
+        const json = await resp.json();
+        if (json.ret_code !== "0") return;
+        // 过滤：只要诗人项；与当前关键词完全相同的不再重复给（搜"李白"时结果已是李白全集）
+        const poets = (json.suggestions || []).filter(s => s.is_poet && s.title !== keyword);
+        if (!poets.length) return;
+        // 输入框已被改掉（用户连搜）→ 本次延伸作废，防止插错位置
+        if (document.getElementById("searchInput").value.trim() !== keyword) return;
+        window._poetEx = poets.slice(0, 8).map(s => s.title);
+        const chips = poets.slice(0, 8).map((s, i) =>
+          '<button onclick="fillSearch(_poetEx[' + i + '])">' +
+          escapeHtml(s.title) + '<span class="pc-cnt">' + escapeHtml(s.poet) + '</span></button>'
+        ).join("");
+        result.insertAdjacentHTML("afterbegin",
+          '<div class="poet-extend"><span class="pe-label">相关诗人</span>' + chips + '</div>');
+      } catch (e) {
+        // 延伸失败不影响主结果，静默忽略
+      }
     }
 
     // ========== 推荐诗词（无输入时展示本地名篇） ==========
@@ -520,7 +626,7 @@
       const result = document.getElementById("result");
       const cards = list.map(p => {
         const title = p.title || "无题";
-        const author = p.poet || "佚名";
+        const author = poetName(p.poet);
         const dynasty = p.dynasty || "未知";
         const contentHtml = p.content || "（无内容）";
         const transHtml = p.translation || "";
@@ -563,7 +669,7 @@
       if (json.poetInfo && json.poetInfo.poet) {
         bioHtml = `
           <div class="poet-bio">
-            <div class="bio-name">${json.poetInfo.poet} · ${json.poetInfo.dynasty || ""}</div>
+            <div class="bio-name">${hl(json.poetInfo.poet, currentPoet)} · ${json.poetInfo.dynasty || ""}</div>
             <div class="bio-text">${json.poetInfo.biography || ""}</div>
           </div>
         `;
@@ -573,7 +679,8 @@
 
       const cards = list.map(p => {
         const title = p.title || "无题";
-        const author = p.poet || "佚名";
+        // 作者名兜底：空名 / 单字残名（如「李」）/ 带占位符的脏名 一律显示「佚名」
+        const author = poetName(p.poet);
         const dynasty = p.dynasty || "未知";
 
         // 兼容两种数据格式：
@@ -601,11 +708,11 @@
 
         return `
           <div class="poem-card">
-            <h2>${title}</h2>
+            <h2>${hl(title, currentPoet)}</h2>
             <div class="poem-meta">
-              ${author} · ${dynasty}
+              ${hl(author, currentPoet)} · ${hl(dynasty, currentPoet)}
             </div>
-            <div class="poem-content">${escapeHtml(contentHtml)}</div>
+            <div class="poem-content">${hl(contentHtml, currentPoet)}</div>
             <div class="section-title">译文</div>
             <div class="translation">${escapeHtml(transHtml) || "（暂无译文）"}</div>
             <div class="section-title">注释</div>
@@ -641,8 +748,8 @@
 
       const items = titles.map(t => `
         <div class="title-item" onclick="searchPoemsByTitle('${escapeHtml(t.title).replace(/'/g, "\\'")}')">
-          <div class="ti-title">${escapeHtml(t.title)}</div>
-          <div class="ti-meta">${escapeHtml(t.poet)} · ${escapeHtml(t.dynasty)}</div>
+          <div class="ti-title">${hl(t.title, currentPoet)}</div>
+          <div class="ti-meta">${hl(poetName(t.poet), currentPoet)} · ${hl(t.dynasty, currentPoet)}</div>
         </div>
       `).join("");
 
@@ -685,6 +792,83 @@
         .replace(/>/g, "&gt;");
     }
 
+    /* ===== 作者名清洗：空名 / 被截断的单字姓氏（如「李」）/ 带占位符的脏名 一律显示「佚名」 ===== */
+    function poetName(raw) {
+      const s = String(raw == null ? "" : raw).replace(/[\s\u3000]/g, "");
+      if (s.length <= 1 || /[□▢▣�?？*＊]/.test(s)) return "佚名";
+      return s;
+    }
+
+    /* ===== 关键词标红：先转义再包朱砂 mark，正则元字符也做安全处理 ===== */
+    function hl(text, kw) {
+      const esc = escapeHtml(text == null ? "" : text);
+      const k = (kw == null ? "" : String(kw)).trim();
+      if (!k) return esc;
+      const kEsc = escapeHtml(k);
+      try {
+        const re = new RegExp(kEsc.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+        return esc.replace(re, '<mark class="kw-hl">' + kEsc + "</mark>");
+      } catch (err) {
+        return esc;
+      }
+    }
+
+    /* ===== 搜索历史：浏览器本地保存，最多 10 条，可单删/清空/点击重搜 ===== */
+    const HIST_KEY = "shiji_search_history";
+    function loadHistory() {
+      try { return JSON.parse(localStorage.getItem(HIST_KEY)) || []; } catch (e) { return []; }
+    }
+    function saveHistory(kw) {
+      kw = (kw || "").trim();
+      if (!kw) return;
+      let h = loadHistory().filter(x => x !== kw);
+      h.unshift(kw);
+      h = h.slice(0, 10);
+      try { localStorage.setItem(HIST_KEY, JSON.stringify(h)); } catch (e) {}
+      renderHistory();
+    }
+    function removeHistory(kw) {
+      const h = loadHistory().filter(x => x !== kw);
+      try { localStorage.setItem(HIST_KEY, JSON.stringify(h)); } catch (e) {}
+      renderHistory();
+    }
+    function clearHistory() {
+      try { localStorage.removeItem(HIST_KEY); } catch (e) {}
+      renderHistory();
+    }
+    window._hist = [];  // 历史词暂存，onclick 按下标取，避免引号转义问题
+    function histGo(i) { fillSearch(window._hist[i]); }
+    function renderHistory() {
+      const box = document.getElementById("historyStrip");
+      if (!box) return;
+      const h = loadHistory();
+      window._hist = h;
+      if (!h.length) { box.style.display = "none"; box.innerHTML = ""; return; }
+      box.style.display = "flex";
+      box.innerHTML = '<span class="hist-label">搜索历史</span>'
+        + h.map((kw, i) =>
+          '<span class="hist-chip">'
+          + '<span class="hist-word" onclick="histGo(' + i + ')" title="点击重新搜索">' + escapeHtml(kw) + '</span>'
+          + '<button class="hist-x" onclick="removeHistory(window._hist[' + i + '])" aria-label="删除 ' + escapeHtml(kw) + '">×</button>'
+          + '</span>'
+        ).join("")
+        + '<button class="hist-clear" onclick="clearHistory()">清空</button>';
+    }
+
+    /* ===== 手机端独立搜索页：聚焦输入时整屏展开（输入+联想+历史），搜索/返回时收起 ===== */
+    const mqMobile = window.matchMedia("(max-width: 768px)");
+    function openSearchMode() {
+      if (!mqMobile.matches) return;  // 桌面端不启用整屏模式
+      document.getElementById("searchPanel").classList.add("search-open");
+      document.body.style.overflow = "hidden";
+      renderHistory();
+    }
+    function closeSearchMode() {
+      const p = document.getElementById("searchPanel");
+      if (p) p.classList.remove("search-open");
+      document.body.style.overflow = "";
+    }
+
     // ========== 标题联想（输入前缀，列出完整篇名） ==========
     let suggestTimer = null;      // 防抖计时器
     let suggestItems = [];        // 当前联想结果
@@ -701,11 +885,14 @@
       suggestTimer = setTimeout(() => fetchSuggest(kw), 200);
     }
 
-    // 请求联想接口
+    // 请求联想接口（带代数号：hideSuggest/新搜索会使在途响应作废，防止迟到的联想盖住结果区）
+    let suggestGen = 0;
     async function fetchSuggest(kw) {
+      const gen = suggestGen;
       try {
         const resp = await fetchRetry(API_BASE + "/suggest?q=" + encodeURIComponent(kw));
         const json = await resp.json();
+        if (gen !== suggestGen) return;  // 期间发生过收起/搜索，本次联想作废
         if (json.ret_code === "0" && json.suggestions && json.suggestions.length > 0) {
           suggestItems = json.suggestions;
           suggestIndex = -1;
@@ -730,7 +917,7 @@
         <div class="suggest-item ${i === suggestIndex ? "hover" : ""}"
              onclick="pickSuggestion(${i})"
              onmouseenter="suggestIndex=${i}; renderSuggest();">
-          <div class="si-title">${escapeHtml(s.title)}</div>
+          <div class="si-title">${escapeHtml(s.title)}${s.is_poet ? '<span class="si-badge">诗人</span>' : ""}</div>
           <div class="si-meta">${escapeHtml(s.poet)} · ${escapeHtml(s.dynasty)}</div>
         </div>
       `).join("");
@@ -739,6 +926,8 @@
 
     function hideSuggest() {
       document.getElementById("suggestList").style.display = "none";
+      clearTimeout(suggestTimer);  // 取消挂着的联想防抖，防止搜索后又弹出
+      suggestGen++;  // 作废所有在途联想响应
       suggestItems = [];
       suggestIndex = -1;
     }
@@ -791,6 +980,7 @@
     // 初始化：若链接带了 keyword 参数（从首页搜索框跳转而来）就自动搜它；
     // 否则保持输入框清空，下方展示推荐诗词
     (function init() {
+      renderHistory();  // 打开页面先渲染本地搜索历史
       const params = new URLSearchParams(location.search);
       const kw = (params.get("keyword") || "").trim();
       document.getElementById("searchInput").value = kw;

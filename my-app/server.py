@@ -85,6 +85,26 @@ except Exception as e:
 
 
 # ===== 古诗文大全（apihz）数据源工具 =====
+# 数据源里「作者名残缺」的字符：占位方块、替换符、问号等
+_POET_DIRT = re.compile(r"[□▢▣�?？*＊]")
+
+
+def normalize_poet(name):
+    """作者名归一化：把数据源里残缺的作者名统一显示成「佚名」。
+
+    覆盖三类脏数据（保留在库里，只是不给用户看）：
+      1. 空名；
+      2. 被截断的单字姓氏（如「李」实为「李纲」）——约 31 种、120 首；
+      3. 含占位符/替换符的名字（如「赵必□」「□韫」「�」）——约 45 处。
+    名字里带生僻字（如「于𣸣」）属正常，保留不动。
+    """
+    n = (name or "").strip()
+    n = "".join(ch for ch in n if ch.isprintable() and ch not in "\u3000")  # 去控制符/全角空格
+    if len(n) <= 1 or _POET_DIRT.search(n):
+        return "佚名"
+    return n
+
+
 def clean_html(text):
     """把 apihz 返回的 HTML 文本清洗成纯文本（保留段落换行）"""
     if not text:
@@ -137,7 +157,7 @@ def _apihz_fetch_page(keyword, page):
         translation, annotation = split_translation_annotation(it.get("ywjzsy"))
         poem_info.append({
             "title": it.get("name", ""),
-            "poet": it.get("author", ""),
+            "poet": normalize_poet(it.get("author", "")),
             "dynasty": it.get("dynasty", ""),
             "content": clean_html(it.get("content")),
             "translation": translation,
@@ -251,7 +271,7 @@ def daily():
         "ret_code": "0",
         "poem": {
             "title": pick.get("title", ""),
-            "poet": pick.get("poet", ""),
+            "poet": normalize_poet(pick.get("poet", "")),
             "dynasty": pick.get("dynasty", ""),
             "preview": preview,
         },
@@ -285,19 +305,30 @@ def suggest():
         return jsonify({
             "ret_code": "0",
             "suggestions": [
-                {"title": r.get("title"), "poet": r.get("poet"), "dynasty": r.get("dynasty")}
+                {"title": r.get("title"), "poet": normalize_poet(r.get("poet")), "dynasty": r.get("dynasty")}
                 for r in rows
             ],
         })
 
-    # 直接查本地库：标题「包含」关键词，去重同名后按知名度降序（搜"水"联想出《水调歌头》等名篇）
-    rows = db_access.suggest_titles(q)
+    # 直接查本地库：诗人名优先（输入「李」→ 李白/李商隐），再补标题匹配
+    # 两路均「前缀优先，再包含」，去重后按知名度降序，合计最多 20 条
+    poets = db_access.suggest_poets(q, limit=6)
+    titles = db_access.suggest_titles(q)
+    suggestions = [
+        {
+            "title": p.get("poet"),          # 诗人项：title 存诗人名，选中即按诗人搜索
+            "poet": f'{p.get("cnt")} 首作品',
+            "dynasty": p.get("dynasty"),
+            "is_poet": True,
+        }
+        for p in poets
+    ] + [
+        {"title": r.get("title"), "poet": normalize_poet(r.get("poet")), "dynasty": r.get("dynasty")}
+        for r in titles
+    ]
     return jsonify({
         "ret_code": "0",
-        "suggestions": [
-            {"title": r.get("title"), "poet": r.get("poet"), "dynasty": r.get("dynasty")}
-            for r in rows
-        ],
+        "suggestions": suggestions[:20],
     })
 
 
@@ -480,7 +511,7 @@ def _poems_from_db(rows, total, page, poet=None):
         poem_info.append({
             "poemId": r.get("poem_id", ""),
             "title": r.get("title", ""),
-            "poet": r.get("poet", ""),
+            "poet": normalize_poet(r.get("poet", "")),
             "dynasty": r.get("dynasty", ""),
             "content": r.get("content", ""),
             "translation": r.get("translation", ""),
@@ -498,7 +529,7 @@ def _poems_from_db(rows, total, page, poet=None):
         info = db_access.get_poet_info(poet)
         if info:
             result["poetInfo"] = {
-                "poet": info["name"],
+                "poet": normalize_poet(info["name"]),
                 "dynasty": info["dynasty"] or "",
                 "biography": info["intro"],
             }
@@ -518,7 +549,7 @@ def find_same_titles(keyword):
             seen.add(title)
             result.append({
                 "title": title,
-                "poet": item.get("poet", ""),
+                "poet": normalize_poet(item.get("poet", "")),
                 "dynasty": item.get("dynasty", ""),
             })
             if len(result) >= 50:
@@ -542,7 +573,7 @@ def find_poet_titles(keyword):
             seen.add(title)
             result.append({
                 "title": title,
-                "poet": item.get("poet", ""),
+                "poet": normalize_poet(item.get("poet", "")),
                 "dynasty": item.get("dynasty", ""),
             })
             if len(result) >= 50:
@@ -563,7 +594,7 @@ def search_by_poet_with_info(poet_info, page):
     poem_data = poem_resp.json().get("showapi_res_body", {})
 
     poem_data["poetInfo"] = {
-        "poet": poet_info.get("poet"),
+        "poet": normalize_poet(poet_info.get("poet")),
         "dynasty": poet_info.get("dynasty"),
         "biography": poet_info.get("biography"),
     }

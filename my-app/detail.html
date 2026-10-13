@@ -503,6 +503,13 @@
       .replace(/>/g, "&gt;");
   }
 
+  // 作者名清洗：空名 / 被截断的单字姓氏（如「李」）/ 带占位符的脏名 一律显示「佚名」
+  function cleanPoet(raw) {
+    var s = String(raw == null ? "" : raw).replace(/[\s\u3000]/g, "");
+    if (s.length <= 1 || /[□▢▣�?？*＊]/.test(s)) return "佚名";
+    return s;
+  }
+
   // 把浏览器/接口的裸报错转成用户能懂的中文；技术原文只进 Console
   function friendlyError(e) {
     console.error("请求失败详情：", e);
@@ -596,7 +603,8 @@
     const tags = (p.tag ? String(p.tag).split(",") : [])
       .filter(t => t.trim())
       .map(t => '<span class="tag">' + escapeHtml(t.trim()) + '</span>').join("");
-    const poetName = p.poet || "佚名";
+    // 作者名兜底：空名 / 单字残名（如「李」）/ 带占位符的脏名 一律显示「佚名」
+    const poetName = cleanPoet(p.poet);
     const dynasty = p.dynasty || "未知";
     const bio = p.biography || "";
     const portrait = POET_PORTRAITS[poetName] || "";

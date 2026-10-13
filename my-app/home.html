@@ -804,6 +804,11 @@
       function esc(s) {
         return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       }
+      // 作者名清洗：空名 / 单字残名（如「李」）/ 带占位符的脏名 一律显示「佚名」
+      function poetOf(raw) {
+        var s = String(raw == null ? "" : raw).replace(/[\s\u3000]/g, "");
+        return (s.length <= 1 || /[□▢▣�?？*＊]/.test(s)) ? "佚名" : s;
+      }
       function bindDaily(title) {
         document.getElementById("dailyCard").onclick = function () {
           location.href = "detail.html?title=" + encodeURIComponent(title) + "&from=home";
@@ -822,7 +827,7 @@
           if (!p || !p.title) { fallback(); return; }
           document.getElementById("dailyTitle").textContent = p.title;
           document.getElementById("dailyLines").innerHTML = esc(p.preview || "").split("\n").join("<br>");
-          document.getElementById("dailyAuthor").textContent = (p.poet || "佚名") + " · " + (p.dynasty || "");
+          document.getElementById("dailyAuthor").textContent = poetOf(p.poet) + " · " + (p.dynasty || "");
           bindDaily(p.title);
         })
         .catch(fallback);
