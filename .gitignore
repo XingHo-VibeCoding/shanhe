@@ -43,3 +43,12 @@ Thumbs.db
 
 # 工作记忆（非项目内容，不上传）
 .workbuddy/
+
+# 本地调试产物（截图 / 探针日志 / 临时预览页，不上传 GitHub）
+# 说明：my-app 根目录只放调试截图；正式图片资源都在 assets/ 与 ink-paintings/ 子目录里
+my-app/*.png
+my-app/design-preview-*.html
+my-app/.playwright-cli/
+_online.html
+_oni.json
+.wbapp_*.genie
