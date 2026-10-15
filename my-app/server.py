@@ -463,7 +463,8 @@ def search_smart(keyword, page):
       1. 本地 poems.db 里按「诗人名」查（单字跳过）→ 命中直接返回
       2. 本地 poems.db 里按「诗名」查 → 命中直接返回
       3. 本地标题索引「同名作品」→ 命中返回标题列表
-      4. 才调 API（先按诗人名，再按诗名）
+      4. 整句兜底（≥4 字才启用）：句中识别诗人名 → 本地全文片段匹配
+      5. 才调 API（先按诗人名，再按诗名）
     """
     page_size = 20
     offset = (int(page) - 1) * page_size if str(page).isdigit() else 0
@@ -522,6 +523,22 @@ def search_smart(keyword, page):
             "allNum": len(title_matches),
             "titles": title_matches,
         })
+
+    # 4. 整句兜底（Day 27 加）：真实用户会背整句来搜，甚至顺口带上诗人名
+    #    （如「三过平山堂下苏轼」）。上面各步和 API 都可能颗粒无收，这里做两层补救：
+    #    ① 句子里若包含完整诗人名（1.35 万名单做包含匹配）→ 直接给 TA 的名篇；
+    #    ② 再把整句切成 4~6 字滑窗查本地全文。只对 ≥4 字的查询启用，不影响正常关键词。
+    if len(keyword) >= 4:
+        phrase_poet = db_access.find_poet_in_phrase(keyword)
+        if phrase_poet and phrase_poet != keyword:
+            poet_rows = db_access.get_poems_by_poet(phrase_poet, page_size, offset)
+            if poet_rows:
+                total = db_access.count_poems_by_poet(phrase_poet)
+                total = total if total else len(poet_rows)
+                return jsonify(_poems_from_db(poet_rows, total, page, poet=phrase_poet))
+        frag_rows = db_access.search_content_fragments(keyword, limit=page_size)
+        if frag_rows:
+            return jsonify(_poems_from_db(frag_rows, len(frag_rows), page))
 
     # 5. 古诗文大全 API 兜底（免费、每日无上限，关键词同时覆盖诗人名/诗名）
     return jsonify(apihz_search(keyword, page))

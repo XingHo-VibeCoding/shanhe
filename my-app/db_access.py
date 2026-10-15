@@ -16,6 +16,7 @@
 """
 
 import os
+import re
 import sqlite3
 
 # 诗词正文数据库（与 server.py 同级，存原文/译文/注释等五件套）
@@ -267,6 +268,87 @@ def get_poet_info(name):
         "SELECT name, dynasty, intro FROM poet_info WHERE name = ?", (name,)
     )
     return rows[0] if rows else None
+
+
+# ===== 整句搜索兜底（Day 27：真实用户会背整句来搜，甚至顺口带上诗人名）=====
+
+_POET_NAMES_CACHE = None
+
+
+def all_poet_names():
+    """全部「干净」诗人名（去掉单字残名/佚名类/占位符名），按人气降序，进程内缓存。
+
+    给「整句里识别诗人名」用：1.35 万个名字放进内存，包含匹配纯 Python 计算，毫秒级。
+    """
+    global _POET_NAMES_CACHE
+    if _POET_NAMES_CACHE is None:
+        rows = db_query(
+            "SELECT poet, SUM(popularity) AS pop FROM poems "
+            f"WHERE length(trim(poet)) > 1 AND NOT {_DIRT_NAME} "
+            "GROUP BY poet ORDER BY pop DESC"
+        )
+        _POET_NAMES_CACHE = [r["poet"] for r in rows]
+    return _POET_NAMES_CACHE
+
+
+def find_poet_in_phrase(phrase):
+    """整句里识别完整诗人名（如「三过平山堂下苏轼」→ 苏轼）。
+    命中多个时取**最长的**那个（同长取人气更高的，names 本身按人气降序）。
+    找不到返回 None。"""
+    kw = (phrase or "").strip()
+    if len(kw) < 2:
+        return None
+    best = None
+    for name in all_poet_names():
+        if name in kw and (best is None or len(name) > len(best)):
+            best = name
+    return best
+
+
+def search_content_fragments(keyword, limit=20, min_win=4, max_win=6):
+    """整句搜索兜底之二：把整句切成 4~6 字滑窗查本地全文，命中窗更长的排前面。
+
+    场景：用户背一句诗来搜，但整句在库里没有完整命中（标点/版本差异）。
+    性能要点：所有滑窗用一次 OR 查询扫表（约 1 秒），而不是逐窗查（9 次全表扫描约 8 秒）。
+    只保留汉字再切窗，避免标点把窗口切碎；长窗优先（命中更准）。
+    """
+    chars = re.findall(r"[\u4e00-\u9fff]", keyword or "")
+    kw = "".join(chars)
+    if len(kw) < min_win:
+        return []
+    frags = []
+    for win in range(min(max_win, len(kw)), min_win - 1, -1):
+        for start in range(0, len(kw) - win + 1):
+            frags.append(kw[start:start + win])
+    conds = " OR ".join(["(content LIKE ? OR title LIKE ?)"] * len(frags))
+    params = []
+    for f in frags:
+        params += [f"%{f}%", f"%{f}%"]
+    rows = db_query(
+        f"SELECT * FROM poems WHERE {conds} ORDER BY popularity DESC LIMIT ?",
+        (*params, limit * 3),
+    )
+    # 得分 = 命中的最长滑窗长度（越长越准），同分再按人气排
+    scored = []
+    for r in rows:
+        text = (r.get("content") or "") + (r.get("title") or "")
+        best_len = 0
+        for f in frags:
+            if f in text and len(f) > best_len:
+                best_len = len(f)
+        if best_len:
+            scored.append((best_len, r.get("popularity") or 0, r))
+    scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    out, seen = [], set()
+    for _, _, r in scored:
+        key = (r.get("title"), r.get("poet"))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(r)
+        if len(out) >= limit:
+            break
+    return out
 
 
 # ===== 单字姓氏聚合（搜「王」→ 先给王姓名家代表作，再给含「王」字的诗）=====
