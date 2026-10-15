@@ -16,9 +16,9 @@
 | 第三周周成果 | 10 | **PASS** | 云端数据服务 v1：四个云函数（api-checkins/hot/favorites/health）走公网网关；检查台 `mock/index.html` 线上可用（探活面板 + 热门榜 + 打卡增删改查）；周成果文档 `docs/week3-review.md`；演示证据见 `docs/FINAL-DEMO-OUTLINE.md`。 |
 | Skill 与测试 | 10 | **PASS** | Skill 调用：`tools/pre-release-check/check.py` 今日实跑 5/5 全过（Day 25 建）；**故意失败**：Day 25 负向测试，向 index.html 注入假密钥后第 1 项正确报红并定位行号（记录在 SKILL.md「验证记录」）；Bug 修复与回归：Day 24 手机端搜索间歇失败（fetchRetry）+ Day 27 整句兜底（回归测李白/月/王/将进酒全部正常）。 |
 | 线上发布 | 10 | **PASS** | 公网地址可访问（HTTP 200，实测 0.5s）；线上真实读写（两轮 CRUD 走公网网关）；检查与数据库证据：`.workbuddy/reports/pre-release/report-20261014-*.md`、`report-20261015-*.md` + 本表 CRUD 记录；版本标记 v1.0 已推 GitHub（refs/tags/v1.0 = 3f3921b）。 |
-| 额度、到期和备份 | 5 | **PASS**（1 项待填） | 计费状态：CloudBase 本月消费 0.00 元、可用余额 0.00（2026-10-15 控制台截图）；风险已文档化：万维易源免费额度剩 81 次约撑 5 天（超额仅影响兜底层）；数据导出说明：`docs/CLOUDBASE-RESOURCE-CHECK.md`（checkins 导出步骤 + poems.db 带日期复制）。**待填：CloudBase 套餐到期/重置具体日期**（需登录控制台套餐页查看，本表如实标注）。 |
+| 额度、到期和备份 | 5 | **PASS** | 计费状态：CloudBase 本月消费 0.00 元、可用余额 0.00（2026-10-15 控制台截图）；**到期信息**：环境为免费版，概览页显示「免费版领资源规划福利期，即刻参与享领 8 个月权益」（2026-10-15 环境概览页截图，envId=shijishanhe-d5gmc8a0k01b1e88d）；风险已文档化：万维易源免费额度剩 81 次约撑 5 天（超额仅影响兜底层）；数据导出说明：`docs/CLOUDBASE-RESOURCE-CHECK.md`（checkins 导出步骤 + poems.db 带日期复制）。 |
 
-**自评小结**：8 项全部 PASS；唯一扣分风险在第 8 项的「到期时间待填」——补看一眼控制台套餐页即可补齐，不影响任何主流程。
+**自评小结**：8 项全部 PASS，无待填项；唯一长期风险是免费版额度上限与万维易源 5 天免费余额，均已记录在 `docs/CLOUDBASE-RESOURCE-CHECK.md`。
 
 ---
 
@@ -47,8 +47,8 @@
 | 最终验收表和项目映射表 | ✅ | 本文件第一、二节 |
 | 一条最有效的改写提示词 | ✅ | Day 27 整句搜索修复（`docs/TRIAL-SCRIPT.md` 第三节有全文） |
 | 运行和技术路线说明 | ✅ | 本文件第四节 |
-| 数据库、部署、额度、到期和备份说明（不含密钥） | ✅ | `docs/CLOUDBASE-RESOURCE-CHECK.md` + `docs/ROLLBACK.md`（到期日期 1 项待填） |
-| 200 字以内结营总结 | ⏳ 待写 | 等"最大认知改变"定稿后一并产出（候选 A/B/C/D 已给） |
+| 数据库、部署、额度、到期和备份说明（不含密钥） | ✅ | `docs/CLOUDBASE-RESOURCE-CHECK.md` + `docs/ROLLBACK.md`（免费版 + 8 个月权益福利期，2026-10-15 查） |
+| 200 字以内结营总结 | ✅ | `docs/FINAL-RETRO.md` 末节（165 字） |
 
 ---
 
