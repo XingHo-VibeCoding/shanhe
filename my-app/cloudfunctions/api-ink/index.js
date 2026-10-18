@@ -2,10 +2,12 @@
 //
 // GET  /api/ink            —— 画作列表（画廊用：标题/作者/封面/计数，不含大字段 content）
 // GET  /api/ink?slug=xxx   —— 单篇完整内容（content JSON 已解析）+ 当前计数
-// POST /api/ink            —— 计数 +1 { slug, action: 'view' | 'like' | 'fav' }，返回新计数
+// POST /api/ink            —— 计数变更 { slug, action }
+//   action: 'view' 浏览+1 | 'like' 点赞+1 | 'fav' 收藏+1 | 'unlike' 取消点赞-1 | 'unfav' 取消收藏-1
+//   减法最少减到 0，不会出负数。
 //
 // 计数说明：本项目暂无用户登录体系，like/fav 是全站累计值；
-// 防连点由前端 localStorage 负责，服务端只做参数校验。
+// 同一浏览器「已赞再点 = 取消」由前端 localStorage 判断，服务端只做参数校验。
 // 写入采用「先读后写」，量级小（个位数并发）下足够可靠。
 //
 // 响应统一 { ok, data, error } 三字段（与 api-favorites / api-checkins 一致）。
@@ -14,7 +16,7 @@ const cloudbase = require('@cloudbase/node-sdk');
 
 const ENV_ID = 'shijishanhe-d5gmc8a0k01b1e88d';
 
-const VALID_ACTIONS = ['view', 'like', 'fav'];
+const VALID_ACTIONS = ['view', 'like', 'fav', 'unlike', 'unfav'];
 
 exports.main = async (event) => {
   const headers = {
@@ -139,7 +141,7 @@ async function handlePost(body, db, headers) {
     return bad(headers, 400, 'slug 过长（最多 100 字符）');
   }
   if (VALID_ACTIONS.indexOf(action) === -1) {
-    return bad(headers, 400, "action 必须是 'view' / 'like' / 'fav' 之一");
+    return bad(headers, 400, "action 必须是 'view' / 'like' / 'fav' / 'unlike' / 'unfav' 之一");
   }
 
   // 1) 先确认存在并读当前计数
@@ -156,11 +158,14 @@ async function handlePost(body, db, headers) {
     return bad(headers, 404, '没有找到这幅「一句一画」：' + slug);
   }
 
-  // 2) 计数 +1（先读后写）
+  // 2) 计数变更（先读后写；减法最少减到 0）
   const patch = {};
-  if (action === 'view') patch.views = Number(row.views || 0) + 1;
-  if (action === 'like') patch.likes = Number(row.likes || 0) + 1;
-  if (action === 'fav') patch.favs = Number(row.favs || 0) + 1;
+  const cur = { views: Number(row.views || 0), likes: Number(row.likes || 0), favs: Number(row.favs || 0) };
+  if (action === 'view') patch.views = cur.views + 1;
+  if (action === 'like') patch.likes = cur.likes + 1;
+  if (action === 'fav') patch.favs = cur.favs + 1;
+  if (action === 'unlike') patch.likes = Math.max(0, cur.likes - 1);
+  if (action === 'unfav') patch.favs = Math.max(0, cur.favs - 1);
 
   const { error: updErr } = await db.from('ink_pages').update(patch).eq('slug', slug);
   if (updErr) {

@@ -77,11 +77,11 @@
   .ink-painting img{width:100%;height:auto;display:block}
   .ink-painting figcaption{line-height:1.6;font-size:13px;color:var(--sub);text-align:center;padding:11px 16px 13px;
     background:rgba(255,253,247,.6);border-top:1px dashed var(--line);letter-spacing:.04em;}
-  .ink-painting .dl{display:table;margin:9px auto 0;padding:5px 16px;border:1px solid var(--line);
+  .ink-painting .dl, .cover-art .dl{display:table;margin:9px auto 0;padding:5px 16px;border:1px solid var(--line);
     border-radius:999px;background:var(--panel);color:var(--accent);font-size:12.5px;letter-spacing:.08em;
     text-decoration:none;transition:.18s}
-  .ink-painting .dl:hover{border-color:var(--accent);background:var(--accent-soft)}
-  .ink-painting .dl svg{display:inline-block;width:13px;height:13px;vertical-align:-2px;margin-right:6px;
+  .ink-painting .dl:hover, .cover-art .dl:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .ink-painting .dl svg, .cover-art .dl svg{display:inline-block;width:13px;height:13px;vertical-align:-2px;margin-right:6px;
     stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
   .field{margin:0 0 0}
@@ -267,7 +267,7 @@
     if(c.cover){
       h += '<div class="cover-card"><figure class="cover-art">'
         +  '<img src="' + esc(c.cover.src) + '" alt="' + esc(d.title + ' 封面水墨图') + '">'
-        +  '<a class="dl" href="' + esc(c.cover.src) + '" download="' + esc(d.title + '·封面.png') + '">' + DOWNLOAD_SVG + '保存此画</a>'
+        +  '<a class="dl" href="' + esc(c.cover.src) + '" download="' + esc(d.title + '·封面.jpg') + '">' + DOWNLOAD_SVG + '保存此画</a>'
         +  '</figure><div class="cover-overlay">'
         +  '<h2 class="cover-title">' + esc(d.title) + '</h2>'
         +  '<p class="cover-sub">' + esc(c.cover.sub) + '</p>'
@@ -289,7 +289,7 @@
         +  '<div class="verse">' + esc(s.verse) + '<span class="pin">' + esc(s.pinyin || '') + '</span></div>'
         +  '<figure class="ink-painting">'
         +  '<img src="' + esc(s.img) + '" alt="' + esc(s.alt || s.verse + ' 水墨画') + '" loading="lazy">'
-        +  '<a class="dl" href="' + esc(s.img) + '" download="' + esc(safeFile(d.title + '·' + s.verse) + '.png') + '">' + DOWNLOAD_SVG + '保存此画</a>'
+        +  '<a class="dl" href="' + esc(s.img) + '" download="' + esc(safeFile(d.title + '·' + s.verse) + '.jpg') + '">' + DOWNLOAD_SVG + '保存此画</a>'
         +  '<figcaption>' + esc(s.caption || '') + '</figcaption>'
         +  '</figure>'
         +  '<div class="field"><span class="lbl">水墨画寓意</span><p>' + esc(s.meaning || '') + '</p></div>'
@@ -385,23 +385,33 @@
     var likeBtn = document.getElementById('btnLike');
     var favBtn = document.getElementById('btnFav');
     likeBtn.addEventListener('click', function(){
-      if(localStorage.getItem(lsKey('liked', slug)) === '1'){ note('已经赞过这幅画啦'); return; }
+      var liked = localStorage.getItem(lsKey('liked', slug)) === '1';
       likeBtn.disabled = true;
-      bump('like').then(function(s){
+      bump(liked ? 'unlike' : 'like').then(function(s){
         paintNums(s);
-        localStorage.setItem(lsKey('liked', slug), '1');
+        if(liked){
+          localStorage.removeItem(lsKey('liked', slug));
+          note('已取消点赞');
+        }else{
+          localStorage.setItem(lsKey('liked', slug), '1');
+          note('谢谢你的赞，落款已记下');
+        }
         paintButtons();
-        note('谢谢你的赞，落款已记下');
       }).catch(function(){ note('网络不太顺畅，稍后再试'); }).finally(function(){ likeBtn.disabled = false; });
     });
     favBtn.addEventListener('click', function(){
-      if(localStorage.getItem(lsKey('faved', slug)) === '1'){ note('已在你收藏夹的画卷里'); return; }
+      var faved = localStorage.getItem(lsKey('faved', slug)) === '1';
       favBtn.disabled = true;
-      bump('fav').then(function(s){
+      bump(faved ? 'unfav' : 'fav').then(function(s){
         paintNums(s);
-        localStorage.setItem(lsKey('faved', slug), '1');
+        if(faved){
+          localStorage.removeItem(lsKey('faved', slug));
+          note('已从画匣取出');
+        }else{
+          localStorage.setItem(lsKey('faved', slug), '1');
+          note('已收进画匣');
+        }
         paintButtons();
-        note('已收进画匣');
       }).catch(function(){ note('网络不太顺畅，稍后再试'); }).finally(function(){ favBtn.disabled = false; });
     });
   }
