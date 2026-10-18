@@ -24,6 +24,16 @@
     background:var(--seal);display:flex;align-items:center;justify-content:center;color:#f6ede0;
     font-size:26px;font-weight:700;letter-spacing:2px;writing-mode:vertical-rl;opacity:.92;
     font-family:"STKaiti","KaiTi","PingFang SC",serif;box-shadow:0 2px 6px rgba(120,40,30,.25)}
+
+  /* 返回首页：左上角固定悬浮，加载中/出错时也在 */
+  a.back-home{position:fixed;left:16px;top:14px;z-index:20;display:inline-flex;align-items:center;gap:6px;
+    padding:7px 15px;border:1px solid var(--line);border-radius:999px;background:rgba(255,253,247,.88);
+    backdrop-filter:blur(8px);color:var(--sub);font-size:13px;letter-spacing:.06em;text-decoration:none;
+    box-shadow:0 2px 10px rgba(60,45,25,.08);transition:.18s}
+  a.back-home:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  a.back-home svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;
+    stroke-linecap:round;stroke-linejoin:round}
+  @media (max-width:640px){ a.back-home{left:10px;top:10px;padding:6px 12px} }
   .kicker{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:20px}
   .kicker svg{width:15px;height:15px}
@@ -129,14 +139,36 @@
     border-radius:999px;background:var(--panel);margin-bottom:14px}
   footer .badge svg{width:15px;height:15px;stroke:var(--accent)}
 
-  /* ---------- 加载 / 错误态 ---------- */
-  .state-box{max-width:var(--maxw);margin:80px auto;padding:40px 28px;text-align:center;
-    background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
-  .state-box .glyph{font-family:"STKaiti","KaiTi","PingFang SC",serif;font-size:40px;color:var(--gold);margin-bottom:12px}
-  .state-box p{color:var(--sub);margin:0 0 18px}
-  .state-box button{border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;
-    font-size:14px;padding:9px 26px;border-radius:999px;cursor:pointer;transition:opacity .15s ease}
-  .state-box button:hover{opacity:.85}
+  /* ---------- 加载 / 错误态：古风「展卷」 ---------- */
+  .state-box{min-height:78vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:40px 28px;position:relative;overflow:hidden}
+  .state-box::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(closest-side at 50% 44%, rgba(35,33,28,.055), transparent 72%)}
+  .state-ink{position:relative;width:170px;height:190px;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+  .state-ink .ring{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;
+    border:1px solid rgba(35,33,28,.22);border-radius:50%;opacity:0;
+    animation:inkRipple 3.2s ease-out infinite}
+  .state-ink .ring:nth-child(2){animation-delay:1.05s}
+  .state-ink .ring:nth-child(3){animation-delay:2.1s}
+  @keyframes inkRipple{0%{transform:scale(.32);opacity:0}16%{opacity:.5}100%{transform:scale(1.18);opacity:0}}
+  .state-ink .word{position:relative;writing-mode:vertical-rl;font-family:"STKaiti","KaiTi","PingFang SC",serif;
+    font-size:44px;letter-spacing:18px;color:var(--ink);
+    animation:breathe 2.8s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.94}50%{opacity:.5}}
+  .state-dots{display:flex;gap:11px;margin:8px 0 20px}
+  .state-dots i{width:7px;height:7px;border-radius:50%;background:var(--seal);opacity:.35;
+    animation:dotDrop 1.5s ease-in-out infinite}
+  .state-dots i:nth-child(2){animation-delay:.25s}
+  .state-dots i:nth-child(3){animation-delay:.5s}
+  @keyframes dotDrop{0%,100%{transform:translateY(0) scale(.85);opacity:.3}45%{transform:translateY(-7px) scale(1);opacity:.85}}
+  .state-box p{color:var(--sub);margin:0;font-size:14.5px;letter-spacing:.14em}
+  .state-box button{margin-top:22px;border:1px solid var(--line);background:var(--panel);color:var(--accent);
+    font:inherit;font-size:14px;letter-spacing:.1em;padding:9px 28px;border-radius:999px;cursor:pointer;
+    transition:border-color .18s ease, background .18s ease}
+  .state-box button:hover{border-color:var(--accent);background:var(--accent-soft)}
+  /* 出错：墨晕停笔，字转朱砂 */
+  .state-box.err .ring,.state-box.err .state-dots{display:none}
+  .state-box.err .state-ink .word{animation:none;opacity:.9;color:var(--seal)}
 
   @media(max-width:560px){
     h1{font-size:31px} h2{font-size:23px} header{padding:48px 0 32px}
@@ -147,9 +179,19 @@
 </head>
 <body>
 
+<!-- ============ 返回首页（固定左上，任何状态可见） ============ -->
+<a class="back-home" href="home.html" aria-label="返回首页">
+  <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+  回首页
+</a>
+
 <!-- ============ 加载 / 错误态（渲染后移除） ============ -->
 <div class="state-box" id="state">
-  <div class="glyph">画</div>
+  <div class="state-ink" aria-hidden="true">
+    <i class="ring"></i><i class="ring"></i><i class="ring"></i>
+    <span class="word">展卷</span>
+  </div>
+  <div class="state-dots" aria-hidden="true"><i></i><i></i><i></i></div>
   <p id="stateMsg">正在展开画卷……</p>
   <button id="stateRetry" style="display:none">重新加载</button>
 </div>
@@ -240,7 +282,9 @@
   var DOWNLOAD_SVG = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 
   function showState(msg, retryable){
-    document.getElementById('state').style.display = 'block';
+    var box = document.getElementById('state');
+    box.style.display = 'flex';
+    box.classList.toggle('err', !!retryable);
     document.getElementById('stateMsg').textContent = msg;
     document.getElementById('stateRetry').style.display = retryable ? 'inline-block' : 'none';
   }

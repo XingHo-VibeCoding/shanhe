@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>诗中有画 · 画廊</title>
+<style>
+  :root{
+    --bg:#f3eee2; --panel:#fffdf7; --paper:#f6f1e4; --ink:#23211c; --sub:#6b6658;
+    --line:#e6dcc5; --accent:#2f6b52; --accent-soft:#e7efe7; --gold:#a9741f;
+    --seal:#b03a2e;
+    --shadow:0 1px 2px rgba(30,28,20,.04),0 8px 28px rgba(30,28,20,.06);
+    --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.72;font-size:16px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+  /* 返回首页 */
+  a.back-home{position:fixed;left:16px;top:14px;z-index:20;display:inline-flex;align-items:center;gap:6px;
+    padding:7px 15px;border:1px solid var(--line);border-radius:999px;background:rgba(255,253,247,.88);
+    backdrop-filter:blur(8px);color:var(--sub);font-size:13px;letter-spacing:.06em;text-decoration:none;
+    box-shadow:0 2px 10px rgba(60,45,25,.08);transition:.18s}
+  a.back-home:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  a.back-home svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;
+    stroke-linecap:round;stroke-linejoin:round}
+
+  header{padding:78px 0 36px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.14em;
+    color:var(--accent);font-weight:600;margin-bottom:18px}
+  .kicker svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  h1{font-size:40px;line-height:1.15;margin:0 0 12px;font-weight:700}
+  .lede{margin:18px 0 0;font-size:16.5px;line-height:1.8;color:#423d31;max-width:620px}
+  .lede strong{color:var(--accent)}
+  .seal{position:absolute;right:22px;top:56px;width:68px;height:68px;border-radius:8px;
+    background:var(--seal);display:flex;align-items:center;justify-content:center;color:#f6ede0;
+    font-size:22px;font-weight:700;letter-spacing:2px;writing-mode:vertical-rl;opacity:.92;
+    font-family:"STKaiti","KaiTi","PingFang SC",serif;box-shadow:0 2px 6px rgba(120,40,30,.25)}
+
+  /* 画廊 */
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:26px;padding:36px 0 30px}
+  a.art-card{display:block;text-decoration:none;color:inherit;background:var(--panel);
+    border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);
+    transition:transform .2s ease, box-shadow .2s ease}
+  a.art-card:hover{transform:translateY(-3px);box-shadow:0 3px 6px rgba(30,28,20,.06),0 14px 36px rgba(30,28,20,.10)}
+  .art-img{aspect-ratio:3/4;overflow:hidden;background:var(--paper);position:relative}
+  .art-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
+  a.art-card:hover .art-img img{transform:scale(1.03)}
+  .art-body{padding:16px 18px 18px;border-top:1px dashed var(--line)}
+  .art-title{font-size:19px;font-weight:700;font-family:"STKaiti","KaiTi","PingFang SC",serif;letter-spacing:.04em}
+  .art-sub{margin-top:4px;font-size:13px;color:var(--sub);letter-spacing:.05em}
+  .art-meta{margin-top:11px;display:flex;gap:14px;align-items:center;font-size:12.5px;color:var(--sub)}
+  .art-meta span{display:inline-flex;align-items:center;gap:5px}
+  .art-meta svg{width:13px;height:13px;stroke:var(--sub);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .art-go{margin-left:auto;color:var(--accent);font-size:12.5px;letter-spacing:.08em}
+  .empty-note{padding:60px 0;text-align:center;color:var(--sub);font-size:15px}
+
+  footer{border-top:1px solid var(--line);padding:26px 0 40px;margin-top:20px;color:var(--sub);font-size:12.5px}
+
+  /* 加载 / 错误态：古风「画廊」 */
+  .state-box{min-height:72vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;color:var(--sub);padding:40px 28px;position:relative;overflow:hidden}
+  .state-box::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(closest-side at 50% 44%, rgba(35,33,28,.055), transparent 72%)}
+  .state-ink{position:relative;width:170px;height:190px;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+  .state-ink .ring{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;
+    border:1px solid rgba(35,33,28,.22);border-radius:50%;opacity:0;
+    animation:inkRipple 3.2s ease-out infinite}
+  .state-ink .ring:nth-child(2){animation-delay:1.05s}
+  .state-ink .ring:nth-child(3){animation-delay:2.1s}
+  @keyframes inkRipple{0%{transform:scale(.32);opacity:0}16%{opacity:.5}100%{transform:scale(1.18);opacity:0}}
+  .state-ink .word{position:relative;writing-mode:vertical-rl;font-family:"STKaiti","KaiTi","PingFang SC",serif;
+    font-size:44px;letter-spacing:18px;color:var(--ink);
+    animation:breathe 2.8s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.94}50%{opacity:.5}}
+  .state-dots{display:flex;gap:11px;margin:8px 0 20px}
+  .state-dots i{width:7px;height:7px;border-radius:50%;background:var(--seal);opacity:.35;
+    animation:dotDrop 1.5s ease-in-out infinite}
+  .state-dots i:nth-child(2){animation-delay:.25s}
+  .state-dots i:nth-child(3){animation-delay:.5s}
+  @keyframes dotDrop{0%,100%{transform:translateY(0) scale(.85);opacity:.3}45%{transform:translateY(-7px) scale(1);opacity:.85}}
+  .state-box p{color:var(--sub);margin:0;font-size:14.5px;letter-spacing:.14em}
+  #stateRetry{margin-top:22px;border:1px solid var(--line);background:var(--panel);color:var(--accent);
+    font:inherit;font-size:14px;letter-spacing:.1em;padding:9px 28px;border-radius:999px;cursor:pointer;
+    transition:border-color .18s ease, background .18s ease}
+  #stateRetry:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .state-box.err .ring,.state-box.err .state-dots{display:none}
+  .state-box.err .state-ink .word{animation:none;opacity:.9;color:var(--seal)}
+</style>
+</head>
+<body>
+
+<a class="back-home" href="home.html" aria-label="返回首页">
+  <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+  回首页
+</a>
+
+<div class="state-box" id="state">
+  <div class="state-ink" aria-hidden="true">
+    <i class="ring"></i><i class="ring"></i><i class="ring"></i>
+    <span class="word">画廊</span>
+  </div>
+  <div class="state-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+  <p id="stateMsg">正在布置画廊……</p>
+  <button id="stateRetry" style="display:none">重新加载</button>
+</div>
+
+<div id="content" style="display:none">
+  <header>
+    <div class="seal">有画</div>
+    <div class="wrap">
+      <div class="kicker">
+        <svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+        诗词水墨蒸馏 · 画廊
+      </div>
+      <h1>诗中有画</h1>
+      <p class="lede">每首词拆成意群，一句配一幅水墨——<strong>选一卷展开</strong>，看诗怎么变成画。</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="gallery" id="gallery"></div>
+    <p class="empty-note" id="emptyNote" style="display:none">画廊里还没有画卷，稍后再来看看。</p>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div>诗词水墨蒸馏 · 一句一画 · 图片为 AI 生成的当代水墨意象，非历史画作复制</div>
+      <div style="margin-top:6px">本页为文化解读，不构成任何专业或投资建议</div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  var API_BASE = 'https://shijishanhe-d5gmc8a0k01b1e88d.service.tcloudbase.com/api/ink';
+
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function fetchRetry(url, opts, tries){
+    tries = tries || 3;
+    function once(){
+      return fetch(url, opts).then(function(r){
+        if(r.status >= 400 && r.status < 500){ return r.json().then(function(j){ throw {business:true, j:j}; }); }
+        if(!r.ok){ throw new Error('HTTP ' + r.status); }
+        return r.json();
+      });
+    }
+    return once().catch(function(e){
+      if(!e.business && tries > 1){ return fetchRetry(url, opts, tries - 1); }
+      throw e;
+    });
+  }
+
+  var EYE_SVG = '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var LIKE_SVG = '<svg viewBox="0 0 24 24"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>';
+  var FAV_SVG = '<svg viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z"/></svg>';
+
+  function render(list){
+    var g = document.getElementById('gallery');
+    g.innerHTML = list.map(function(it){
+      return '<a class="art-card" href="poem-ink.html?slug=' + esc(it.slug) + '">'
+        + '<div class="art-img"><img src="' + esc(it.cover_path) + '" alt="' + esc(it.title) + ' 封面水墨图" loading="lazy"></div>'
+        + '<div class="art-body">'
+        + '<div class="art-title">' + esc(it.title) + '</div>'
+        + '<div class="art-sub">' + esc(it.poet) + ' · ' + esc(it.dynasty || '') + (it.form ? ' · ' + esc(it.form) : '') + '</div>'
+        + '<div class="art-meta">'
+        + '<span>' + EYE_SVG + (it.views || 0) + '</span>'
+        + '<span>' + LIKE_SVG + (it.likes || 0) + '</span>'
+        + '<span>' + FAV_SVG + (it.favs || 0) + '</span>'
+        + '<span class="art-go">展开画卷 →</span>'
+        + '</div></div></a>';
+    }).join('');
+  }
+
+  function showErr(msg, retryable){
+    var box = document.getElementById('state');
+    box.classList.toggle('err', !!retryable);
+    document.getElementById('stateMsg').textContent = msg;
+    document.getElementById('stateRetry').style.display = retryable ? '' : 'none';
+  }
+
+  function load(){
+    return fetchRetry(API_BASE)
+      .then(function(res){
+        var list = (res && res.ok && res.data) ? res.data : [];
+        if(!list.length){
+          document.getElementById('state').style.display = 'none';
+          document.getElementById('content').style.display = '';
+          document.getElementById('emptyNote').style.display = '';
+          return;
+        }
+        // 新入座的排前面
+        list.sort(function(a,b){ return (a.created_at < b.created_at) ? 1 : -1; });
+        document.getElementById('state').style.display = 'none';
+        document.getElementById('content').style.display = '';
+        render(list);
+      })
+      .catch(function(e){
+        showErr(e && e.business ? '画廊暂时打不开，请稍后再试' : '网络不太顺畅，画廊没有布好', !(e && e.business));
+      });
+  }
+
+  document.getElementById('stateRetry').addEventListener('click', function(){
+    showErr('正在布置画廊……', false);
+    load();
+  });
+  load();
+</script>
+</body>
+</html>
