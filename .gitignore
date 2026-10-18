@@ -52,3 +52,6 @@ my-app/.playwright-cli/
 _online.html
 _oni.json
 .wbapp_*.genie
+
+# 一句一画：去水印前的原图备份（本地留档，不入库）
+my-app/ink-paintings/_originals/

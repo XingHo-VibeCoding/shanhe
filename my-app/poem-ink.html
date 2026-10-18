@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>蝶恋花 · 春景 · 水墨蒸馏页</title>
+<title>一句一画 · 诗中有画</title>
 <style>
   :root{
     --bg:#f3eee2; --panel:#fffdf7; --paper:#f6f1e4; --ink:#23211c; --sub:#6b6658;
@@ -51,7 +51,8 @@
   .fulltext .stan{margin-top:14px}
 
   nav.toc{position:sticky;top:0;z-index:5;background:rgba(243,238,226,.9);
-    backdrop-filter:saturate(1.3) blur(8px);border-bottom:1px solid var(--line)}
+    backdrop-filter:saturate(1.3) blur(8px);border-bottom:1px solid var(--line);display:none}
+  nav.toc.on{display:block}
   .toc-inner{max-width:var(--maxw);margin:0 auto;padding:12px 24px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .toc button{border:0;background:transparent;color:var(--sub);font:inherit;font-size:13.5px;
     padding:7px 13px;border-radius:999px;cursor:pointer;transition:.18s;white-space:nowrap}
@@ -76,6 +77,12 @@
   .ink-painting img{width:100%;height:auto;display:block}
   .ink-painting figcaption{line-height:1.6;font-size:13px;color:var(--sub);text-align:center;padding:11px 16px 13px;
     background:rgba(255,253,247,.6);border-top:1px dashed var(--line);letter-spacing:.04em;}
+  .ink-painting .dl{display:table;margin:9px auto 0;padding:5px 16px;border:1px solid var(--line);
+    border-radius:999px;background:var(--panel);color:var(--accent);font-size:12.5px;letter-spacing:.08em;
+    text-decoration:none;transition:.18s}
+  .ink-painting .dl:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .ink-painting .dl svg{display:inline-block;width:13px;height:13px;vertical-align:-2px;margin-right:6px;
+    stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
   .field{margin:0 0 0}
   .field + .field{margin-top:14px}
@@ -98,239 +105,337 @@
   ol.big li::before{counter-increment:t;content:counter(t);position:absolute;left:8px;top:14px;
     width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;
     display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
-  ol.big li b{color:var(--accent)}
+
+  /* ---------- 互动条 ---------- */
+  .stats-bar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;
+    padding:22px 18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);margin:8px 0 0}
+  .stat{display:inline-flex;align-items:center;gap:9px;padding:9px 20px;border:1px solid var(--line);
+    border-radius:999px;background:var(--paper);color:var(--sub);font-size:14.5px;letter-spacing:.04em}
+  .stat svg{width:16px;height:16px;stroke:var(--sub);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .stat b{color:var(--ink);font-weight:700}
+  button.stat{cursor:pointer;font:inherit;font-size:14.5px;transition:transform .15s ease,opacity .15s ease,border-color .15s ease,color .15s ease}
+  button.stat:hover{border-color:var(--accent);color:var(--accent)}
+  button.stat:hover svg{stroke:var(--accent)}
+  button.stat.done{border-color:var(--seal);color:var(--seal);background:var(--warn-soft)}
+  button.stat.done svg{stroke:var(--seal);fill:var(--seal);opacity:.18}
+  button.stat.done b{color:var(--seal)}
+  button.stat:active{transform:scale(.96)}
+  .stats-note{width:100%;text-align:center;font-size:12.5px;color:var(--sub);margin:6px 0 0;min-height:1.2em;opacity:0;transition:opacity .25s ease}
+  .stats-note.on{opacity:1}
 
   footer{padding:40px 0 64px;color:var(--sub);font-size:13.5px;text-align:center}
   footer .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid var(--line);
     border-radius:999px;background:var(--panel);margin-bottom:14px}
   footer .badge svg{width:15px;height:15px;stroke:var(--accent)}
 
+  /* ---------- 加载 / 错误态 ---------- */
+  .state-box{max-width:var(--maxw);margin:80px auto;padding:40px 28px;text-align:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+  .state-box .glyph{font-family:"STKaiti","KaiTi","PingFang SC",serif;font-size:40px;color:var(--gold);margin-bottom:12px}
+  .state-box p{color:var(--sub);margin:0 0 18px}
+  .state-box button{border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;
+    font-size:14px;padding:9px 26px;border-radius:999px;cursor:pointer;transition:opacity .15s ease}
+  .state-box button:hover{opacity:.85}
+
   @media(max-width:560px){
     h1{font-size:31px} h2{font-size:23px} header{padding:48px 0 32px}
     .card{padding:20px} .seal{display:none} .verse{font-size:26px}
+    .stat{padding:8px 14px}
   }
 </style>
 </head>
 <body>
 
+<!-- ============ 加载 / 错误态（渲染后移除） ============ -->
+<div class="state-box" id="state">
+  <div class="glyph">画</div>
+  <p id="stateMsg">正在展开画卷……</p>
+  <button id="stateRetry" style="display:none">重新加载</button>
+</div>
+
 <!-- ============ 页头 ============ -->
-<header>
-  <div class="seal">春景</div>
+<header id="pageHead" style="display:none">
+  <div class="seal" id="seal"></div>
   <div class="wrap">
     <div class="kicker">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      <span>诗词水墨蒸馏 · 一句一画</span>
+      <span id="kicker"></span>
     </div>
-    <h1>蝶恋花 · 春景<span class="en">苏轼 · 词 · 北宋（婉约）</span></h1>
-    <div class="meta">
-      <span>上下两阕 · 6 幅水墨 · 每个意群一画</span>
-      <span>约 6 分钟</span>
-      <span>诗中有画 · 画中有诗</span>
-    </div>
-    <p class="lede">暮春时节，花褪残红，青杏初结——苏轼在这首婉约小词里写尽了<strong>「多情却被无情恼」</strong>的微妙心事。一分惜春，一分旷达，三分说不清道不明的怅惘。</p>
+    <h1><span id="title"></span><span class="en" id="headingEn"></span></h1>
+    <div class="meta" id="meta"></div>
+    <p class="lede" id="lede"></p>
   </div>
 </header>
 
 <!-- ============ 目录 ============ -->
-<nav class="toc">
-  <div class="toc-inner" id="toc">
-    <button data-target="s1" class="active">其一 · 春归</button>
-    <button data-target="s2">其二 · 人家</button>
-    <button data-target="s3">其三 · 宽解</button>
-    <button data-target="s4">其四 · 一墙</button>
-    <button data-target="s5">其五 · 偶闻</button>
-    <button data-target="s6">其六 · 怅惘</button>
-    <button data-target="s7">意象速查</button>
-    <button data-target="s8">带走一句</button>
-  </div>
+<nav class="toc" id="tocNav">
+  <div class="toc-inner" id="toc"></div>
 </nav>
 
-<main class="wrap">
+<main class="wrap" id="main" style="display:none"></main>
 
-  <!-- ============ 封面卡 ============ -->
-  <section style="padding-top:30px">
-    <div class="cover-card">
-      <figure class="cover-art">
-        <img src="ink-paintings/cover.png" alt="蝶恋花·春景 封面水墨图">
-      </figure>
-      <div class="cover-overlay">
-        <h2 class="cover-title">蝶恋花 · 春景</h2>
-        <p class="cover-sub">苏轼 · 词 · 北宋</p>
-        <span class="cover-hook">6 幅水墨，一句一画 · 暮春的怅惘与宽解</span>
-      </div>
-    </div>
+<!-- ============ 互动条 ============ -->
+<div class="wrap" id="statsWrap" style="display:none;padding:0 24px 8px">
+  <div class="stats-bar" id="statsBar">
+    <span class="stat" id="statViews">
+      <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      浏览 <b id="numViews">0</b>
+    </span>
+    <button class="stat" id="btnLike">
+      <svg viewBox="0 0 24 24"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+      点赞 <b id="numLikes">0</b>
+    </button>
+    <button class="stat" id="btnFav">
+      <svg viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z"/></svg>
+      收藏 <b id="numFavs">0</b>
+    </button>
+    <p class="stats-note" id="statsNote"></p>
+  </div>
+</div>
 
-    <div class="fulltext">
-      <h3>全 词</h3>
-      <p class="stan">花褪残红青杏小。燕子飞时，绿水人家绕。<br>枝上柳绵吹又少，天涯何处无芳草。</p>
-      <p class="stan">墙里秋千墙外道。墙外行人，墙里佳人笑。<br>笑渐不闻声渐悄，多情却被无情恼。</p>
-    </div>
-  </section>
-
-  <!-- ============ 其一 ============ -->
-  <section id="s1">
-    <div class="sec-num">上阕 · 其一</div>
-    <h2>春归 · 花褪残红青杏小</h2>
-    <p class="sec-intro">词从枝头一瞥开始：花退了，杏来了，春天正在悄悄交班。</p>
-
-    <div class="card">
-      <div class="verse">花褪残红青杏小<span class="pin">huā tuì cán hóng qīng xìng xiǎo</span></div>
-      <figure class="ink-painting">
-        <img src="ink-paintings/v1.png" alt="花褪残红青杏小 水墨画">
-        <figcaption>残红褪尽 · 青杏初结 · 春事阑珊</figcaption>
-      </figure>
-      <div class="field"><span class="lbl">水墨画寓意</span><p>画面一枝斜出，红花已谢得只剩零星，青涩的小杏悄悄探头。花退杏进，正是暮春最微妙的时刻——繁华落尽，果实初生。苏轼不写伤春的哀嚎，只冷静记录这场交接，淡然里藏着一丝惋惜。</p></div>
-      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>褪</b>：凋谢、褪色；<b>残红</b>：落花；<b>青杏</b>：初结的小杏，色青未熟。句意——花儿凋残，红色褪去，枝头只剩小小的青杏。</p></div>
-    </div>
-  </section>
-
-  <!-- ============ 其二 ============ -->
-  <section id="s2">
-    <div class="sec-num">上阕 · 其二</div>
-    <h2>人家 · 燕子飞时，绿水人家绕</h2>
-    <p class="sec-intro">视线从枝头拉远，一幅安稳圆足的江南暮春图。</p>
-
-    <div class="card">
-      <div class="verse">燕子飞时，绿水人家绕<span class="pin">yàn zǐ fēi shí, lǜ shuǐ rén jiā rào</span></div>
-      <figure class="ink-painting">
-        <img src="ink-paintings/v2.png" alt="燕子飞时绿水人家绕 水墨画">
-        <figcaption>燕剪春风 · 绿水绕村 · 烟火安然</figcaption>
-      </figure>
-      <div class="field"><span class="lbl">水墨画寓意</span><p>燕子掠过天空，一湾绿水环绕着村舍人家。动静相衬——燕子是流动的生气，人家是安顿的烟火。这幅江南暮春图安宁圆足，恰为下文的怅惘埋下反衬的底色。</p></div>
-      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>绕</b>：环绕、围绕。句意——燕子飞舞的时节，一湾绿水环绕着几户人家。</p></div>
-    </div>
-  </section>
-
-  <!-- ============ 其三 ============ -->
-  <section id="s3">
-    <div class="sec-num">上阕 · 其三</div>
-    <h2>宽解 · 枝上柳绵吹又少，天涯何处无芳草</h2>
-    <p class="sec-intro">上句惜春，下句忽而宕开——这是全词最著名的转折。</p>
-
-    <div class="card">
-      <div class="verse">枝上柳绵吹又少，天涯何处无芳草<span class="pin">zhī shàng liǔ mián chuī yòu shǎo, tiān yá hé chù wú fāng cǎo</span></div>
-      <figure class="ink-painting">
-        <img src="ink-paintings/v3.png" alt="柳绵芳草 水墨画">
-        <figcaption>柳绵渐稀 · 芳草连天 · 一收一放</figcaption>
-      </figure>
-      <div class="field"><span class="lbl">水墨画寓意</span><p>柳絮被风吹得越来越少，春天真的要走了；可抬眼望，天涯尽头哪一处没有青青芳草？上句收，惜眼前之春；下句放，见天地之阔。一收一放之间，是苏轼式的自我宽解——失去的固然可惜，生机却处处都在。</p></div>
-      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>柳绵</b>：柳絮；<b>天涯</b>：天边，极远之处；<b>芳草</b>：香草，常喻美好的事物与希望。句意——枝上柳絮愈吹愈少，但天边何处没有芳草呢。</p></div>
-    </div>
-  </section>
-
-  <!-- ============ 其四 ============ -->
-  <section id="s4">
-    <div class="sec-num">下阕 · 其四</div>
-    <h2>一墙 · 墙里秋千墙外道</h2>
-    <p class="sec-intro">镜头一转，从旷野收进人间：一道墙，隔出两个世界。</p>
-
-    <div class="card">
-      <div class="verse">墙里秋千墙外道<span class="pin">qiáng lǐ qiū qiān qiáng wài dào</span></div>
-      <figure class="ink-painting">
-        <img src="ink-paintings/v4.png" alt="墙里秋千墙外道 水墨画">
-        <figcaption>一墙之隔 · 秋千掩映 · 小径寂寂</figcaption>
-      </figure>
-      <div class="field"><span class="lbl">水墨画寓意</span><p>一道白墙，墙里是深宅庭院、秋千闲荡的青春，墙外是行人必经的道路。墙是实际的建筑，更是人与人间「遇与不遇」的隐喻——只一墙之隔，却两不相见。画面简净，墙内墙外各自成境。</p></div>
-      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>秋千</b>：悬索荡板的游戏器械，古时多置庭院，为女子春日嬉戏之具。句意——围墙里有人荡着秋千，围墙外是行人走的道路。</p></div>
-    </div>
-  </section>
-
-  <!-- ============ 其五 ============ -->
-  <section id="s5">
-    <div class="sec-num">下阕 · 其五</div>
-    <h2>偶闻 · 墙外行人，墙里佳人笑</h2>
-    <p class="sec-intro">一场毫无预谋的相遇：笑声那样近，人却那样远。</p>
-
-    <div class="card">
-      <div class="verse">墙外行人，墙里佳人笑<span class="pin">qiáng wài xíng rén, qiáng lǐ jiā rén xiào</span></div>
-      <figure class="ink-painting">
-        <img src="ink-paintings/v5.png" alt="墙外行人墙里佳人笑 水墨画">
-        <figcaption>行人赶路 · 笑语出墙 · 一墙之隔</figcaption>
-      </figure>
-      <div class="field"><span class="lbl">水墨画寓意</span><p>墙里，佳人荡着秋千，笑声清脆；墙外，行人拄杖赶路，未曾抬头。墙太高，挡住了视线——他看不见她，她也不知道墙外有人经过。可笑声不认得墙，径自越了过去。一个无情地笑，一个多情地恼，这场相遇与错过，全在这道墙的两边。</p></div>
-      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>行人</b>：过路之人，亦暗指漂泊在外的苏轼自己；<b>佳人</b>：美好的女子。句意——墙外的行人驻足倾听，墙里是佳人的欢笑。</p></div>
-    </div>
-  </section>
-
-  <!-- ============ 其六 ============ -->
-  <section id="s6">
-    <div class="sec-num">下阕 · 其六</div>
-    <h2>怅惘 · 笑渐不闻声渐悄，多情却被无情恼</h2>
-    <p class="sec-intro">全词收束于此：不解释，不排解，把那点怅惘留在空白里。</p>
-
-    <div class="card">
-      <div class="verse">笑渐不闻声渐悄，多情却被无情恼<span class="pin">xiào jiàn bù wén shēng jiàn qiǎo, duō qíng què bèi wú qíng nǎo</span></div>
-      <figure class="ink-painting">
-        <img src="ink-paintings/v6.png" alt="多情却被无情恼 水墨画">
-        <figcaption>笑声渐杳 · 万籁归寂 · 怅然自失</figcaption>
-      </figure>
-      <div class="field"><span class="lbl">水墨画寓意</span><p>笑声渐渐远去、低下去，终于听不见了；墙外行人兀自立在寂静里，大块留白压出满纸空落。多情的是他，浑然不觉的是墙里人——这一恼，恼得无理又真实。画面愈静，心事愈深。</p></div>
-      <div class="field"><span class="lbl gold">注解</span><p class="gloss"><b>多情</b>：指墙外行人（自指）；<b>无情</b>：指墙内佳人（不知有人徘徊）；<b>恼</b>：撩拨、引起烦恼。句意——笑声渐远渐悄，我这片多情，却被无情的人儿惹得满心烦恼。</p></div>
-    </div>
-  </section>
-
-  <!-- ============ 意象速查 ============ -->
-  <section id="s7">
-    <div class="sec-num">意象速查</div>
-    <h2>词中的意象与象征</h2>
-    <p class="sec-intro">这首词的每个意象都带着「将尽」与「将生」的双重意味。</p>
-    <table>
-      <thead><tr><th>意象</th><th>出处</th><th>象征</th></tr></thead>
-      <tbody>
-        <tr><td><b>残红 / 青杏</b></td><td>花褪残红青杏小</td><td>春光将尽、生机暗换</td></tr>
-        <tr><td><b>燕子</b></td><td>燕子飞时</td><td>时序流转、人间生气</td></tr>
-        <tr><td><b>绿水人家</b></td><td>绿水人家绕</td><td>安宁圆足的生活图景</td></tr>
-        <tr><td><b>柳绵</b></td><td>枝上柳绵吹又少</td><td>留不住的春光</td></tr>
-        <tr><td><b>芳草</b></td><td>天涯何处无芳草</td><td>处处可寻的希望与慰藉</td></tr>
-        <tr><td><b>墙</b></td><td>墙里秋千墙外道</td><td>人我之间的阻隔</td></tr>
-        <tr><td><b>佳人笑</b></td><td>墙里佳人笑</td><td>可望而不可即的美好</td></tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- ============ 带走一句 ============ -->
-  <section id="s8" style="border-bottom:0">
-    <div class="sec-num">Takeaway</div>
-    <h2>如果只带走一句</h2>
-    <div class="card takeaway">
-      <ol class="big">
-        <li><b>「天涯何处无芳草」</b>——失意时的自我宽解：一段春光结束了，但天地辽阔，生机处处。这也是苏轼一生贬谪路上的人生底色。</li>
-        <li><b>以景写情，婉而多讽</b>——全词不着一个「愁」字，愁绪却从残红、柳绵、渐悄的笑声里一层层渗出来，愈淡愈深。</li>
-        <li><b>「多情却被无情恼」</b>——人生许多烦恼，正来自「有情」遇见「不觉」；读懂这一句，便多一分释然。</li>
-      </ol>
-    </div>
-  </section>
-
-</main>
-
-<!-- ============ footer（来源声明） ============ -->
-<footer>
+<!-- ============ footer ============ -->
+<footer id="pageFoot" style="display:none">
   <div class="wrap">
     <div class="badge">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
       <span>诗词水墨蒸馏 · 一句一画</span>
     </div>
-    <div>原文录自公版《蝶恋花 · 春景》· 苏轼 · 7 幅水墨（含封面）为 AI 按「南宗渲淡 / 披麻皴 / 米点皴 / 计白当黑」风格生成的当代水墨意象，非历史画作复制</div>
+    <div id="footNote"></div>
     <div style="margin-top:10px;font-size:12.5px">本页为文化解读，不构成任何专业或投资建议</div>
   </div>
 </footer>
 
 <script>
-  var buttons = Array.prototype.slice.call(document.querySelectorAll('#toc button'));
-  buttons.forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var el = document.getElementById(btn.getAttribute('data-target'));
-      if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
-    });
-  });
-  var sections = buttons.map(function(b){ return document.getElementById(b.getAttribute('data-target')); });
-  function onScroll(){
-    var pos = window.scrollY + 140, idx = 0;
-    for(var i=0;i<sections.length;i++){ if(sections[i] && sections[i].offsetTop <= pos){ idx = i; } }
-    buttons.forEach(function(b,i){ b.classList.toggle('active', i===idx); });
+  var API_BASE = 'https://shijishanhe-d5gmc8a0k01b1e88d.service.tcloudbase.com/api/ink';
+
+  // ---------- 工具 ----------
+  function qs(name){
+    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : '';
   }
-  window.addEventListener('scroll', onScroll, {passive:true});
-  onScroll();
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function safeFile(s){ return String(s||'').replace(/[，。、！？：；,.!?;:]/g,''); }
+  function lsKey(action, slug){ return 'ink_' + action + '_' + slug; }
+
+  function fetchRetry(url, opts, tries){
+    tries = tries || 3;
+    function once(){
+      return fetch(url, opts).then(function(r){
+        // 4xx 是业务应答（400/404 等带中文提示），直接透传不重试
+        if(r.status >= 400 && r.status < 500 && r.status !== 429){ return r.json(); }
+        if(!r.ok){ throw new Error('HTTP ' + r.status); }
+        return r.json();
+      });
+    }
+    return once().catch(function(e){
+      if(tries > 1){ return fetchRetry(url, opts, tries - 1); }
+      throw e;
+    });
+  }
+
+  var DOWNLOAD_SVG = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+  function showState(msg, retryable){
+    document.getElementById('state').style.display = 'block';
+    document.getElementById('stateMsg').textContent = msg;
+    document.getElementById('stateRetry').style.display = retryable ? 'inline-block' : 'none';
+  }
+  function hideState(){ document.getElementById('state').style.display = 'none'; }
+
+  // ---------- 渲染 ----------
+  function render(d){
+    var c = d.content || {};
+    document.title = d.title + ' · 一句一画';
+
+    // 页头
+    document.getElementById('seal').textContent = c.seal || (d.title || '').slice(0, 2);
+    document.getElementById('kicker').textContent = c.kicker || '诗词水墨蒸馏 · 一句一画';
+    document.getElementById('title').textContent = d.title;
+    document.getElementById('headingEn').textContent = [d.poet, d.form, d.dynasty].filter(Boolean).join(' · ');
+    var metaHtml = (c.meta || []).map(function(m){ return '<span>' + esc(m) + '</span>'; }).join('');
+    document.getElementById('meta').innerHTML = metaHtml;
+    document.getElementById('lede').innerHTML = c.lede || d.lede || '';
+
+    // 封面 + 全词 + 六章 + 意象 + 带走一句 → 全部装进 main
+    var h = '';
+
+    h += '<section style="padding-top:30px">';
+    if(c.cover){
+      h += '<div class="cover-card"><figure class="cover-art">'
+        +  '<img src="' + esc(c.cover.src) + '" alt="' + esc(d.title + ' 封面水墨图') + '">'
+        +  '<a class="dl" href="' + esc(c.cover.src) + '" download="' + esc(d.title + '·封面.png') + '">' + DOWNLOAD_SVG + '保存此画</a>'
+        +  '</figure><div class="cover-overlay">'
+        +  '<h2 class="cover-title">' + esc(d.title) + '</h2>'
+        +  '<p class="cover-sub">' + esc(c.cover.sub) + '</p>'
+        +  '<span class="cover-hook">' + esc(c.cover.hook) + '</span>'
+        +  '</div></div>';
+    }
+    h += '<div class="fulltext"><h3>' + esc(c.fulltext_label || '全 词') + '</h3>'
+      +  (c.fulltext || []).map(function(p){ return '<p class="stan">' + p + '</p>'; }).join('')
+      +  '</div></section>';
+
+    var secs = c.sections || [];
+    secs.forEach(function(s, i){
+      var id = 's' + (i + 1);
+      h += '<section id="' + id + '">'
+        +  '<div class="sec-num">' + esc(s.tag || '') + '</div>'
+        +  '<h2>' + esc(s.heading || '') + '</h2>'
+        +  '<p class="sec-intro">' + esc(s.intro || '') + '</p>'
+        +  '<div class="card">'
+        +  '<div class="verse">' + esc(s.verse) + '<span class="pin">' + esc(s.pinyin || '') + '</span></div>'
+        +  '<figure class="ink-painting">'
+        +  '<img src="' + esc(s.img) + '" alt="' + esc(s.alt || s.verse + ' 水墨画') + '" loading="lazy">'
+        +  '<a class="dl" href="' + esc(s.img) + '" download="' + esc(safeFile(d.title + '·' + s.verse) + '.png') + '">' + DOWNLOAD_SVG + '保存此画</a>'
+        +  '<figcaption>' + esc(s.caption || '') + '</figcaption>'
+        +  '</figure>'
+        +  '<div class="field"><span class="lbl">水墨画寓意</span><p>' + esc(s.meaning || '') + '</p></div>'
+        +  '<div class="field"><span class="lbl gold">注解</span><p class="gloss">' + (s.gloss || '') + '</p></div>'
+        +  '</div></section>';
+    });
+
+    if(c.imagery && c.imagery.length){
+      h += '<section id="s' + (secs.length + 1) + '">'
+        +  '<div class="sec-num">' + esc(c.imagery_label || '意象速查') + '</div>'
+        +  '<h2>' + esc(c.imagery_title || '') + '</h2>'
+        +  '<p class="sec-intro">' + esc(c.imagery_intro || '') + '</p>'
+        +  '<table><thead><tr><th>意象</th><th>出处</th><th>象征</th></tr></thead><tbody>'
+        +  c.imagery.map(function(r){
+            return '<tr><td><b>' + esc(r.name) + '</b></td><td>' + esc(r.from) + '</td><td>' + esc(r.symbol) + '</td></tr>';
+          }).join('')
+        +  '</tbody></table></section>';
+    }
+
+    if(c.takeaways && c.takeaways.length){
+      h += '<section id="s' + (secs.length + 2) + '" style="border-bottom:0">'
+        +  '<div class="sec-num">' + esc(c.takeaway_label || 'Takeaway') + '</div>'
+        +  '<h2>' + esc(c.takeaway_title || '') + '</h2>'
+        +  '<div class="card takeaway"><ol class="big">'
+        +  c.takeaways.map(function(t){ return '<li>' + t + '</li>'; }).join('')
+        +  '</ol></div></section>';
+    }
+
+    var main = document.getElementById('main');
+    main.innerHTML = h;
+    main.style.display = 'block';
+    document.getElementById('pageHead').style.display = 'block';
+    document.getElementById('pageFoot').style.display = 'block';
+    document.getElementById('statsWrap').style.display = 'block';
+    document.getElementById('footNote').textContent = c.footer_note || '';
+
+    // 目录
+    var tocItems = secs.map(function(s, i){ return { id: 's' + (i + 1), label: s.toc || s.heading || ('其' + (i + 1)) }; });
+    if(c.imagery && c.imagery.length){ tocItems.push({ id: 's' + (secs.length + 1), label: c.imagery_label || '意象速查' }); }
+    if(c.takeaways && c.takeaways.length){ tocItems.push({ id: 's' + (secs.length + 2), label: c.takeaway_title || '带走一句' }); }
+    var toc = document.getElementById('toc');
+    toc.innerHTML = tocItems.map(function(t){
+      return '<button data-target="' + t.id + '"' + (t.id === 's1' ? ' class="active"' : '') + '>' + esc(t.label) + '</button>';
+    }).join('');
+    document.getElementById('tocNav').classList.add('on');
+
+    // 目录滚动 + 高亮
+    var buttons = Array.prototype.slice.call(toc.querySelectorAll('button'));
+    buttons.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var el = document.getElementById(btn.getAttribute('data-target'));
+        if(el){ el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      });
+    });
+    var sections = buttons.map(function(b){ return document.getElementById(b.getAttribute('data-target')); });
+    function onScroll(){
+      var pos = window.scrollY + 140, idx = 0;
+      for(var i = 0; i < sections.length; i++){ if(sections[i] && sections[i].offsetTop <= pos){ idx = i; } }
+      buttons.forEach(function(b, i){ b.classList.toggle('active', i === idx); });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
+  // ---------- 互动 ----------
+  var slug = '';
+  function note(msg){
+    var n = document.getElementById('statsNote');
+    n.textContent = msg;
+    n.classList.add('on');
+    setTimeout(function(){ n.classList.remove('on'); }, 2200);
+  }
+  function bump(action){
+    return fetchRetry(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug, action: action })
+    }).then(function(d){
+      if(!d.ok){ throw new Error(d.error || '计数失败'); }
+      return d.data;
+    });
+  }
+  function paintNums(s){
+    document.getElementById('numViews').textContent = s.views;
+    document.getElementById('numLikes').textContent = s.likes;
+    document.getElementById('numFavs').textContent = s.favs;
+  }
+  function paintButtons(){
+    document.getElementById('btnLike').classList.toggle('done', localStorage.getItem(lsKey('liked', slug)) === '1');
+    document.getElementById('btnFav').classList.toggle('done', localStorage.getItem(lsKey('faved', slug)) === '1');
+  }
+  function bindStats(){
+    var likeBtn = document.getElementById('btnLike');
+    var favBtn = document.getElementById('btnFav');
+    likeBtn.addEventListener('click', function(){
+      if(localStorage.getItem(lsKey('liked', slug)) === '1'){ note('已经赞过这幅画啦'); return; }
+      likeBtn.disabled = true;
+      bump('like').then(function(s){
+        paintNums(s);
+        localStorage.setItem(lsKey('liked', slug), '1');
+        paintButtons();
+        note('谢谢你的赞，落款已记下');
+      }).catch(function(){ note('网络不太顺畅，稍后再试'); }).finally(function(){ likeBtn.disabled = false; });
+    });
+    favBtn.addEventListener('click', function(){
+      if(localStorage.getItem(lsKey('faved', slug)) === '1'){ note('已在你收藏夹的画卷里'); return; }
+      favBtn.disabled = true;
+      bump('fav').then(function(s){
+        paintNums(s);
+        localStorage.setItem(lsKey('faved', slug), '1');
+        paintButtons();
+        note('已收进画匣');
+      }).catch(function(){ note('网络不太顺畅，稍后再试'); }).finally(function(){ favBtn.disabled = false; });
+    });
+  }
+  function countView(){
+    // 同一标签页会话只计一次（刷新不重复计数，关掉再进才 +1）
+    if(sessionStorage.getItem('ink_viewed_' + slug)){ return; }
+    bump('view').then(function(s){
+      paintNums(s);
+      sessionStorage.setItem('ink_viewed_' + slug, '1');
+    }).catch(function(){ /* 浏览量失败不打扰用户 */ });
+  }
+
+  // ---------- 入口 ----------
+  function load(){
+    slug = qs('slug') || 'dielianhua-chunjing';
+    showState('正在展开画卷……', false);
+    fetchRetry(API_BASE + '?slug=' + encodeURIComponent(slug))
+      .then(function(d){
+        if(!d.ok || !d.data){ throw new Error(d.error || '数据异常'); }
+        hideState();
+        render(d.data);
+        paintNums({ views: d.data.views, likes: d.data.likes, favs: d.data.favs });
+        paintButtons();
+        bindStats();
+        countView();
+      })
+      .catch(function(e){
+        showState(e.message && e.message.indexOf('没有找到') === 0
+          ? '没有找到这幅「一句一画」，检查一下链接里的 slug'
+          : '画卷暂时打不开（网络或服务打盹了），稍后再试', true);
+      });
+  }
+  document.getElementById('stateRetry').addEventListener('click', load);
+  load();
 </script>
 </body>
 </html>

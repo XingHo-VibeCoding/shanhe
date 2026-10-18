@@ -105,3 +105,34 @@ COMMENT ON COLUMN checkins.created_at IS '打卡时间，TIMESTAMPTZ 带时区�
 -- checkins 写权限（同 favorites：anon 角色默认只读）
 GRANT SELECT, INSERT, UPDATE, DELETE ON checkins TO anon;
 GRANT USAGE, SELECT ON SEQUENCE checkins_id_seq TO anon;
+
+-- ---------- 5. 诗中有画 · 一句一画表 ink_pages（结营后新增：云端内容 + 点赞/收藏/浏览量） ----------
+-- 存「每幅诗词水墨蒸馏页」的整页内容与互动计数。
+-- 内容大字段 content 为 JSON 文本（全词/章节/意象/带走一句），由 tools/import_ink.py 从 ink-data/*.json 导入。
+-- 图片不进库：只存相对路径（ink-paintings/<slug>/xx.png），静态文件随站点托管。
+CREATE TABLE ink_pages (
+  id          SERIAL PRIMARY KEY,
+  slug        TEXT NOT NULL UNIQUE,
+  title       TEXT NOT NULL,
+  poet        TEXT NOT NULL,
+  dynasty     TEXT,
+  form        TEXT,
+  cover_path  TEXT,
+  lede        TEXT,
+  content     TEXT NOT NULL,
+  views       INTEGER NOT NULL DEFAULT 0,
+  likes       INTEGER NOT NULL DEFAULT 0,
+  favs        INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE ink_pages IS '一句一画页：整页内容 JSON + 浏览/点赞/收藏计数（api-ink 的载体）';
+COMMENT ON COLUMN ink_pages.slug IS 'URL 标识，如 dielianhua-chunjing；GET /api/ink?slug= 按此取篇';
+COMMENT ON COLUMN ink_pages.content IS '整页内容 JSON 文本（fulltext/sections/imagery/takeaways），前端渲染唯一来源';
+COMMENT ON COLUMN ink_pages.views IS '浏览量：每次进入页面 POST action=view +1';
+COMMENT ON COLUMN ink_pages.likes IS '点赞数：全站累计（暂无用户体系，前端 localStorage 防连点）';
+COMMENT ON COLUMN ink_pages.favs IS '收藏数：全站累计（同上）';
+
+-- ink_pages 写权限（anon 默认只读；计数走 UPDATE，内容导入走 CLI 管理员通道）
+GRANT SELECT, UPDATE ON ink_pages TO anon;
