@@ -25,7 +25,7 @@
     font-size:26px;font-weight:700;letter-spacing:2px;writing-mode:vertical-rl;opacity:.92;
     font-family:"STKaiti","KaiTi","PingFang SC",serif;box-shadow:0 2px 6px rgba(120,40,30,.25)}
 
-  /* 返回首页：左上角固定悬浮，加载中/出错时也在 */
+  /* 返回画廊：左上角固定悬浮，加载中/出错时也在；目录条吸顶时为其让位 */
   a.back-home{position:fixed;left:16px;top:14px;z-index:20;display:inline-flex;align-items:center;gap:6px;
     padding:7px 15px;border:1px solid var(--line);border-radius:999px;background:rgba(255,253,247,.88);
     backdrop-filter:blur(8px);color:var(--sub);font-size:13px;letter-spacing:.06em;text-decoration:none;
@@ -34,6 +34,9 @@
   a.back-home svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;
     stroke-linecap:round;stroke-linejoin:round}
   @media (max-width:640px){ a.back-home{left:10px;top:10px;padding:6px 12px} }
+  /* 目录条吸顶时：整体右移避开返回钮；返回钮也下移对齐目录条内沿 */
+  body.toc-on a.back-home{top:52px}
+  body.toc-on .toc-inner{padding-left:150px}
   .kicker{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:20px}
   .kicker svg{width:15px;height:15px}
@@ -69,7 +72,7 @@
   .toc button:hover{background:var(--accent-soft);color:var(--accent)}
   .toc button.active{background:var(--accent);color:#fff}
 
-  section{padding:52px 0;border-bottom:1px solid var(--line)}
+  section{padding:52px 0;border-bottom:1px solid var(--line);scroll-margin-top:58px}
   .sec-num{font-size:13px;letter-spacing:.12em;color:var(--gold);font-weight:600;text-transform:uppercase}
   h2{font-size:28px;line-height:1.25;margin:10px 0;font-weight:700;letter-spacing:-.005em}
   .sec-intro{color:var(--sub);font-size:16px;margin:0 0 8px}
@@ -381,6 +384,7 @@
       return '<button data-target="' + t.id + '"' + (t.id === 's1' ? ' class="active"' : '') + '>' + esc(t.label) + '</button>';
     }).join('');
     document.getElementById('tocNav').classList.add('on');
+    document.body.classList.add('toc-on');
 
     // 目录滚动 + 高亮
     var buttons = Array.prototype.slice.call(toc.querySelectorAll('button'));
