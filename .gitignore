@@ -55,3 +55,6 @@ _oni.json
 
 # 一句一画：去水印前的原图备份（本地留档，不入库）
 my-app/ink-paintings/_originals/
+my-app/ink-paintings/mujiangyin/_wm_orig_backup/
+my-app/ink-paintings/mujiangyin/_raw_user.jpg
+my-app/ink-paintings/mujiangyin/user_raw_untreated.png

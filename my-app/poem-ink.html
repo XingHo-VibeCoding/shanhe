@@ -331,11 +331,13 @@
         +  '<p class="sec-intro">' + esc(s.intro || '') + '</p>'
         +  '<div class="card">'
         +  '<div class="verse">' + esc(s.verse) + '<span class="pin">' + esc(s.pinyin || '') + '</span></div>'
-        +  '<figure class="ink-painting">'
-        +  '<img src="' + esc(s.img) + '" alt="' + esc(s.alt || s.verse + ' 水墨画') + '" loading="lazy">'
-        +  '<a class="dl" href="' + esc(s.img) + '" download="' + esc(safeFile(d.title + '·' + s.verse) + '.jpg') + '">' + DOWNLOAD_SVG + '保存此画</a>'
-        +  '<figcaption>' + esc(s.caption || '') + '</figcaption>'
-        +  '</figure>'
+        +  (s.img
+            ? '<figure class="ink-painting">'
+              + '<img src="' + esc(s.img) + '" alt="' + esc(s.alt || s.verse + ' 水墨画') + '" loading="lazy">'
+              + '<a class="dl" href="' + esc(s.img) + '" download="' + esc(safeFile(d.title + '·' + s.verse) + '.jpg') + '">' + DOWNLOAD_SVG + '保存此画</a>'
+              + '<figcaption>' + esc(s.caption || '') + '</figcaption>'
+              + '</figure>'
+            : '')
         +  '<div class="field"><span class="lbl">水墨画寓意</span><p>' + esc(s.meaning || '') + '</p></div>'
         +  '<div class="field"><span class="lbl gold">注解</span><p class="gloss">' + (s.gloss || '') + '</p></div>'
         +  '</div></section>';
